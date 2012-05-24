@@ -9,11 +9,166 @@ sys.path.append( EVERNOTE_SDK )
 
 import httplib
 import time
-from urllib import quote_plus, urlencode
+from urllib import quote_plus, urlencode, unquote
 from urlparse import urlparse
 import re
+import Cookie
+import uuid
 
-def getPage(url, uri=None, method="GET", params="", headers={}):
+
+CONSUMER_KEY = 'stepler'
+CONSUMER_SECRET = 'de89e76dd1bf6e19'
+LOGIN_POST_DATA = {
+    'login': 'Sign in',
+    'username': 'stepler',
+    'password': '5t3pl3r',
+    'targetUrl': None,
+}
+ACCESS_POST_DATA = {
+    'authorize': 'Authorize',
+    'oauth_token': None,
+    'oauth_callback': None,
+    'embed': 'false',
+}
+COOKIES = {}
+
+baseUrl  = 'sandbox.evernote.com'
+authUrl  = "/OAuth.action?oauth_token=%(token)s"
+loginUrl = "/Login.action;jsessionid=%(jsessionid)s"
+accesshUrl = "/OAuth.action"
+oauthUrl = "/oauth"
+
+class auth(object):
+
+    url = {
+        "base"  : "sandbox.evernote.com",
+        "oauth" : "/OAuth.action",
+        "login" : "/Login.action;jsessionid=%(jsessionid)s"
+    }
+
+    cookies = {}
+
+    postData = {
+        'login': {
+            'login': 'Sign in',
+            'username': 'stepler',
+            'password': '5t3pl3r',
+            'targetUrl': None,
+        },
+        access: {
+            'authorize': 'Authorize',
+            'oauth_token': None,
+            'oauth_callback': None,
+            'embed': 'false',
+        }
+    }
+
+    tmpOAuthToken = None
+
+    def getTokenRequestData(self, **kwargs):
+        params = {
+            'oauth_consumer_key': CONSUMER_KEY, 
+            'oauth_signature': CONSUMER_SECRET+'%26', 
+            'oauth_signature_method': 'PLAINTEXT',
+            'oauth_timestamp': str(int(time.time())), 
+            'oauth_nonce': uuid.uuid4().hex
+        }
+    
+    def loadPage(self, url, uri=None, method="GET", params=""):
+        if not url:
+            print "ERROR: URL NOT FOUND"
+            exit(1)
+
+        if not uri:
+            urlData = urlparse(url)
+            url = urlData.netloc
+            uri = urlData.path + '?' + urlData.query
+
+        if params:
+            params = urlencode(params)
+            if method == "GET":
+                uri += ( '?' uri.find('?') == -1 '&') + params
+                params = ""
+
+        # insert local cookies in request
+        headers = {
+            "Cookie": '; '.join( [ key+'='+self.cookies[key] for key in self.cookies.keys() ] )
+        }
+
+        if method == "POST":
+            headers["Content-type"] = "application/x-www-form-urlencoded"
+
+        
+        conn = httplib.HTTPSConnection(url)
+        conn.request(method, uri, params, headers)
+        response = conn.getresponse()
+
+        result = new Struct(status=response.status, headers=response.getheaders(), data=response.read())
+        conn.close()
+
+        # update local cookies
+        sk = Cookie.SimpleCookie(response.getheaders("Set-Cookie", ""))
+        self.cookies[key] = sk[key].value for key in sk:
+
+        return result
+
+
+    def run(self):
+        pass
+
+    def getTmpOAuthToken(self):
+        response = self.loadPage(self.url['base'], self.url['oauth'], "GET", 
+            self.getTokenRequestData(oauth_callback="https://"+elf.url['base']))
+
+        if (response.status != 302)
+            raise Exeption('ERROR')
+
+        self.tmpOAuthToken = re.search('oauth_token=(.*?)&', response.data).group(1)
+
+        # AUTH 
+        auth = getPage(baseUrl, authUrl % {'token': oauth_token});
+        redirectUrl = auth['resp'].getheader('Location', None)
+
+        # LOGIN
+        login = getPage(redirectUrl)
+
+        # AUTH 
+        LOGIN_POST_DATA['targetUrl'] = authUrl % {'token': oauth_token}
+        auth = getPage(baseUrl, loginUrl % {'jsessionid': COOKIES['JSESSIONID']}, "POST", LOGIN_POST_DATA)
+
+        # ALLOW ACCESS
+        redirectUrl = auth['resp'].getheader('Location', None)
+        access = getPage(redirectUrl)
+
+        ACCESS_POST_DATA['oauth_token'] = oauth_token
+        ACCESS_POST_DATA['oauth_callback'] = baseUrl
+        allow_access = getPage(baseUrl, accesshUrl, "POST", ACCESS_POST_DATA)
+
+        # GET REAL TOKEN
+        real_oauth_token = getPage(baseUrl, oauthUrl, "GET", {
+            'oauth_consumer_key': CONSUMER_KEY, 
+            'oauth_signature': CONSUMER_SECRET+'%26', 
+            'oauth_signature_method': 'PLAINTEXT',
+            'oauth_timestamp': str(int(time.time())), 
+            'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988b',
+            'oauth_token': oauth_token,
+            'oauth_verifier': re.search('oauth_verifier=(.*)$', allow_access['resp'].getheader('Location', '')).group(1)
+        })
+
+print unquote(real_oauth_token['data'])
+
+
+
+class Struct:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
+
+def getPage(url, uri=None, method="GET", params=""):
+    if not url:
+        print "ERROR: URL NOT FOUND"
+        exit(1)
+
     if not uri:
         urlData = urlparse(url)
         url = urlData.netloc
@@ -23,72 +178,101 @@ def getPage(url, uri=None, method="GET", params="", headers={}):
         params = urlencode(params)
         print params
 
+    if params and method == "GET":
+        uri += '?' + params
+        params = ""
+
+    headers = {
+        "Cookie": getCookie()
+    }
+
+    if method == "POST":
+        headers["Content-type"] = "application/x-www-form-urlencoded"
+
     print uri
+    print headers
     conn = httplib.HTTPSConnection(url)
     conn.request(method, uri, params, headers)
     r = conn.getresponse()
     ret = {'resp': r, 'headers': r.getheaders(), 'data': r.read()}
     conn.close()
+
+    setCookie(r.getheader('Set-Cookie', ""))
+
+    print ret
+    print "---"
     return ret
 
+def setCookie(setCookies):
+    sk = Cookie.SimpleCookie(setCookies)
+    for key in sk:
+        COOKIES[key] = sk[key].value
+
+def getCookie():
+    return '; '.join([key+'='+COOKIES[key] for key in COOKIES.keys()])
 
 CONSUMER_KEY = 'stepler'
 CONSUMER_SECRET = 'de89e76dd1bf6e19'
-POST_DATA = {
+LOGIN_POST_DATA = {
     'login': 'Sign in',
     'username': 'stepler',
     'password': '5t3pl3r',
     'targetUrl': None,
 }
-COOKIE = ""
+ACCESS_POST_DATA = {
+    'authorize': 'Authorize',
+    'oauth_token': None,
+    'oauth_callback': None,
+    'embed': 'false',
+}
+COOKIES = {}
 
-baseUrl = 'sandbox.evernote.com'
-tokenUrl = "/oauth?oauth_consumer_key=%(key)s&oauth_signature=%(s_key)s&oauth_signature_method=PLAINTEXT&oauth_timestamp=%(time)s&oauth_nonce=%(nonce)s&oauth_callback=%(callback)s"
-authUrl = "/OAuth.action?oauth_token=%(token)s"
+baseUrl  = 'sandbox.evernote.com'
+authUrl  = "/OAuth.action?oauth_token=%(token)s"
 loginUrl = "/Login.action;jsessionid=%(jsessionid)s"
+accesshUrl = "/OAuth.action"
+oauthUrl = "/oauth"
 
-"""
-conn = httplib.HTTPSConnection(baseUrl)
-conn.request("GET", tokenUrl % {'key': CONSUMER_KEY, 's_key': CONSUMER_SECRET+'%26', 'time': str(int(time.time())), 'nonce': '1c4fbbe4387a685829d5938a3d97988c', 'callback': quote_plus('http://www.evernote.com')})
 
-r = conn.getresponse()
-resp = r.read()
-conn.close()
+# AUTH TOKEN
+token = getPage(baseUrl, tokenUrl, "GET", {
+    'oauth_consumer_key': CONSUMER_KEY, 
+    'oauth_signature': CONSUMER_SECRET+'%26', 
+    'oauth_signature_method': 'PLAINTEXT',
+    'oauth_timestamp': str(int(time.time())), 
+    'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988c',
+    'oauth_callback': baseUrl
+})
+oauth_token = re.search('oauth_token=(.*?)&', token['data']).group(1)
 
-#resp = 'oauth_token=stepler.13779C1B2FC.687474703A2F2F7777772E657665726E6F74652E636F6D.7517FB1D6F650595E5A95D91E2D86306&oauth_token_secret=&oauth_callback_confirmed=true'
-
-oauth_token = re.search('oauth_token=(.*?)&', resp).group(1)
-"""
-oauth_token = 'stepler.13779C71548.687474703A2F2F7777772E657665726E6F74652E636F6D.51C73959902B94203AD1E31436CDA6C4'
-print oauth_token
-
+# AUTH 
 auth = getPage(baseUrl, authUrl % {'token': oauth_token});
-print auth
+redirectUrl = auth['resp'].getheader('Location', None)
 
-if auth['resp'].status == 302:
-    redirectUrl = auth['resp'].getheader('Location', None)
-    if not redirectUrl:
-        print 'error'
-        exit(1)
+# LOGIN
+login = getPage(redirectUrl)
 
-    login = getPage(redirectUrl)
-    print redirectUrl
-    COOKIE = re.search('JSESSIONID=(.*?);', login['resp'].getheader('Set-Cookie', "")).group(1)
+# AUTH 
+LOGIN_POST_DATA['targetUrl'] = authUrl % {'token': oauth_token}
+auth = getPage(baseUrl, loginUrl % {'jsessionid': COOKIES['JSESSIONID']}, "POST", LOGIN_POST_DATA)
 
+# ALLOW ACCESS
+redirectUrl = auth['resp'].getheader('Location', None)
+access = getPage(redirectUrl)
 
-    POST_DATA['targetUrl'] = authUrl % {'token': oauth_token}
-    #POST_DATA['_sourcePage'] = re.findall('_sourcePage\" value=\"(.*?)\"', login['data'])[-1]
-    #POST_DATA['__fp'] = re.findall('__fp\" value=\"(.*?)\"', login['data'])[-1]
-    headers = {
-        "Content-type": "application/x-www-form-urlencoded",
-        #"Cookie": "JSESSIONID=%s; cookieTestValue=%s" % (COOKIE, re.search('cookieTestValue=(.*?);', login['resp'].getheader('Set-Cookie', "")).group(1))
-    }
-    print headers
-    print POST_DATA
-    auth = getPage(baseUrl, loginUrl % {'jsessionid': COOKIE}, "POST", POST_DATA, headers)
-    print auth
-    print auth['data']
+ACCESS_POST_DATA['oauth_token'] = oauth_token
+ACCESS_POST_DATA['oauth_callback'] = baseUrl
+allow_access = getPage(baseUrl, accesshUrl, "POST", ACCESS_POST_DATA)
 
-    redirectUrl = auth['resp'].getheader('Location', None)
-    access = getPage(redirectUrl)
-    print access
+# GET REAL TOKEN
+real_oauth_token = getPage(baseUrl, oauthUrl, "GET", {
+    'oauth_consumer_key': CONSUMER_KEY, 
+    'oauth_signature': CONSUMER_SECRET+'%26', 
+    'oauth_signature_method': 'PLAINTEXT',
+    'oauth_timestamp': str(int(time.time())), 
+    'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988b',
+    'oauth_token': oauth_token,
+    'oauth_verifier': re.search('oauth_verifier=(.*)$', allow_access['resp'].getheader('Location', '')).group(1)
+})
+
+print unquote(real_oauth_token['data'])

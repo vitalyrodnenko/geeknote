@@ -32,7 +32,8 @@ import evernote.edam.error.ttypes as Errors
 # purpose of exploring the API, you can get a developer token that allows
 # you to access your own Evernote account. To get a developer token, visit 
 # https://sandbox.evernote.com/api/DeveloperToken.action
-authToken = "S=s1:U=2265a:E=13ecd96d767:C=13775e5ab67:P=1cd:A=en-devtoken:H=9054285f16538b423668a54e4d9a7c1b"
+authToken = "S=s1:U=2265a:E=13ecd96d767:C=13775e5ab67:P=1cd:A=en-dev :H=9054285f16538b423668a54e4d9a7c1b"
+authToken = "S=s1:U=2265a:E=13ed6702e15:C=1377ebf0215:P=185:A=stepler:H=fb17721d6723911deb84b7fc4e33c5c9"
 
 if authToken == "your developer token":
     print "Please fill in your developer token"
