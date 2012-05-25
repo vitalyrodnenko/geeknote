@@ -6,8 +6,8 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 EVERNOTE_SDK = os.path.join(PROJECT_ROOT, 'oauth')
 sys.path.append( EVERNOTE_SDK )
 
-
 import httplib
+from log import logging
 import time
 from urllib import quote_plus, urlencode, unquote
 from urlparse import urlparse
@@ -15,35 +15,25 @@ import re
 import Cookie
 import uuid
 
-
 CONSUMER_KEY = 'stepler'
 CONSUMER_SECRET = 'de89e76dd1bf6e19'
-LOGIN_POST_DATA = {
-    'login': 'Sign in',
-    'username': 'stepler',
-    'password': '5t3pl3r',
-    'targetUrl': None,
-}
-ACCESS_POST_DATA = {
-    'authorize': 'Authorize',
-    'oauth_token': None,
-    'oauth_callback': None,
-    'embed': 'false',
-}
-COOKIES = {}
 
-baseUrl  = 'sandbox.evernote.com'
-authUrl  = "/OAuth.action?oauth_token=%(token)s"
-loginUrl = "/Login.action;jsessionid=%(jsessionid)s"
-accesshUrl = "/OAuth.action"
-oauthUrl = "/oauth"
+class Struct:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
+class AuthError(Exception):
+    """Base class for exceptions in this module."""
+    pass
 
 class auth(object):
 
     url = {
         "base"  : "sandbox.evernote.com",
-        "oauth" : "/OAuth.action",
-        "login" : "/Login.action;jsessionid=%(jsessionid)s"
+        "oauth" : "/OAuth.action?oauth_token=%s",
+        "access": "/OAuth.action",
+        "token" : "/oauth",
+        "login" : "/Login.action;jsessionid=%s"
     }
 
     cookies = {}
@@ -55,7 +45,7 @@ class auth(object):
             'password': '5t3pl3r',
             'targetUrl': None,
         },
-        access: {
+        'access': {
             'authorize': 'Authorize',
             'oauth_token': None,
             'oauth_callback': None,
@@ -73,10 +63,15 @@ class auth(object):
             'oauth_timestamp': str(int(time.time())), 
             'oauth_nonce': uuid.uuid4().hex
         }
+
+        if kwargs:
+            params = dict(params.items() + kwargs.items())
+        
+        return params
     
     def loadPage(self, url, uri=None, method="GET", params=""):
         if not url:
-            print "ERROR: URL NOT FOUND"
+            logging.error("Request URL undefined")
             exit(1)
 
         if not uri:
@@ -84,10 +79,10 @@ class auth(object):
             url = urlData.netloc
             uri = urlData.path + '?' + urlData.query
 
-        if params:
+        if params :
             params = urlencode(params)
             if method == "GET":
-                uri += ( '?' uri.find('?') == -1 '&') + params
+                uri += ('?' if uri.find('?') == -1 else '&') + params
                 params = ""
 
         # insert local cookies in request
@@ -98,72 +93,138 @@ class auth(object):
         if method == "POST":
             headers["Content-type"] = "application/x-www-form-urlencoded"
 
-        
+        logging.debug("Request URL: %s:/%s > %s # %s", url, uri, unquote(params), headers["Cookie"])
+
         conn = httplib.HTTPSConnection(url)
         conn.request(method, uri, params, headers)
         response = conn.getresponse()
-
-        result = new Struct(status=response.status, headers=response.getheaders(), data=response.read())
+        data = response.read()
         conn.close()
 
+        logging.debug("Response : %s > %s", response.status, response.getheaders())
+        result = Struct(status=response.status, location=response.getheader('location', None), data=data)
+
         # update local cookies
-        sk = Cookie.SimpleCookie(response.getheaders("Set-Cookie", ""))
-        self.cookies[key] = sk[key].value for key in sk:
+        sk = Cookie.SimpleCookie(response.getheader("Set-Cookie", ""))
+        for key in sk:
+            self.cookies[key] = sk[key].value
 
         return result
 
+    def parseResponse(self, data):
+        data = unquote(data)
+        return dict( item.split('=', 1) for item in data.split('?')[-1].split('&') )
+
 
     def run(self):
-        pass
+        self.getTmpOAuthToken()
 
     def getTmpOAuthToken(self):
-        response = self.loadPage(self.url['base'], self.url['oauth'], "GET", 
-            self.getTokenRequestData(oauth_callback="https://"+elf.url['base']))
+        response = self.loadPage(self.url['base'], self.url['token'], "GET", 
+            self.getTokenRequestData(oauth_callback="https://"+self.url['base']))
 
-        if (response.status != 302)
-            raise Exeption('ERROR')
+        if response.status != 200:
+            logging.error("Unexpected response status on get temporary oauth_token 200 != %s", response.status)
+            exit(1)
 
-        self.tmpOAuthToken = re.search('oauth_token=(.*?)&', response.data).group(1)
+        responseData = self.parseResponse(response.data)
+        if not responseData.has_key('oauth_token'):
+            logging.error("OAuth temporary not found")
+            exit(1)
 
-        # AUTH 
-        auth = getPage(baseUrl, authUrl % {'token': oauth_token});
-        redirectUrl = auth['resp'].getheader('Location', None)
+        self.tmpOAuthToken = responseData['oauth_token']
 
-        # LOGIN
-        login = getPage(redirectUrl)
+        logging.debug("Temporary OAuth token : %s", self.tmpOAuthToken)
 
-        # AUTH 
-        LOGIN_POST_DATA['targetUrl'] = authUrl % {'token': oauth_token}
-        auth = getPage(baseUrl, loginUrl % {'jsessionid': COOKIES['JSESSIONID']}, "POST", LOGIN_POST_DATA)
+        self.tryAuth()
 
-        # ALLOW ACCESS
-        redirectUrl = auth['resp'].getheader('Location', None)
-        access = getPage(redirectUrl)
+    def tryAuth(self):
+        response = self.loadPage(self.url['base'], self.url['oauth']%self.tmpOAuthToken)
 
-        ACCESS_POST_DATA['oauth_token'] = oauth_token
-        ACCESS_POST_DATA['oauth_callback'] = baseUrl
-        allow_access = getPage(baseUrl, accesshUrl, "POST", ACCESS_POST_DATA)
+        if response.status != 302:
+            logging.error("Unexpected response status on oauth 302 != %s", response.status)
+            exit(1)
 
-        # GET REAL TOKEN
-        real_oauth_token = getPage(baseUrl, oauthUrl, "GET", {
-            'oauth_consumer_key': CONSUMER_KEY, 
-            'oauth_signature': CONSUMER_SECRET+'%26', 
-            'oauth_signature_method': 'PLAINTEXT',
-            'oauth_timestamp': str(int(time.time())), 
-            'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988b',
-            'oauth_token': oauth_token,
-            'oauth_verifier': re.search('oauth_verifier=(.*)$', allow_access['resp'].getheader('Location', '')).group(1)
-        })
+        if not response.location:
+            logging.error("Target URL was not found in the response")
+            exit(1)
 
-print unquote(real_oauth_token['data'])
+        logging.debug("Redirect on login page")
 
+        self.login(response.location)
 
+    def login(self, URL):
+        response = self.loadPage(URL)
 
-class Struct:
-    def __init__(self, **entries): 
-        self.__dict__.update(entries)
+        if response.status != 200:
+            logging.error("Unexpected response status on login 200 != %s", response.status)
+            exit(1)
 
+        if not self.cookies.has_key('JSESSIONID'):
+            logging.error("Not found value JSESSIONID in the response cookies")
+            exit(1)
 
+        self.postData['login']['targetUrl'] = self.url['oauth']%self.tmpOAuthToken
+        response = self.loadPage(self.url['base'], self.url['login']%self.cookies['JSESSIONID'], "POST", self.postData['login'])
+
+        if not response.location:
+            logging.error("Target URL was not found in the response on login")
+            exit(1)
+
+        if response.location.find('Login.action') != -1:
+            logging.error("Incorrect login or password")
+            print response.data
+            exit(1)
+
+        logging.debug("Success authorize, redirect to access page")
+
+        self.allowAccess(response.location)
+
+    def allowAccess(self, URL):
+        response = self.loadPage(URL)
+
+        if response.status != 200:
+            logging.error("Unexpected response status on allowing access 200 != %s", response.status)
+            exit(1)
+
+        self.postData['access']['oauth_token'] = self.tmpOAuthToken
+        self.postData['access']['oauth_callback'] = "https://"+self.url['base']
+        response = self.loadPage(self.url['base'], self.url['access'], "POST", self.postData['access'])
+
+        if response.status != 302:
+            logging.error("Unexpected response status on allowing access 302 != %s", response.status)
+            exit(1)
+
+        responseData = self.parseResponse(response.location)
+        if not responseData.has_key('oauth_verifier'):
+            logging.error("OAuth verifier not found")
+            exit(1)
+
+        verifier = responseData['oauth_verifier']
+
+        logging.debug("OAuth verifier token take")
+
+        self.getOAuthToken(verifier)
+
+    def getOAuthToken(self, verifier):
+        response = self.loadPage(self.url['base'], self.url['token'], "GET",  
+            self.getTokenRequestData(oauth_token=self.tmpOAuthToken, oauth_verifier=verifier))
+
+        if response.status != 200:
+            logging.error("Unexpected response status on getting oauth token 200 != %s", response.status)
+            exit(1)
+
+        responseData = self.parseResponse(response.data)
+        if not responseData.has_key('oauth_token'):
+            logging.error("OAuth token not found")
+            exit(1)
+
+        logging.debug("OAuth token take : %s", responseData['oauth_token'])
+        print responseData['oauth_token']
+
+A = auth()
+A.run()
+"""
 def getPage(url, uri=None, method="GET", params=""):
     if not url:
         print "ERROR: URL NOT FOUND"
@@ -276,3 +337,4 @@ real_oauth_token = getPage(baseUrl, oauthUrl, "GET", {
 })
 
 print unquote(real_oauth_token['data'])
+"""
