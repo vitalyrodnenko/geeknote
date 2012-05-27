@@ -18,23 +18,29 @@ import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
 
 import io
+from oauth import GeekNoteAuth
 
 CONSUMER_KEY = 'stepler-8439'
 CONSUMER_SECRET = '4b4e6661ed1f2a5c'
 
 class GeekNote:
 
-    user = 'simon@webpp.ru'
-    password = '5t3pl3r'
-
     consumerKey = CONSUMER_KEY
     consumerSecret = CONSUMER_SECRET
     userStoreUri = "https://sandbox.evernote.com/edam/user"
-    noteStoreUriBase = "http://sandbox.evernote.com/edam/note/"
-    authToken = None
-    authResult = None
+    authToken = None #"S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
+    userStore = None
     noteStore = None
 
+    def __init__(self):
+        self.getStorage()
+        self.getSettings()
+
+        io.preloader.setMessage('Check SDK version...')
+        self.checkVersion()
+
+        io.preloader.setMessage('Check OAuth Token..')
+        self.checkAuth()
 
     def getStorage(self):
         # TODO access to sqlite
@@ -44,44 +50,73 @@ class GeekNote:
         # TODO load settings from storage
         pass
 
-    def saveUserAccount(self):
+    def saveToken(self):
         # TODO save account to storage
         pass
 
-    def getAuth(self):
-
-        if not (self.user and self.password):
-            self.user, self.password = io.GetUserCredentials()
-            self.saveUserAccount()
-
-
+    def checkVersion(self):
         userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
         userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
-        userStore = UserStore.Client(userStoreProtocol)
+        self.userStore = UserStore.Client(userStoreProtocol)
     
-        versionOK = userStore.checkVersion("Python EDAMTest",
+        versionOK = self.userStore.checkVersion("Python EDAMTest",
                                        UserStoreConstants.EDAM_VERSION_MAJOR,
                                        UserStoreConstants.EDAM_VERSION_MINOR)
         if not versionOK:
             print "Old EDAM version"
             exit(1)
-        print self.user, self.password, self.consumerKey, self.consumerSecret
-        authResult = userStore.authenticate(self.user, self.password, self.consumerKey, self.consumerSecret)
-        user = authResult.user
-        self.authToken = authResult.authenticationToken
-        self.authResult = authResult
-        return self.authToken
+
+    def checkAuth(self):
+        # load from storage 
+        
+        if self.authToken:
+            return
+
+        GNA = GeekNoteAuth()
+        self.authToken = GNA.getToken()
+        print self.authToken
+        # TODO save token to storage
     
     def getNoteStore(self):
-        noteStoreUri = self.noteStoreUriBase + self.authResult.user.shardId
-        noteStoreHttpClient = THttpClient.THttpClient(noteStoreUri)
+        io.preloader.setMessage('Connect to Notes...')
+
+        noteStoreUrl = self.userStore.getNoteStoreUrl(self.authToken)
+        noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
         noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
         self.noteStore = NoteStore.Client(noteStoreProtocol)
 
-    def getAllNotes(self, maxNotes):
+    def findNotes(self, count, keywords):
+        nf = NoteStore.NoteFilter()
+        nf.words = keywords
+        return self.noteStore.findNotes(self.authToken, nf, 0, count)
+
+    def getAllNotes(self, maxNotes=20):
+        if not self.noteStore:
+            self.getNoteStore()
+
+        io.preloader.setMessage('Search Notes...')
         return self.noteStore.findNotes(self.authToken, NoteStore.NoteFilter(), 0, maxNotes)
 
+    def getNote(self, name, full):
+        notelist = self.findNotes(10,name)
+        #for note in notelist.notes:
+        if (len(notelist.notes) == 0):
+            return None
+        notelist.notes[0].content = self.noteStore.getNoteContent(self.authToken, notelist.notes[0].guid)
+        return notelist.notes[0]
+
+    def createNote(self, title, text):
+        if not self.noteStore:
+            self.getNoteStore()
+
+        newNote = Types.Note()
+        newNote.title = title
+        newNote.content = text
+        self.noteStore.text(self.authToken, newNote)
+
+        return self.noteStore.createNote(self.authToken, note)
+
 gn = GeekNote()
-gn.getAuth()
+
 gn.getNoteStore()
-print gn.getAllNotes()
+print gn.getAllNotes(10)
