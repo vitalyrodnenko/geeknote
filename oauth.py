@@ -1,22 +1,17 @@
 # -*- coding: utf-8 -*-
-# add oauth
-
-import os, sys
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-EVERNOTE_SDK = os.path.join(PROJECT_ROOT, 'oauth')
-sys.path.append( EVERNOTE_SDK )
 
 import httplib
-from log import logging
 import time
-from urllib import quote_plus, urlencode, unquote
-from urlparse import urlparse
-import re
 import Cookie
 import uuid
+from log import logging
+from urllib import urlencode, unquote
+from urlparse import urlparse
 
-CONSUMER_KEY = 'stepler'
-CONSUMER_SECRET = 'de89e76dd1bf6e19'
+import io
+
+CONSUMER_KEY = 'stepler-8439'
+CONSUMER_SECRET = '4b4e6661ed1f2a5c'
 
 class Struct:
     def __init__(self, **entries): 
@@ -26,14 +21,15 @@ class AuthError(Exception):
     """Base class for exceptions in this module."""
     pass
 
-class auth(object):
+class GeekNoteAuth(object):
 
     url = {
         "base"  : "sandbox.evernote.com",
         "oauth" : "/OAuth.action?oauth_token=%s",
         "access": "/OAuth.action",
         "token" : "/oauth",
-        "login" : "/Login.action;jsessionid=%s"
+        "login" : "/Login.action",
+        #"login" : "/Login.action;jsessionid=%s"
     }
 
     cookies = {}
@@ -53,7 +49,13 @@ class auth(object):
         }
     }
 
+    username = None
+    password = None
     tmpOAuthToken = None
+    verifierToken = None
+    OAuthToken = None
+    incorrectLogin = 0
+
 
     def getTokenRequestData(self, **kwargs):
         params = {
@@ -79,6 +81,7 @@ class auth(object):
             url = urlData.netloc
             uri = urlData.path + '?' + urlData.query
 
+        # prepare params, append to uri
         if params :
             params = urlencode(params)
             if method == "GET":
@@ -116,8 +119,22 @@ class auth(object):
         return dict( item.split('=', 1) for item in data.split('?')[-1].split('&') )
 
 
-    def run(self):
+    def getToken(self):
+        io.preloader.setMessage('Login...')
         self.getTmpOAuthToken()
+
+        io.preloader.setMessage('Authorize...')
+        self.login()
+
+        io.preloader.setMessage('Allow Access...')
+        self.allowAccess()
+
+        io.preloader.setMessage('Getting Token...')
+        self.getOAuthToken()
+
+        #io.preloader.stop()
+        return self.OAuthToken
+
 
     def getTmpOAuthToken(self):
         response = self.loadPage(self.url['base'], self.url['token'], "GET", 
@@ -136,25 +153,8 @@ class auth(object):
 
         logging.debug("Temporary OAuth token : %s", self.tmpOAuthToken)
 
-        self.tryAuth()
-
-    def tryAuth(self):
-        response = self.loadPage(self.url['base'], self.url['oauth']%self.tmpOAuthToken)
-
-        if response.status != 302:
-            logging.error("Unexpected response status on oauth 302 != %s", response.status)
-            exit(1)
-
-        if not response.location:
-            logging.error("Target URL was not found in the response")
-            exit(1)
-
-        logging.debug("Redirect on login page")
-
-        self.login(response.location)
-
-    def login(self, URL):
-        response = self.loadPage(URL)
+    def login(self):
+        response = self.loadPage(self.url['base'], self.url['login'], "GET", {'oauth_token': self.tmpOAuthToken})
 
         if response.status != 200:
             logging.error("Unexpected response status on login 200 != %s", response.status)
@@ -164,28 +164,30 @@ class auth(object):
             logging.error("Not found value JSESSIONID in the response cookies")
             exit(1)
 
+        # get login/password
+        self.username, self.password = io.GetUserCredentials()
+
+        self.postData['login']['username'] = self.username
+        self.postData['login']['password'] = self.password
         self.postData['login']['targetUrl'] = self.url['oauth']%self.tmpOAuthToken
-        response = self.loadPage(self.url['base'], self.url['login']%self.cookies['JSESSIONID'], "POST", self.postData['login'])
+        response = self.loadPage(self.url['base'], self.url['login']+";jsessionid="+self.cookies['JSESSIONID'], "POST", 
+            self.postData['login'])
+
+        if not response.location and response.status == 200:
+            if self.incorrectLogin < 3:
+                return self.login()
+            else:
+                logging.error("Incorrect login or password")
 
         if not response.location:
             logging.error("Target URL was not found in the response on login")
             exit(1)
 
-        if response.location.find('Login.action') != -1:
-            logging.error("Incorrect login or password")
-            print response.data
-            exit(1)
-
         logging.debug("Success authorize, redirect to access page")
 
-        self.allowAccess(response.location)
+        #self.allowAccess(response.location)
 
-    def allowAccess(self, URL):
-        response = self.loadPage(URL)
-
-        if response.status != 200:
-            logging.error("Unexpected response status on allowing access 200 != %s", response.status)
-            exit(1)
+    def allowAccess(self):
 
         self.postData['access']['oauth_token'] = self.tmpOAuthToken
         self.postData['access']['oauth_callback'] = "https://"+self.url['base']
@@ -200,15 +202,15 @@ class auth(object):
             logging.error("OAuth verifier not found")
             exit(1)
 
-        verifier = responseData['oauth_verifier']
+        self.verifierToken = responseData['oauth_verifier']
 
         logging.debug("OAuth verifier token take")
 
-        self.getOAuthToken(verifier)
+        #self.getOAuthToken(verifier)
 
-    def getOAuthToken(self, verifier):
+    def getOAuthToken(self):
         response = self.loadPage(self.url['base'], self.url['token'], "GET",  
-            self.getTokenRequestData(oauth_token=self.tmpOAuthToken, oauth_verifier=verifier))
+            self.getTokenRequestData(oauth_token=self.tmpOAuthToken, oauth_verifier=self.verifierToken))
 
         if response.status != 200:
             logging.error("Unexpected response status on getting oauth token 200 != %s", response.status)
@@ -220,121 +222,4 @@ class auth(object):
             exit(1)
 
         logging.debug("OAuth token take : %s", responseData['oauth_token'])
-        print responseData['oauth_token']
-
-A = auth()
-A.run()
-"""
-def getPage(url, uri=None, method="GET", params=""):
-    if not url:
-        print "ERROR: URL NOT FOUND"
-        exit(1)
-
-    if not uri:
-        urlData = urlparse(url)
-        url = urlData.netloc
-        uri = urlData.path + '?' + urlData.query
-
-    if params:
-        params = urlencode(params)
-        print params
-
-    if params and method == "GET":
-        uri += '?' + params
-        params = ""
-
-    headers = {
-        "Cookie": getCookie()
-    }
-
-    if method == "POST":
-        headers["Content-type"] = "application/x-www-form-urlencoded"
-
-    print uri
-    print headers
-    conn = httplib.HTTPSConnection(url)
-    conn.request(method, uri, params, headers)
-    r = conn.getresponse()
-    ret = {'resp': r, 'headers': r.getheaders(), 'data': r.read()}
-    conn.close()
-
-    setCookie(r.getheader('Set-Cookie', ""))
-
-    print ret
-    print "---"
-    return ret
-
-def setCookie(setCookies):
-    sk = Cookie.SimpleCookie(setCookies)
-    for key in sk:
-        COOKIES[key] = sk[key].value
-
-def getCookie():
-    return '; '.join([key+'='+COOKIES[key] for key in COOKIES.keys()])
-
-CONSUMER_KEY = 'stepler'
-CONSUMER_SECRET = 'de89e76dd1bf6e19'
-LOGIN_POST_DATA = {
-    'login': 'Sign in',
-    'username': 'stepler',
-    'password': '5t3pl3r',
-    'targetUrl': None,
-}
-ACCESS_POST_DATA = {
-    'authorize': 'Authorize',
-    'oauth_token': None,
-    'oauth_callback': None,
-    'embed': 'false',
-}
-COOKIES = {}
-
-baseUrl  = 'sandbox.evernote.com'
-authUrl  = "/OAuth.action?oauth_token=%(token)s"
-loginUrl = "/Login.action;jsessionid=%(jsessionid)s"
-accesshUrl = "/OAuth.action"
-oauthUrl = "/oauth"
-
-
-# AUTH TOKEN
-token = getPage(baseUrl, tokenUrl, "GET", {
-    'oauth_consumer_key': CONSUMER_KEY, 
-    'oauth_signature': CONSUMER_SECRET+'%26', 
-    'oauth_signature_method': 'PLAINTEXT',
-    'oauth_timestamp': str(int(time.time())), 
-    'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988c',
-    'oauth_callback': baseUrl
-})
-oauth_token = re.search('oauth_token=(.*?)&', token['data']).group(1)
-
-# AUTH 
-auth = getPage(baseUrl, authUrl % {'token': oauth_token});
-redirectUrl = auth['resp'].getheader('Location', None)
-
-# LOGIN
-login = getPage(redirectUrl)
-
-# AUTH 
-LOGIN_POST_DATA['targetUrl'] = authUrl % {'token': oauth_token}
-auth = getPage(baseUrl, loginUrl % {'jsessionid': COOKIES['JSESSIONID']}, "POST", LOGIN_POST_DATA)
-
-# ALLOW ACCESS
-redirectUrl = auth['resp'].getheader('Location', None)
-access = getPage(redirectUrl)
-
-ACCESS_POST_DATA['oauth_token'] = oauth_token
-ACCESS_POST_DATA['oauth_callback'] = baseUrl
-allow_access = getPage(baseUrl, accesshUrl, "POST", ACCESS_POST_DATA)
-
-# GET REAL TOKEN
-real_oauth_token = getPage(baseUrl, oauthUrl, "GET", {
-    'oauth_consumer_key': CONSUMER_KEY, 
-    'oauth_signature': CONSUMER_SECRET+'%26', 
-    'oauth_signature_method': 'PLAINTEXT',
-    'oauth_timestamp': str(int(time.time())), 
-    'oauth_nonce': '1c4fbbe4387a685829d5938a3d97988b',
-    'oauth_token': oauth_token,
-    'oauth_verifier': re.search('oauth_verifier=(.*)$', allow_access['resp'].getheader('Location', '')).group(1)
-})
-
-print unquote(real_oauth_token['data'])
-"""
+        self.OAuthToken = responseData['oauth_token']
