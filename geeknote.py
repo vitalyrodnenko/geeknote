@@ -20,15 +20,21 @@ import evernote.edam.error.ttypes as Errors
 import io
 from oauth import GeekNoteAuth
 
-CONSUMER_KEY = 'stepler-8439'
-CONSUMER_SECRET = '4b4e6661ed1f2a5c'
+import tempfile
+import os
+from subprocess import call
+from xml.dom.minidom import DOMImplementation
+import html2text
+
+CONSUMER_KEY = 'skaizer-1250'
+CONSUMER_SECRET = 'ed0fcc0c97c032a5'
 
 class GeekNote:
 
     consumerKey = CONSUMER_KEY
     consumerSecret = CONSUMER_SECRET
     userStoreUri = "https://sandbox.evernote.com/edam/user"
-    authToken = None #"S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
+    authToken = "S=s1:U=2374b:E=13ef15cf7d7:C=13799abcbd7:P=185:A=stepler-8439:H=c9f34ca532df2df1b6593f2f504f1c5c"
     userStore = None
     noteStore = None
 
@@ -116,7 +122,29 @@ class GeekNote:
 
         return self.noteStore.createNote(self.authToken, note)
 
+    def editNote(self, name, full):
+        io.preloader.stop()
+        note = self.getNote(name, full)
+        EDITOR = os.environ.get('EDITOR','nano')
+        tmpfile = tempfile.NamedTemporaryFile(mode='w+t', delete=False, suffix=".html")
+        tmpfile.write(html2text.html2text(str(note.content)))
+        tmpfile.flush()
+        n = tmpfile.name
+        tmpfile.close()
+        call([EDITOR, n])
+        newfile = open(n)
+        newnote = newfile.read()
+        newfile.close()
+        os.remove(n)
+
+        return newnote
+
+
+
+
+
 gn = GeekNote()
 
 gn.getNoteStore()
-print gn.getAllNotes(10)
+#print gn.getAllNotes(10)
+print gn.editNote("Test", "t")
