@@ -4,11 +4,16 @@ import datetime
 
 from sqlalchemy import *
 from sqlalchemy.orm import *
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('sqlite:///geeknote.db', echo=True)
+from log import logging
 
-class User(object):
-    __tablename__ = 'users'
+engine = create_engine('sqlite:///geeknote1.db', echo=True)
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'user_info'
 
     id = Column(Integer, primary_key=True)
     token = Column(String(255))
@@ -21,16 +26,13 @@ class User(object):
     def __repr__(self):
         return "<User('{0}','{1})>".format(self.login, self.token)
         
-class Setting(object):
+class Setting(Base):
     __tablename__ = 'settings'
 
     id = Column(Integer, primary_key=True)
     key = Column(String(255))
     value = Column(String(1000))
-    user_id = Column(Integer, ForeignKey('users.id'))
     
-    user = relationship("User", backref=backref('settings', order_by=id))
-
     def __init__(self, key, value):
         self.key = key
         self.value = value
@@ -38,61 +40,34 @@ class Setting(object):
     def __repr__(self):
         return "<Setting('{0}','{1})>".format(self.key, self.value)
         
-class Notebook(object):
+class Notebook(Base):
     __tablename__ = 'notebooks'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
-    user_id = Column(Integer, ForeignKey('users.id'))
+    uuid = Column(String(255))
+    #parent_id = Column(Integer, ForeignKey('notebooks.id'))
     timestamp = Column(DateTime(), nullable = False)
     
-    user = relationship("User", backref=backref('notebooks', order_by=id))
+    #parent = relationship("Notebook", backref=backref('notebooks', order_by=id))
 
-    def __init__(self, name):
+    def __init__(self, name, uuid):
         self.name = name
+        self.uuid = uuid
         self.timestamp = datetime.datetime.now()
 
     def __repr__(self):
         return "<Notebook('{0}')>".format(self.name)
         
-notes_tags = Table('notes_tags', MetaData(),
-    Column('note_id', Integer, ForeignKey('notes.id')),
-    Column('tag_id', Integer, ForeignKey('tags.id'))
-)
-        
-class Note(object):
-    __tablename__ = 'notes'
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String(255))
-    content = Column(Text())
-    notebook_id = Column(Integer, ForeignKey('notebooks.id'))
-    user_id = Column(Integer, ForeignKey('users.id'))
-    timestamp = Column(DateTime(), nullable = False)
-    
-    tags = relationship('Tag', secondary=notes_tags, backref='notes')
-    user = relationship("User", backref=backref('notes', order_by=id))
-    notebook = relationship("Notebook", backref=backref('notes', order_by=id))
-
-    def __init__(self, title, content):
-        self.title = title
-        self.content = content
-        self.timestamp = datetime.datetime.now()
-
-    def __repr__(self):
-        return "<Note('{0}')>".format(self.title)
-        
-class Tag(object):
+class Tag(Base):
     __tablename__ = 'tags'
 
     id = Column(Integer, primary_key=True)
     tag = Column(String(255))
-    user_id = Column(Integer, ForeignKey('users.id'))
-    parent_id = Column(Integer, ForeignKey('tags.id'))
+    #parent_id = Column(Integer, ForeignKey('tags.id'))
     timestamp = Column(DateTime(), nullable = False)
     
-    user = relationship("User", backref=backref('tags', order_by=id))
-    parent = relationship("Tag", backref=backref('tags', order_by=id))
+    #parent = relationship("Tag", backref=backref('tags', order_by=id))
 
     def __init__(self, tag):
         self.title = tag
@@ -101,3 +76,66 @@ class Tag(object):
     def __repr__(self):
         return "<Tag('{0}')>".format(self.tag)
 
+class Storage(object):
+    session = None
+    
+    def __init__(self):
+        Base.metadata.create_all(engine) 
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        
+    def setSettings(self, settings):
+        try:
+            if not isinstance(settings, list):
+                raise Exception("Wrong settings")
+            for item in settings:
+                if not item['key'] or not item['value']:
+                    raise Exception("Wrong setting's item")
+                    
+                instance = self.session.query(Setting).filter_by(key=item['key']).first()
+                if instance:
+                    instance.value = item['value']
+                else:
+                    instance = Setting(item['key'], item['value'])
+                    self.session.add(instance)
+            
+            self.session.commit()
+            return True
+        except Exception, e:
+            logging.error("Settings setter: %s:/%s", key, value)
+            return False
+        
+    def getSettings(self):
+        try:
+            return self.session.query(Setting).all()
+        except Exception, e:
+            logging.error("Settings getter")
+            return False
+        
+    def setSetting(self, key, value):
+        try:
+            instance = self.session.query(Setting).filter_by(key=key).first()
+            if instance:
+                instance.value = value
+            else:
+                instance = Setting(key, value)
+                self.session.add(instance)
+            
+            self.session.commit()
+            return True
+        except Exception, e:
+            logging.error("Setting setter: %s:/%s", key, value)
+            return False
+        
+    def getSetting(self, key):
+        try:
+            instance = self.session.query(Setting).filter_by(key=key).first()
+            if instance:
+                return instance.value
+            else:
+                return None
+        except Exception, e:
+            logging.error("Setting geter: %s", key)
+            return False
+
+    
