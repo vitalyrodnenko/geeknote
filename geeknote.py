@@ -123,7 +123,7 @@ class GeekNote:
 
         return self.noteStore.createNote(self.authToken, note)
 
-    def editNote(self, name, full):
+    def editNote2(self, name, full):
         io.preloader.stop()
         note = self.getNote(name, full)
         EDITOR = os.environ.get('EDITOR','nano')
