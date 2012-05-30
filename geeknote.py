@@ -25,6 +25,7 @@ import os
 from subprocess import call
 from xml.dom.minidom import DOMImplementation
 import html2text
+import markdown
 
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
@@ -126,6 +127,16 @@ class GeekNote:
         io.preloader.stop()
         note = self.getNote(name, full)
         EDITOR = os.environ.get('EDITOR','nano')
+        """
+        with tempfile.NamedTemporaryFile(suffix=".txt") as tmpfile:
+            tmpfile.write(str(note.content))
+            tmpfile.flush()
+            call([EDITOR, tmpfile.name])
+            for line in tmpfile.readlines():
+                print line
+            tmpfile.close()
+        """
+
         tmpfile = tempfile.NamedTemporaryFile(mode='w+t', delete=False, suffix=".html")
         tmpfile.write(html2text.html2text(str(note.content)))
         tmpfile.flush()
@@ -136,15 +147,83 @@ class GeekNote:
         newnote = newfile.read()
         newfile.close()
         os.remove(n)
+        #self.createNote("New", newnote)
 
-        return newnote
+        return 1
+
+    def _convertToHTML(self, note):
+        noteHTML = markdown.markdown(note)
+        return noteHTML
+
+    def _parseNoteToMarkDown(self, note):    
+        txt = html2text.html2text(note.decode('utf-8','ignore'))
+        return txt#.decode('utf-8', 'replace')
+
+    def _wrapNotetoHTML(self, noteBody):
+        mytext = '''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml.dtd">
+<en-note>'''
+        mytext += self._convertToHTML(noteBody)
+        mytext += "</en-note>"
+        return mytext
+
+    def editNote(self, noteid):
+        note = self.getNote(noteid, noteid)
+
+        io.preloader.stop()
+
+        """
+        note = Types.Note()
+        note = self.getNote(self.noteName, False)
+        """
+        oldNote = self._parseNoteToMarkDown(note.content)
+     
+        (fd, tfn) = tempfile.mkstemp()
+        
+        os.write(fd, oldNote)
+        os.close(fd)
+        editor = os.environ.get("editor")
+        if not (editor):
+            editor = os.environ.get("EDITOR")
+        if not (editor):
+            editor = "nano"
+        os.system(editor + " " + tfn)
+        file = open(tfn, 'r')
+        contents = file.read()
+
+        print contents
+
+        #noteContent = self._wrapNotetoHTML(contents)
+        #note.content = noteContent
+        #self.noteStore.updateNote(self.authToken, note)
+
+
+        return
+        try:
+            noteContent = self._wrapNotetoHTML(contents)
+            note.content = noteContent
+            self.noteStore.updateNote(self.authToken, note)
+        except:
+            print "Your XML was malformed. Edit again (Y/N)?"
+            answer = ""
+            while (answer.lower() != 'n' and answer.lower() != 'y'):
+                answer = getInput()
+            if (answer.lower() == 'y'):
+                self.editNote()
 
 
 
+def getInput():
+    mystring = ""
+    while(True):
+        line = sys.stdin.readline()
+        if not line:
+            break
+        mystring += line
+    return mystring
 
 
 gn = GeekNote()
 
 gn.getNoteStore()
 #print gn.getAllNotes(10)
-print gn.editNote("Test", "t")
+print gn.editNote("Test")
