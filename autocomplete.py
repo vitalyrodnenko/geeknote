@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import sys
 
 def printGrid(list):
-    print "".join([item.ljust(12, " ") + ("\n" if index%4 == 3 else "") for index, item in enumerate(list)])
+    print " ".join(list)
+    #print "".join([item.ljust(12, " ") + ("\n" if index%4 == 3 else "") for index, item in enumerate(list)])
 
 COMMANDS = {
     "create": ["--title", "--body", "--tag", "--location"],
@@ -11,11 +13,13 @@ COMMANDS = {
     "fix": [],
 }
 
+input = sys.argv[2:]
+
 #input = ["autocomplete.py", ]
 #input = ["autocomplete.py", "create"]
-input = ["autocomplete.py", "create", "--title"]
+#input = ["autocomplete.py", "create", "--title"]
 #input = ["autocomplete.py", "create", "--t"]
-input = ["autocomplete.py", "create", "--title", "New title", "--body", "New note"]
+#input = ["autocomplete.py", "create", "--title", "New title", "--body", "New note"]
 #input = ["autocomplete.py", "create", "--title", "New title", "--body", "New note", "--tag"]
 #input = ["autocomplete.py", "find", '--']
 
@@ -24,11 +28,12 @@ level = len(input)
 #список команд
 CMD_LIST = COMMANDS.keys()
 # введенная команда
-CMD = None if level == 1 else input[1]
+CMD = None if level == 0 else input[0]
 # список возможных аргументов введенной команды
-ARGS = [] if level <= 1 or not COMMANDS.has_key(CMD) else COMMANDS[CMD]
+ARGS = [] if level == 0 or not COMMANDS.has_key(CMD) else COMMANDS[CMD]
 # список введенных аргументов и их значений
-INP = [] if level <= 2 else input[2:]
+INP = [] if level <= 1 else input[1:]
+
 # список введенных аргументов (без значений)
 INP_ARGS = INP[::2] if INP else []
 # последний введенный аргумент
@@ -36,13 +41,12 @@ INP_ARG = INP[-1] if len(INP)%2 == 1 else ( INP[-2] if INP else None )
 # последнее веденное значение
 INP_VAL = INP[-1] if INP and len(INP)%2 == 0 else None
 
-
 # печатаем корневые команды
-if level == 1:
+if level == 0:
     printGrid(CMD_LIST)
 
 # работа с корневыми командами
-elif level == 2:
+elif level == 1:
 
     # печатаем аргументы если команда найдена
     if CMD in CMD_LIST:
@@ -67,4 +71,4 @@ else:
 
         # обработка аргумента
         else:
-            print "input %s" % INP_ARG
+            print "" #"Please_input_%s" % INP_ARG.replace('-', '')
