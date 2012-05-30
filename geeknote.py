@@ -123,43 +123,18 @@ class GeekNote:
 
         return self.noteStore.createNote(self.authToken, note)
 
-    def editNote2(self, name, full):
-        io.preloader.stop()
-        note = self.getNote(name, full)
-        EDITOR = os.environ.get('EDITOR','nano')
-        """
-        with tempfile.NamedTemporaryFile(suffix=".txt") as tmpfile:
-            tmpfile.write(str(note.content))
-            tmpfile.flush()
-            call([EDITOR, tmpfile.name])
-            for line in tmpfile.readlines():
-                print line
-            tmpfile.close()
-        """
-
-        tmpfile = tempfile.NamedTemporaryFile(mode='w+t', delete=False, suffix=".html")
-        tmpfile.write(html2text.html2text(str(note.content)))
-        tmpfile.flush()
-        n = tmpfile.name
-        tmpfile.close()
-        call([EDITOR, n])
-        newfile = open(n)
-        newnote = newfile.read()
-        newfile.close()
-        os.remove(n)
-        #self.createNote("New", newnote)
-
-        return 1
-
     def _convertToHTML(self, note):
         noteHTML = markdown.markdown(note)
         return noteHTML
 
     def _parseNoteToMarkDown(self, note):    
-        txt = html2text.html2text(note.decode('utf-8','ignore'))
-        return txt#.decode('utf-8', 'replace')
+        txt = html2text.html2text(note.decode('us-ascii','ignore'))
+        return txt.decode('utf-8', 'replace')
 
     def _wrapNotetoHTML(self, noteBody):
+        """
+        Create an ENML format of note.
+        """
         mytext = '''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml.dtd">
 <en-note>'''
         mytext += self._convertToHTML(noteBody)
@@ -167,42 +142,39 @@ class GeekNote:
         return mytext
 
     def editNote(self, noteid):
+        """
+        Call the system editor, that types as a default in the system.
+        Editing goes in markdown format, and then the markdown converts into HTML, before uploading to Evernote.
+        """
+
         note = self.getNote(noteid, noteid)
 
         io.preloader.stop()
 
-        """
-        note = Types.Note()
-        note = self.getNote(self.noteName, False)
-        """
         oldNote = self._parseNoteToMarkDown(note.content)
      
         (fd, tfn) = tempfile.mkstemp()
         
         os.write(fd, oldNote)
         os.close(fd)
+        # Try to find default editor in the system.
         editor = os.environ.get("editor")
         if not (editor):
             editor = os.environ.get("EDITOR")
         if not (editor):
+            # If default editor is not finded, then use nano as a default.
             editor = "nano"
+        # Make a system call to open file for editing.
         os.system(editor + " " + tfn)
         file = open(tfn, 'r')
         contents = file.read()
-
-        print contents
-
-        #noteContent = self._wrapNotetoHTML(contents)
-        #note.content = noteContent
-        #self.noteStore.updateNote(self.authToken, note)
-
-
-        return
         try:
+            # Try to submit changes.
             noteContent = self._wrapNotetoHTML(contents)
             note.content = noteContent
             self.noteStore.updateNote(self.authToken, note)
         except:
+            # If it's an error.
             print "Your XML was malformed. Edit again (Y/N)?"
             answer = ""
             while (answer.lower() != 'n' and answer.lower() != 'y'):
@@ -225,5 +197,3 @@ def getInput():
 gn = GeekNote()
 
 gn.getNoteStore()
-#print gn.getAllNotes(10)
-print gn.editNote("Test")
