@@ -16,16 +16,10 @@ import evernote.edam.userstore.constants as UserStoreConstants
 import evernote.edam.notestore.NoteStore as NoteStore
 import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
+import argparse
 
 import io
 from oauth import GeekNoteAuth
-
-import tempfile
-import os
-from subprocess import call
-from xml.dom.minidom import DOMImplementation
-import html2text
-import markdown
 
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
@@ -124,90 +118,15 @@ class GeekNote:
 
         return self.noteStore.createNote(self.authToken, note)
 
-    def _convertToHTML(self, note):
-        noteHTML = markdown.markdown(note)
-        return noteHTML
-
-    def _parseNoteToMarkDown(self, note):    
-        txt = html2text.html2text(note.decode('us-ascii','ignore'))
-        return txt.decode('utf-8', 'replace')
-
-    def _wrapNotetoHTML(self, noteBody):
-        """
-        Create an ENML format of note.
-        """
-        mytext = '''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml.dtd">
-<en-note>'''
-        mytext += self._convertToHTML(noteBody)
-        mytext += "</en-note>"
-        return mytext
-
-    def editNote(self, noteid):
-        """
-        Call the system editor, that types as a default in the system.
-        Editing goes in markdown format, and then the markdown converts into HTML, before uploading to Evernote.
-        """
-
-        note = self.getNote(noteid, noteid)
-
-        io.preloader.stop()
-
-        oldNote = self._parseNoteToMarkDown(note.content)
-     
-        (fd, tfn) = tempfile.mkstemp()
-        
-        os.write(fd, oldNote)
-        os.close(fd)
-        # Try to find default editor in the system.
-        editor = os.environ.get("editor")
-        if not (editor):
-            editor = os.environ.get("EDITOR")
-        if not (editor):
-            # If default editor is not finded, then use nano as a default.
-            editor = "nano"
-        # Make a system call to open file for editing.
-        os.system(editor + " " + tfn)
-        file = open(tfn, 'r')
-        contents = file.read()
-        try:
-            # Try to submit changes.
-            noteContent = self._wrapNotetoHTML(contents)
-            note.content = noteContent
-            self.noteStore.updateNote(self.authToken, note)
-        except:
-            # If it's an error.
-            print "Your XML was malformed. Edit again (Y/N)?"
-            answer = ""
-            while (answer.lower() != 'n' and answer.lower() != 'y'):
-                answer = getInput()
-            if (answer.lower() == 'y'):
-                self.editNote()
-
-
-
-def getInput():
-    mystring = ""
-    while(True):
-        line = sys.stdin.readline()
-        if not line:
-            break
-        mystring += line
-    return mystring
-
-
-gn = GeekNote()
-
-gn.getNoteStore()
-
 class Notes(object):
-
+    """Работа с заметками"""
     evernote = None
     def __init__(self):
         io.preloader.setMessage('Connect to Evernote...')
 
         self.evernote = GeekNote()
 
-    """ Работа с заметками"""
+    
     def find(self):
         io.preloader.setMessage('Search...')
 
@@ -220,3 +139,53 @@ class Notes(object):
 
         # print results
         io.SearchResult(notes)
+
+COMMANDS = {
+    "create": {
+        "help": "Create note", 
+        "arguments": {
+            "--title": {"help": "Set note title", "required": True}, 
+            "--body": {"help": "Set note content", "required": True} 
+            "--tag", 
+            "--location"
+        }
+    },
+    "edit": ["--id", "--title", "--body", "--tag", "--location"],
+    "remove": ["--id"],
+    "find": ["--tag", "--notepad", "--force", "--exact-entry", "--count", "--url-only"],
+    "fix": [],
+}
+
+if __name__ == "__main__":
+    
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(help='List of commands')
+
+    # A create command
+    create_parser = subparsers.add_parser('create', help='Create note')
+    create_parser.add_argument('--title', help='Set note title', required=True)
+    create_parser.add_argument('--body', help='Set note content', required=True)
+    create_parser.add_argument('--tag', help='Add tag to note')
+    create_parser.add_argument('--location', help='Add location marker to note')
+
+    # A edit command
+    edit_parser = subparsers.add_parser('edit', help='Edit a note')
+    edit_parser.add_argument('--id', help='Note ID or position note in last search', required=True)
+    edit_parser.add_argument('--title', help='Set note title')
+    edit_parser.add_argument('--body', help='Set note content')
+    edit_parser.add_argument('--tag', help='Add tag to note')
+    edit_parser.add_argument('--location', help='Add location marker to note')
+
+    # A remove command
+    edit_parser = subparsers.add_parser('remove', help='Edit a note')
+    edit_parser.add_argument('--id', help='Note ID or position note in last search', required=True)
+
+    # A create command
+    create_parser = subparsers.add_parser('find', help='Find notes')
+    create_parser.add_argument('--exact-entry', help='exact-entry')
+    create_parser.add_argument('--tag', help='Search by tags')
+    create_parser.add_argument('--notepad', help='Search by notepad')
+    create_parser.add_argument('--url-only', help='Display url instead of snippet')
+
+    print parser.parse_args()
