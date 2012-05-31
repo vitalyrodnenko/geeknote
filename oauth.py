@@ -120,10 +120,10 @@ class GeekNoteAuth(object):
 
 
     def getToken(self):
-        io.preloader.setMessage('Login...')
+        io.preloader.setMessage('Authorize...')
         self.getTmpOAuthToken()
 
-        io.preloader.setMessage('Authorize...')
+        #io.preloader.setMessage('Authorize...')
         self.login()
 
         io.preloader.setMessage('Allow Access...')

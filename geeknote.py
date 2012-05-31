@@ -35,7 +35,8 @@ class GeekNote:
     consumerKey = CONSUMER_KEY
     consumerSecret = CONSUMER_SECRET
     userStoreUri = "https://sandbox.evernote.com/edam/user"
-    authToken = "S=s1:U=2374b:E=13ef15cf7d7:C=13799abcbd7:P=185:A=stepler-8439:H=c9f34ca532df2df1b6593f2f504f1c5c"
+    authToken = None
+    #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
     userStore = None
     noteStore = None
 
@@ -43,10 +44,10 @@ class GeekNote:
         self.getStorage()
         self.getSettings()
 
-        io.preloader.setMessage('Check SDK version...')
+        
         self.checkVersion()
 
-        io.preloader.setMessage('Check OAuth Token..')
+        #io.preloader.setMessage('Check OAuth Token..')
         self.checkAuth()
 
     def getStorage(self):
@@ -81,11 +82,11 @@ class GeekNote:
 
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
-        print self.authToken
+        # print self.authToken
         # TODO save token to storage
     
     def getNoteStore(self):
-        io.preloader.setMessage('Connect to Notes...')
+        #io.preloader.setMessage('Connect to Notes...')
 
         noteStoreUrl = self.userStore.getNoteStoreUrl(self.authToken)
         noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
@@ -101,7 +102,7 @@ class GeekNote:
         if not self.noteStore:
             self.getNoteStore()
 
-        io.preloader.setMessage('Search Notes...')
+        #io.preloader.setMessage('Search Notes...')
         return self.noteStore.findNotes(self.authToken, NoteStore.NoteFilter(), 0, maxNotes)
 
     def getNote(self, name, full):
@@ -197,3 +198,25 @@ def getInput():
 gn = GeekNote()
 
 gn.getNoteStore()
+
+class Notes(object):
+
+    evernote = None
+    def __init__(self):
+        io.preloader.setMessage('Connect to Evernote...')
+
+        self.evernote = GeekNote()
+
+    """ Работа с заметками"""
+    def find(self):
+        io.preloader.setMessage('Search...')
+
+        result = self.evernote.getAllNotes()
+        if result.totalNotes == 0:
+            print "notes not found"
+
+        notes = dict( (index+1, {'title': item.title, 'guid': item.guid}) for index, item in enumerate(result.notes) )
+        # TODO Save result to storage
+
+        # print results
+        io.SearchResult(notes)
