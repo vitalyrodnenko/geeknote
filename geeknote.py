@@ -23,9 +23,10 @@ from oauth import GeekNoteAuth
 import tempfile
 import os
 from subprocess import call
-from xml.dom.minidom import DOMImplementation
 import html2text
 import markdown
+import md5
+from tools import confirm
 
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
@@ -37,6 +38,7 @@ class GeekNote:
     userStoreUri = "https://sandbox.evernote.com/edam/user"
     authToken = None
     #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
+    authToken = "S=s1:U=2374b:E=13ef15cf7d7:C=13799abcbd7:P=185:A=stepler-8439:H=c9f34ca532df2df1b6593f2f504f1c5c"
     userStore = None
     noteStore = None
 
@@ -125,12 +127,14 @@ class GeekNote:
         return self.noteStore.createNote(self.authToken, note)
 
     def _convertToHTML(self, note):
+        note = unicode(note,"utf-8")
         noteHTML = markdown.markdown(note)
-        return noteHTML
+        return noteHTML.encode("utf-8")
 
-    def _parseNoteToMarkDown(self, note):    
-        txt = html2text.html2text(note.decode('us-ascii','ignore'))
-        return txt.decode('utf-8', 'replace')
+    def _parseNoteToMarkDown(self, note):
+        note = note.decode('utf-8')
+        txt = html2text.html2text(note)
+        return txt.encode('utf-8')
 
     def _wrapNotetoHTML(self, noteBody):
         """
@@ -148,6 +152,7 @@ class GeekNote:
         Editing goes in markdown format, and then the markdown converts into HTML, before uploading to Evernote.
         """
 
+        # ВНИМАНИЕ: Следующую строку надо переделать. Сейчас требуется передавать 2 аргумента функции, второй ничего не делает. Когда переделается метод, надо исправить этот кусок.
         note = self.getNote(noteid, noteid)
 
         io.preloader.stop()
@@ -158,6 +163,7 @@ class GeekNote:
         
         os.write(fd, oldNote)
         os.close(fd)
+        
         # Try to find default editor in the system.
         editor = os.environ.get("editor")
         if not (editor):
@@ -165,39 +171,32 @@ class GeekNote:
         if not (editor):
             # If default editor is not finded, then use nano as a default.
             editor = "nano"
+        
         # Make a system call to open file for editing.
         os.system(editor + " " + tfn)
         file = open(tfn, 'r')
-        contents = file.read()
-        try:
-            # Try to submit changes.
-            noteContent = self._wrapNotetoHTML(contents)
-            note.content = noteContent
-            self.noteStore.updateNote(self.authToken, note)
-        except:
-            # If it's an error.
-            print "Your XML was malformed. Edit again (Y/N)?"
-            answer = ""
-            while (answer.lower() != 'n' and answer.lower() != 'y'):
-                answer = getInput()
-            if (answer.lower() == 'y'):
-                self.editNote()
+        newNote = file.read()
 
+        # Check the note is changed. If it's not, then nothing to save.
+        if md5.md5(oldNote).hexdigest() != md5.md5(newNote).hexdigest():
 
-
-def getInput():
-    mystring = ""
-    while(True):
-        line = sys.stdin.readline()
-        if not line:
-            break
-        mystring += line
-    return mystring
-
+            # Convert markdown to HTML.
+            noteContent = self._wrapNotetoHTML(newNote)
+            try:
+                # Try to submit changes.
+                note.content = noteContent
+                # Upload changes
+                self.noteStore.updateNote(self.authToken, note)
+            except:
+                # If it's an error we can edit our note again.
+                if confirm("Your XML is not correct. Edit again?"):
+                    self.editNote(noteid)
+        else:
+            print "Note wasn't edited. Nothing to save."
 
 gn = GeekNote()
-
 gn.getNoteStore()
+gn.editNote("Test")
 
 class Notes(object):
 
