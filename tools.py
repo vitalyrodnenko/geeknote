@@ -27,6 +27,7 @@ def getch():
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
+<<<<<<< HEAD
 def strip(data):
     if not data:
         return data
@@ -211,3 +212,24 @@ def printAutocomplete(COMMANDS, input):
             # обработка аргумента
             else:
                 print "" #"Please_input_%s" % INP_ARG.replace('-', '')
+=======
+def confirm(prompt_str="Confirm", allow_empty=False, default=False):
+    """
+    Allows to ask user action from console. It asks a question and gives ability to answer Y or N.
+    """
+    fmt = (prompt_str, 'y', 'n') if default else (prompt_str, 'n', 'y')
+    if allow_empty:
+        prompt = '%s [%s]|%s: ' % fmt
+    else:
+        prompt = '%s %s|%s: ' % fmt
+    while True:
+        ans = raw_input(prompt).lower()
+        if ans == '' and allow_empty:
+            return default
+        elif ans == 'y':
+            return True
+        elif ans == 'n':
+            return False
+        else:
+            print 'Please enter y or n.'
+>>>>>>> origin/master

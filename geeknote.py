@@ -25,7 +25,6 @@ from oauth import GeekNoteAuth
 import tools
 from log import logging
 
-
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
 
@@ -35,7 +34,7 @@ class GeekNote:
     consumerSecret = CONSUMER_SECRET
     userStoreUri = "https://sandbox.evernote.com/edam/user"
     authToken = None
-    authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
+    #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
     userStore = None
     noteStore = None
 
@@ -139,6 +138,7 @@ class GeekNote:
         note.guid = guid
         if title:
             note.title = title
+
 
         if content:
             note.content = content
