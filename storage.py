@@ -366,7 +366,7 @@ class Storage(object):
     @logging
     def setSearch(self, search_obj):
         """
-        Set searching. Searching must be an instanse of ???
+        Set searching.
         Previous searching items will be removed
         return True if all done
         return False if something wrong
