@@ -4,12 +4,9 @@ from storage import *
 s = Storage()
 
 # search
-search = [
-    {'uuid': '646-64564-324-53', 'name': 'note1', 'stype': 'note', 'snippet': 'Snippet for note1'},
-    {'uuid': '645423-546546-45353', 'name': 'notebook2', 'stype': 'noteebook', 'snippet': 'Snippet for notebook2'}
-]
-
-s.setSearch(search)
+from oauth import GeekNoteAuth
+GNA = GeekNoteAuth()
+s.setSearch(GNA)
 s.getSearch()
 
 # notebooks
