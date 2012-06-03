@@ -3,9 +3,7 @@ import getpass
 import time
 import sys
 import thread
-from tools import getch
-from i18n import LNG
-
+import tools
 
 def preloaderPause(fn, *args, **kwargs):
     def wrapped(*args, **kwargs):
@@ -93,20 +91,79 @@ def GetUserCredentials():
     return (email, password)
 
 @preloaderStop
-def SearchResult(result):
+def SearchResult(result, request):
     """Печать результатов поиска"""
     
-    request_row = "%(request_title)s : %(request)s \n"
-    result_total = "%(find_total)s : %(total)d \n"
+    request_row = "Search request: %s \n"
+    result_total = "Total found: %d \n"
     result_row = "%(key)s:  %(title)s \n"
 
     total = len(result)
-    sys.stdout.write(result_total % {'find_total': LNG['find_total'], 'total': total })
+    sys.stdout.write(request_row % request)
+    sys.stdout.write(result_total % total)
     for key, item in result.iteritems():
         sys.stdout.write(result_row % {'key': str(key).rjust(3, " "), 'title': item['title']})
         if key%2 == 0 and key < total:
             sys.stdout.write("-- More -- \r")
-            getch()
+            tools.getch()
             sys.stdout.write(" "*10 +"\r")
 
+    sys.stdout.flush()
+
+@preloaderStop
+def SelectSearchResult(result):
+    """Выбор результата поиска"""
+    
+    result_total = "Total found: %d \n"
+    result_row = "%(key)s:  %(title)s \n"
+
+    total = len(result)
+    sys.stdout.write(result_total % total)
+
+    for key, item in result.iteritems():
+        sys.stdout.write(result_row % {'key': str(key).rjust(3, " "), 'title': item['title']})
+        """
+        if key%2 == 0 and key < total:
+            sys.stdout.write("-- More -- \r")
+            tools.getch()
+            sys.stdout.write(" "*10 +"\r")
+        """
+
+    sys.stdout.flush()
+
+    while True:
+        num = raw_input(": ")
+        if tools.checkIsInt(num) and  1 <= int(num) <= total:
+            return result[int(num)]
+
+        failureMessage('Incorrect number "%s", please try again:\n' % num)
+
+@preloaderStop
+def removeConfirm(title):
+    """Подтверждение удаления заметки"""
+    
+    sys.stdout.write('Are you sure you want to delete this note: "%s"\n' % title)
+    sys.stdout.flush()
+
+    while True:
+        answer = raw_input("Yes/No: ")
+
+        if answer.lower() in ["yes", "ye", "y"]:
+            return True
+
+        if answer.lower() in ["no", "n"]:
+            return False
+
+        failureMessage('Incorrect answer "%s", please try again:\n' % answer)
+
+@preloaderStop
+def successMessage(message):
+    """ Вывод сообщения """
+    sys.stdout.write(message)
+    sys.stdout.flush()
+
+@preloaderStop
+def failureMessage(message):
+    """ Вывод сообщения """
+    sys.stdout.write(message)
     sys.stdout.flush()
