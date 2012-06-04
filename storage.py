@@ -53,12 +53,12 @@ class Notebook(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
-    #uuid = Column(String(255))
+    guid = Column(String(1000))
     timestamp = Column(DateTime(), nullable = False)
 
-    def __init__(self, name):
+    def __init__(self, guid, name):
+        self.guid = guid
         self.name = name
-        #self.uuid = uuid
         self.timestamp = datetime.datetime.now()
 
     def __repr__(self):
@@ -69,9 +69,11 @@ class Tag(Base):
 
     id = Column(Integer, primary_key=True)
     tag = Column(String(255))
+    guid = Column(String(1000))
     timestamp = Column(DateTime(), nullable = False)
 
-    def __init__(self, tag):
+    def __init__(self, guid, tag):
+        self.guid = guid
         self.tag = tag
         self.timestamp = datetime.datetime.now()
 
@@ -261,7 +263,10 @@ class Storage(object):
         return False if something wrong
         """
         settings = self.session.query(Setting).all()
-        return [{item.key: item.value} for item in settings]
+        result = {}
+        for item in settings:
+            result[item.key] = item.value
+        return result
     
     @logging    
     def setSetting(self, key, value):
@@ -296,22 +301,22 @@ class Storage(object):
     @logging    
     def setTags(self, tags):
         """
-        Set tags. Tags must be an instanse of list
+        Set tags. Tags must be an instanse of dict
         Previous tags items will be removed
         return True if all done
         return False if something wrong
         """
-        if not isinstance(tags, list):
+        if not isinstance(tags, dict):
             raise Exception("Wrong tags")
             
         for item in self.session.query(Tag).all():
             self.session.delete(item)
         
-        for tag in tags:
-            if not tag:
-                raise Exception("Empty tag")
+        for key in tags.keys():
+            if not tags[key]:
+                raise Exception("Wrong tag's item")
                 
-            instance = Tag(tag)
+            instance = Tag(key, tags[key])
             self.session.add(instance)
         
         self.session.commit()
@@ -321,32 +326,35 @@ class Storage(object):
     def getTags(self):
         """
         Get all tags
-        return list of tags if all done
+        return list of dicts of tags if all done
         return [] there are not any tags yet
         return False if something wrong
         """
         tags = self.session.query(Tag).all()
-        return [item.tag for item in tags]
+        result = {}
+        for item in tags:
+            result[item.guid] = item.tag
+        return result
     
     @logging    
     def setNotebooks(self, notebooks):
         """
-        Set notebooks. Notebooks must be an instanse of list
+        Set notebooks. Notebooks must be an instanse of dict
         Previous notebooks items will be removed
         return True if all done
         return False if something wrong
         """
-        if not isinstance(notebooks, list):
+        if not isinstance(notebooks, dict):
             raise Exception("Wrong notebooks")
             
         for item in self.session.query(Notebook).all():
             self.session.delete(item)
         
-        for notebook in notebooks:
-            if not notebook:
-                raise Exception("Empty notebook")
+        for key in notebooks.keys():
+            if not notebooks[key]:
+                raise Exception("Wrong notebook's item")
                 
-            instance = Notebook(notebook)
+            instance = Notebook(key, notebooks[key])
             self.session.add(instance)
         
         self.session.commit()
@@ -361,7 +369,10 @@ class Storage(object):
         return False if something wrong
         """
         notebooks = self.session.query(Notebook).all()
-        return [item.name for item in notebooks]
+        result = {}
+        for item in notebooks:
+            result[item.guid] = item.name
+        return result
         
     @logging
     def setSearch(self, search_obj):
