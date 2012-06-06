@@ -4,6 +4,7 @@ import time
 import sys
 import thread
 import tools
+import editor
 
 def preloaderPause(fn, *args, **kwargs):
     def wrapped(*args, **kwargs):
@@ -111,30 +112,23 @@ def SearchResult(result, request):
     sys.stdout.flush()
 
 @preloaderStop
-def SelectSearchResult(result):
+def SelectSearchResult(listItems):
     """Выбор результата поиска"""
     
-    result_total = "Total found: %d \n"
-    result_row = "%(key)s:  %(title)s \n"
+    total = len(listItems)
 
-    total = len(result)
-    sys.stdout.write(result_total % total)
+    separator("#", "FOUND NOTES")
+    sys.stdout.write("Total found: %d \n" % total)
 
-    for key, item in result.iteritems():
-        sys.stdout.write(result_row % {'key': str(key).rjust(3, " "), 'title': item['title']})
-        """
-        if key%2 == 0 and key < total:
-            sys.stdout.write("-- More -- \r")
-            tools.getch()
-            sys.stdout.write(" "*10 +"\r")
-        """
+    for key, item in enumerate(listItems):
+        sys.stdout.write("%(key)s:  %(title)s \n" % {'key': str(key+1).rjust(3, " "), 'title': item.title})
 
     sys.stdout.flush()
 
     while True:
         num = raw_input(": ")
         if tools.checkIsInt(num) and  1 <= int(num) <= total:
-            return result[int(num)]
+            return listItems[int(num)-1]
 
         failureMessage('Incorrect number "%s", please try again:\n' % num)
 
@@ -157,13 +151,51 @@ def removeConfirm(title):
         failureMessage('Incorrect answer "%s", please try again:\n' % answer)
 
 @preloaderStop
+def showNote(note):
+
+    separator("#")
+    sys.stdout.write("TITLE: %s\n" % note.title)
+    separator("=")
+    if note.tagNames:
+        sys.stdout.write("Tags: %s\n" % ', '.join(note.tagNames))
+
+    sys.stdout.write(editor.ENMLtoText(note.content))
+    sys.stdout.flush()
+
+@preloaderStop
+def showUser(user, fullInfo):
+    def line(key, value):
+        if value:
+            sys.stdout.write("%s : %s \n" % (key.ljust(16, " "), value))
+
+    separator("#", "USER INFO")
+    line('Username', user.username)
+    line('Name', user.name)
+    line('eEail', user.email)
+
+    if fullInfo:
+        line('Upload limit', "%.2f" % (int(user.accounting.uploadLimit) / 1024 / 1024))
+        line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000 )) )
+    sys.stdout.flush()
+
+@preloaderStop
 def successMessage(message):
     """ Вывод сообщения """
-    sys.stdout.write(message)
+    sys.stdout.write(message+"\n")
     sys.stdout.flush()
 
 @preloaderStop
 def failureMessage(message):
     """ Вывод сообщения """
-    sys.stdout.write(message)
+    sys.stdout.write(message+"\n")
     sys.stdout.flush()
+
+def separator(symbol="", title=""):
+
+    size = 40
+    if title:
+        sw = (size - len(title) + 2) / 2
+        sys.stdout.write("%s %s %s \n" % (symbol*sw, title, symbol*sw))
+
+    else:
+        sys.stdout.write(symbol*size+"\n")

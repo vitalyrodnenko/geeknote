@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from log import logging
 
 db_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/database.db'
-engine = create_engine('sqlite:////' + db_path)
+engine = create_engine('sqlite:///' + db_path)
 Base = declarative_base()
 
 class Userprop(Base):
@@ -122,6 +122,7 @@ class Storage(object):
     session = None
     
     def __init__(self):
+        logging.debug("Storage engine : %s", engine)
         Base.metadata.create_all(engine) 
         Session = sessionmaker(bind=engine)
         self.session = Session()
@@ -136,7 +137,7 @@ class Storage(object):
         return wrapper
         
     @logging   
-    def createUser(self, oAuthToken):
+    def createUser(self, oAuthToken, info_obj):
         """
         Create user. oAuthToken must be not empty string
         Previous user and user's properties will be removed
@@ -145,18 +146,20 @@ class Storage(object):
         """
         if not oAuthToken:
             raise Exception("Empty oAuth token")
+
+        if not info_obj:
+            raise Exception("Empty user info")
             
         for item in self.session.query(Userprop).all():
             self.session.delete(item)
         
-        instance = Userprop('oAuthToken', oAuthToken)
-        self.session.add(instance)
+        self.setUserprop('oAuthToken', oAuthToken)
+        self.setUserprop('info', pickle.dumps(info_obj))
         
-        self.session.commit()
         return True
     
     @logging    
-    def getUser(self):
+    def getUserToken(self):
         """
         Get user's oAuth token
         return oAuth token if it exists
@@ -164,30 +167,21 @@ class Storage(object):
         return False if something wrong
         """
         return self.getUserprop('oAuthToken')
-    
-    @logging    
-    def setUserprops(self, properties):
+
+    #@logging    
+    def getUserInfo(self):
         """
-        Set multuple user's properties. Properties must be an instanse of a dict
-        return True if all done
+        Get user's oAuth token
+        return oAuth token if it exists
+        return None if there is not oAuth token yet
         return False if something wrong
         """
-        if not isinstance(properties, dict):
-            raise Exception("Wrong properties")
-        
-        for key in properties.keys():
-            if not properties[key]:
-                raise Exception("Wrong property's item")
-                
-            instance = self.session.query(Userprop).filter_by(key=key).first()
-            if instance:
-                instance.value = properties[key]
-            else:
-                instance = Userprop(key, properties[key])
-                self.session.add(instance)
-        
-        self.session.commit()
-        return True
+        info = self.getUserprop('info')
+        print info
+        if info:
+            print pickle.loads(info)
+            exit(1)
+        return None
     
     @logging    
     def getUserprops(self):

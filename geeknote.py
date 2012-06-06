@@ -22,6 +22,8 @@ import time
 
 import io
 from oauth import GeekNoteAuth
+from storage import Storage
+import editor
 import tools
 from log import logging
 
@@ -37,80 +39,88 @@ class GeekNote:
     #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
     userStore = None
     noteStore = None
+    storage = None
 
     def __init__(self):
         self.getStorage()
-        self.getSettings()
-
-        
         self.checkVersion()
 
         #io.preloader.setMessage('Check OAuth Token..')
         self.checkAuth()
 
     def getStorage(self):
-        # TODO access to sqlite
-        pass
+        if self.storage:
+            return self.storage
 
-    def getSettings(self):
-        # TODO load settings from storage
-        pass
+        self.storage = Storage()
+        return self.storage
 
-    def saveToken(self):
-        # TODO save account to storage
-        pass
+    def setUserStore(self, store):
+        self.userStore = store
+
+
+    def getUserStore(self):
+        if self.userStore:
+            return self.userStore
+
+        logging.error("User Store not exist")
+
+    def loadNoteStore(self):
+        noteStoreUrl = self.getUserStore().getNoteStoreUrl(self.authToken)
+        noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
+        noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
+        self.noteStore = NoteStore.Client(noteStoreProtocol)
+
+    def getNoteStore(self):
+        if self.noteStore:
+            return self.noteStore
+
+        self.loadNoteStore()
+        return self.noteStore
 
     def checkVersion(self):
         userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
         userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
-        self.userStore = UserStore.Client(userStoreProtocol)
+        self.setUserStore(UserStore.Client(userStoreProtocol))
     
-        versionOK = self.userStore.checkVersion("Python EDAMTest",
+        versionOK = self.getUserStore().checkVersion("Python EDAMTest",
                                        UserStoreConstants.EDAM_VERSION_MAJOR,
                                        UserStoreConstants.EDAM_VERSION_MINOR)
         if not versionOK:
-            print "Old EDAM version"
+            logging.error("Old EDAM version")
             exit(1)
 
     def checkAuth(self):
-        # load from storage 
-        
+        self.authToken = self.getStorage().getUserToken()
+        logging.debug("oAuth token : %s", self.authToken)
         if self.authToken:
             return
 
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
-        # print self.authToken
-        # TODO save token to storage
-    
-    def getNoteStore(self):
+        userInfo = self.getUserInfo()
+        if not isinstance(userInfo, Types.User):
+            logging.error("User info not get")
 
-        noteStoreUrl = self.userStore.getNoteStoreUrl(self.authToken)
-        noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
-        noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
-        self.noteStore = NoteStore.Client(noteStoreProtocol)
+        self.getStorage().createUser(self.authToken, userInfo)
+
+    def getUserInfo(self):
+        return self.getUserStore().getUser(self.authToken)
 
     def findNotes(self, keywords, count):
-        if not self.noteStore:
-            self.getNoteStore()
-
         nf = NoteStore.NoteFilter()
         if keywords:
             nf.words = keywords
-        return self.noteStore.findNotes(self.authToken, nf, 0, count)
+        return self.getNoteStore().findNotes(self.authToken, nf, 0, count)
 
-    def getNote(self, name, full):
-        notelist = self.findNotes(10,name)
-        #for note in notelist.notes:
-        if (len(notelist.notes) == 0):
-            return None
-        notelist.notes[0].content = self.noteStore.getNoteContent(self.authToken, notelist.notes[0].guid)
-        return notelist.notes[0]
+    def loadNoteContent(self, note):
+        """ modify Note object """
+        if not isinstance(note, Types.Note):
+            raise Exception("Note content must be an instanse of Note, '%s' given." % type(content))
+
+        note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
 
     def createNote(self, title, content, tags=None, notebook=None):
-        if not self.noteStore:
-            self.getNoteStore()
-
         note = Types.Note()
         note.title = title
         note.content = content
@@ -124,21 +134,17 @@ class GeekNote:
         logging.debug("New note : %s", note)
 
         try: 
-            self.noteStore.createNote(self.authToken, note)
+            self.getNoteStore().createNote(self.authToken, note)
             return True
         except Exception, e:
             logging.error("Error: %s", str(e))
             return False
 
     def updateNote(self, guid, title=None, content=None, tags=None, notebook=None):
-        if not self.noteStore:
-            self.getNoteStore()
-
         note = Types.Note()
         note.guid = guid
         if title:
             note.title = title
-
 
         if content:
             note.content = content
@@ -152,51 +158,70 @@ class GeekNote:
         logging.debug("Update note : %s", note)
 
         try: 
-            self.noteStore.updateNote(self.authToken, note)
+            self.getNoteStore().updateNote(self.authToken, note)
             return True
         except Exception, e:
             logging.error("Error: %s", str(e))
             return False
 
     def deleteNote(self, guid):
-        if not self.noteStore:
-            self.getNoteStore()
-
         logging.debug("Delete note with guid: %s", guid)
         try: 
-            self.noteStore.deleteNote(self.authToken, guid)
+            self.getNoteStore().deleteNote(self.authToken, guid)
             return True
         except Exception, e:
             logging.error("Error: %s", str(e))
             return False
 
 
-class Notes(object):
-    """Работа с заметками"""
+class GeekNoteConnector(object):
     evernote = None
+    storage = None
     
     def connectToEvertone(self):
         if self.evernote:
             return
 
         io.preloader.setMessage("Connect to Evernote...")
-
         self.evernote = GeekNote()
-        return self
+
+    def getEvernote(self):
+        if self.evernote:
+            return self.evernote
+
+        self.connectToEvertone()
+        return self.evernote
+
+    def getStorage(self):
+        if self.storage:
+            return self.storage
+
+        self.storage = self.getEvernote().getStorage()
+        return self.storage
+
+
+class User(GeekNoteConnector):
+    """ Work with auth User """
+
+    def info(self, full=True):
+        
+        info = self.getEvernote().getUserInfo()
+        #logging.debug("User info:" % str(info))
+        io.showUser(info, True)
+
+
+class Notes(GeekNoteConnector):
+    """ Work with Notes """
     
     def create(self, title, body, tags=None, notepad=None):
 
         if body == "WRITE_IN_EDITOR":
-            # TODO launch editor
             logging.debug("launch system editor")
+            body = editor.edit()
 
-        # TMP >>>
-        if body and not body.startswith("<?xml"):
-            content = body
-            body =  '<?xml version="1.0" encoding="UTF-8"?>'
-            body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-            body += '<en-note>%s</en-note>' % content
-        # TMP <<<
+        else:
+            logging.debug("Convert body")
+            body = editor.textToENML(body)
 
         if tags:
             tags = tools.strip(tags.split(','))
@@ -207,7 +232,7 @@ class Notes(object):
 
         self.connectToEvertone()
         io.preloader.setMessage("Creating note...")
-        result = self.evernote.createNote(title=title, content=body, tags=tags, notebook=notepad)
+        result = self.getEvernote().createNote(title=title, content=body, tags=tags, notebook=notepad)
 
         if result:
             io.successMessage("Note successfully created")
@@ -216,22 +241,21 @@ class Notes(object):
 
     def edit(self, note, title=None, body=None, tags=None, notepad=None):
 
+        self.connectToEvertone()
         note = self._searchNote(note)
 
         if not title:
-            title = note['title']
-        
-        if body == "WRITE_IN_EDITOR":
-            # TODO launch editor
-            logging.debug("launch system editor")
+            title = note.title
 
-        # TMP >>>
-        if body and not body.startswith("<?xml"):
-            content = body
-            body =  '<?xml version="1.0" encoding="UTF-8"?>'
-            body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-            body += '<en-note>%s</en-note>' % content
-        # TMP <<<
+        if body:
+            if body == "WRITE_IN_EDITOR":
+                logging.debug("launch system editor")
+                self.getEvernote().loadNoteContent(note)
+                body = editor.edit(note.content)
+
+            else:
+                logging.debug("Convert body")
+                body = editor.textToENML(body)
 
         if tags:
             tags = tools.strip(tags.split(','))
@@ -240,9 +264,9 @@ class Notes(object):
             # TODO search notebooks in storage
             logging.debug("search notebook")
 
-        self.connectToEvertone()
+        
         io.preloader.setMessage("Saving note...")
-        result = self.evernote.updateNote(guid=note['guid'], title=title, content=body, tags=tags, notebook=notepad)
+        result = self.getEvernote().updateNote(guid=note.guid, title=title, content=body, tags=tags, notebook=notepad)
 
         if result:
             io.successMessage("Note successfully saved")
@@ -251,34 +275,45 @@ class Notes(object):
 
     def remove(self, note):
 
+        self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not io.removeConfirm(note['title']):
+        if not io.removeConfirm(note.title):
             exit(1)
 
-        self.connectToEvertone()
-        
         io.preloader.setMessage("Deleting note...")
-        result = self.evernote.deleteNote(note['guid'])
+        result = self.getEvernote().deleteNote(note.guid)
 
         if result:
             io.successMessage("Note successful deleted")
         else:
             io.failureMessage("Error while deleting the note")
 
+    def show(self, note):
+
+        self.connectToEvertone()
+
+        note = self._searchNote(note)
+
+        io.preloader.setMessage("Loading note...")
+        self.getEvernote().loadNoteContent(note)
+
+        io.showNote(note)
+
+
     def _searchNote(self, note):
         note = tools.strip(note)
         if tools.checkIsInt(note):
             # TODO request in storage
             # TMP >>>
-            result = self._search(1)
+            result = self.getEvernote().findNotes(None, 1)
             note = result.notes[0]
             # TMP <<<
 
         else:
             request = "intitle:%s" % note if note else None
             logging.debug("Search notes: %s" % request)
-            result = self._search(20, request)
+            result = self.getEvernote().findNotes(request, 20)
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
@@ -289,11 +324,10 @@ class Notes(object):
                 note = result.notes[0]
 
             else:
-                notes = dict( (index+1, {"title": item.title, "guid": item.guid}) for index, item in enumerate(result.notes) )
-                logging.debug("Choose notes: %s" % str(notes)) 
-                note = io.SelectSearchResult(notes)
+                logging.debug("Choose notes: %s" % str(result.notes)) 
+                note = io.SelectSearchResult(result.notes)
 
-        logging.debug("Found notes: %s" % str(note))
+        logging.debug("Selected note: %s" % str(note))
         return note
 
 
@@ -346,7 +380,7 @@ class Notes(object):
         logging.debug("Search request: %s", request)
         logging.debug("Search count: %s", count)
         
-        result = self._search(count, request)
+        result = self.getEvernote().findNotes(request, count)
 
         if result.totalNotes == 0:
             io.successMessage("Notes not found")
@@ -356,10 +390,6 @@ class Notes(object):
 
         # print results
         io.SearchResult(notes, request)
-
-    def _search(self, request, count):
-        self.connectToEvertone()
-        return self.evernote.findNotes(count, request)
 
 COMMANDS = {
     "create": {
@@ -385,6 +415,18 @@ COMMANDS = {
         "help": "Create note",
         "arguments": {
             "--note": {"help": "Set note title"},
+        }
+    },
+    "show": {
+        "help": "Create note",
+        "arguments": {
+            "--note": {"help": "Set note title"},
+        }
+    },
+    "user": {
+        "help": "Create note",
+        "flags": {
+            "--full": {"help": "Add tag to note", "action": "store_true"},
         }
     },
     "find": {
@@ -441,5 +483,11 @@ if __name__ == "__main__":
     if COMAND == 'remove':
         Notes().remove(**ARGS)
 
+    if COMAND == 'show':
+        Notes().show(**ARGS)
+
     if COMAND == 'find':
         Notes().find(**ARGS)
+
+    if COMAND == 'user':
+        User().info(**ARGS)
