@@ -106,7 +106,10 @@ class GeekNote:
 
     def getUserInfo(self):
         return self.getUserStore().getUser(self.authToken)
-
+    
+    """
+    WORK WITH NOTEST
+    """
     def findNotes(self, keywords, count):
         nf = NoteStore.NoteFilter()
         if keywords:
@@ -173,6 +176,39 @@ class GeekNote:
             logging.error("Error: %s", str(e))
             return False
 
+    """
+    WORK WITH NOTEBOOKS
+    """
+    def findNotebooks(self):
+        return self.getNoteStore().listNotebooks(self.authToken)
+
+    def createNotebook(self, name):
+        notebook = Types.Notebook()
+        notebook.name = name
+
+        logging.debug("New notebook : %s", notebook)
+
+        try: 
+            self.getNoteStore().createNotebook(self.authToken, notebook)
+            return True
+        except Exception, e:
+            logging.error("Error: %s", str(e))
+            return False
+
+    def updateNotebook(self, guid, name):
+        notebook = Types.Notebook()
+        notebook.name = name
+        notebook.guid = guid
+
+        logging.debug("Update notebook : %s", notebook)
+
+        try: 
+            self.getNoteStore().updateNotebook(self.authToken, notebook)
+            return True
+        except Exception, e:
+            logging.error("Error: %s", str(e))
+            return False
+
 
 class GeekNoteConnector(object):
     evernote = None
@@ -208,6 +244,51 @@ class User(GeekNoteConnector):
         info = self.getEvernote().getUserInfo()
         #logging.debug("User info:" % str(info))
         io.showUser(info, True)
+
+
+
+class Notebooks(GeekNoteConnector):
+    """ Work with auth Notebooks """
+
+    def list(self):
+        result = self.getEvernote().findNotebooks()
+        io.printList(result)
+
+    def create(self, title):
+        self.connectToEvertone()
+        io.preloader.setMessage("Creating notepad...")
+        result = self.getEvernote().createNotebook(name=title)
+
+        if result:
+            io.successMessage("Notepad successfully created")
+        else:
+            io.failureMessage("Error while creating the note")
+
+    def edit(self, notepad, title):
+
+        notebook = self._searchNotebook(notepad)
+
+        io.preloader.setMessage("Updating notepad...")
+        result = self.getEvernote().updateNotebook(guid=notebook.guid, name=title)
+
+        if result:
+            io.successMessage("Notepad successfully updated")
+        else:
+            io.failureMessage("Error while creating the note")
+
+    def _searchNotebook(self, notebook):
+
+        result = self.getEvernote().findNotebooks()
+        notebook = [item for item in result if item.name == notebook]
+
+        if len(notebook) == 1:
+            notebook = notebook[0]
+
+        else:
+            notebook = io.SelectSearchResult(result)
+
+        logging.debug("Selected notebook: %s" % str(notebook))
+        return notebook
 
 
 class Notes(GeekNoteConnector):
@@ -278,7 +359,7 @@ class Notes(GeekNoteConnector):
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not io.removeConfirm(note.title):
+        if not io.confirm('Are you sure you want to delete this note: "%s"' % note.title):
             exit(1)
 
         io.preloader.setMessage("Deleting note...")
@@ -385,13 +466,20 @@ class Notes(GeekNoteConnector):
         if result.totalNotes == 0:
             io.successMessage("Notes not found")
 
-        notes = dict( (index+1, {"title": item.title, "guid": item.guid}) for index, item in enumerate(result.notes) )
         # TODO Save result to storage
 
-        # print results
-        io.SearchResult(notes, request)
+        io.SearchResult(result.notes, request)
 
 COMMANDS = {
+    # User
+    "user": {
+        "help": "Create note",
+        "flags": {
+            "--full": {"help": "Add tag to note", "action": "store_true"},
+        }
+    },
+
+    # Notes
     "create": {
         "help": "Create note",
         "arguments": {
@@ -423,12 +511,6 @@ COMMANDS = {
             "--note": {"help": "Set note title"},
         }
     },
-    "user": {
-        "help": "Create note",
-        "flags": {
-            "--full": {"help": "Add tag to note", "action": "store_true"},
-        }
-    },
     "find": {
         "help": "Create note",
         "arguments": {
@@ -442,6 +524,23 @@ COMMANDS = {
             "--exact-entry": {"help": "Add tag to note", "action": "store_true"},
             "--content-search": {"help": "Add tag to note", "action": "store_true"},
             "--url-only": {"help": "Add tag to note"},
+        }
+    },
+    # Notebooks
+    "list-notepad": {
+        "help": "Create note",
+    },
+    "create-notepad": {
+        "help": "Create note",
+        "arguments": {
+            "--title": {"help": "Set note title"},
+        }
+    },
+    "edit-notepad": {
+        "help": "Create note",
+        "arguments": {
+            "--notepad": {"help": "Set note title"},
+            "--title": {"help": "Set note title"},
         }
     },
 }
@@ -474,6 +573,11 @@ if __name__ == "__main__":
     ARGS = tools.strip(ARGS)
     logging.debug("CLI options: %s", str(ARGS))
     
+    # Users
+    if COMAND == 'user':
+        User().info(**ARGS)
+
+    # Notes
     if COMAND == 'create':
         Notes().create(**ARGS)
 
@@ -489,5 +593,13 @@ if __name__ == "__main__":
     if COMAND == 'find':
         Notes().find(**ARGS)
 
-    if COMAND == 'user':
-        User().info(**ARGS)
+    # Notebooks
+    if COMAND == 'list-notepad':
+        Notebooks().list(**ARGS)
+
+    if COMAND == 'create-notepad':
+        Notebooks().create(**ARGS)
+
+    if COMAND == 'edit-notepad':
+        Notebooks().edit(**ARGS)
+    

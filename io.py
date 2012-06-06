@@ -65,13 +65,13 @@ class preloader(object):
         if not preloader.isLaunch:
             return
 
-        sys.stdout.write(preloader.clearLine)
+        printLine(preloader.clearLine, "")
         if preloader.counter == -1:
             sys.stdout.flush()
             return
 
         preloader.counter += 1
-        sys.stdout.write("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message))
+        printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
         sys.stdout.flush()
 
         time.sleep(0.3)
@@ -92,81 +92,47 @@ def GetUserCredentials():
     return (email, password)
 
 @preloaderStop
-def SearchResult(result, request):
+def SearchResult(listItems, request):
     """Печать результатов поиска"""
-    
-    request_row = "Search request: %s \n"
-    result_total = "Total found: %d \n"
-    result_row = "%(key)s:  %(title)s \n"
+    printLine("Search request: %s" % request)
+    printList(listItems)
 
-    total = len(result)
-    sys.stdout.write(request_row % request)
-    sys.stdout.write(result_total % total)
-    for key, item in result.iteritems():
-        sys.stdout.write(result_row % {'key': str(key).rjust(3, " "), 'title': item['title']})
-        if key%2 == 0 and key < total:
-            sys.stdout.write("-- More -- \r")
-            tools.getch()
-            sys.stdout.write(" "*10 +"\r")
-
-    sys.stdout.flush()
 
 @preloaderStop
 def SelectSearchResult(listItems):
     """Выбор результата поиска"""
-    
-    total = len(listItems)
+    return printList(listItems, showSelector=True)
 
-    separator("#", "FOUND NOTES")
-    sys.stdout.write("Total found: %d \n" % total)
-
-    for key, item in enumerate(listItems):
-        sys.stdout.write("%(key)s:  %(title)s \n" % {'key': str(key+1).rjust(3, " "), 'title': item.title})
-
-    sys.stdout.flush()
-
-    while True:
-        num = raw_input(": ")
-        if tools.checkIsInt(num) and  1 <= int(num) <= total:
-            return listItems[int(num)-1]
-
-        failureMessage('Incorrect number "%s", please try again:\n' % num)
 
 @preloaderStop
-def removeConfirm(title):
-    """Подтверждение удаления заметки"""
-    
-    sys.stdout.write('Are you sure you want to delete this note: "%s"\n' % title)
+def confirm(message):
+    printLine(message)
     sys.stdout.flush()
-
     while True:
         answer = raw_input("Yes/No: ")
-
         if answer.lower() in ["yes", "ye", "y"]:
             return True
-
         if answer.lower() in ["no", "n"]:
             return False
-
         failureMessage('Incorrect answer "%s", please try again:\n' % answer)
 
 @preloaderStop
 def showNote(note):
 
-    separator("#")
-    sys.stdout.write("TITLE: %s\n" % note.title)
-    separator("=")
+    separator("#", "TITLE")
+    printLine(note.title)
+    separator("=", "CONTENT")
     if note.tagNames:
-        sys.stdout.write("Tags: %s\n" % ', '.join(note.tagNames))
+        printLine("Tags: %s" % ', '.join(note.tagNames))
 
-    sys.stdout.write(editor.ENMLtoText(note.content))
+    printLine(editor.ENMLtoText(note.content))
     sys.stdout.flush()
 
 @preloaderStop
 def showUser(user, fullInfo):
     def line(key, value):
         if value:
-            sys.stdout.write("%s : %s \n" % (key.ljust(16, " "), value))
+            printLine("%s : %s" % (key.ljust(16, " "), value))
 
     separator("#", "USER INFO")
     line('Username', user.username)
@@ -178,24 +144,54 @@ def showUser(user, fullInfo):
         line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000 )) )
     sys.stdout.flush()
 
+
 @preloaderStop
 def successMessage(message):
     """ Вывод сообщения """
-    sys.stdout.write(message+"\n")
+    printLine(message, "\n")
     sys.stdout.flush()
 
 @preloaderStop
 def failureMessage(message):
     """ Вывод сообщения """
-    sys.stdout.write(message+"\n")
+    printLine(message, "\n")
     sys.stdout.flush()
 
 def separator(symbol="", title=""):
-
     size = 40
     if title:
         sw = (size - len(title) + 2) / 2
-        sys.stdout.write("%s %s %s \n" % (symbol*sw, title, symbol*sw))
+        printLine("%s %s %s" % (symbol*sw, title, symbol*sw))
 
     else:
-        sys.stdout.write(symbol*size+"\n")
+        printLine(symbol*size+"\n")
+
+@preloaderStop
+def printList(listItems, title="", showSelector=False, showByStep=20):
+
+    if title:
+        separator("=", title)
+
+    total = len(listItems)
+    printLine("Total found: %d" % total)
+    for key, item in enumerate(listItems):
+        key += 1
+
+        printLine("%s : %s" % (str(key).rjust(3, " "), item.title if hasattr(item, 'title') else item.name))
+        
+        if key%showByStep == 0 and key < total:
+            printLine("-- More --", "\r")
+            tools.getch()
+            printLine(" "*12, "\r")
+        
+    sys.stdout.flush()
+
+    if showSelector:
+        while True:
+            num = raw_input(": ")
+            if tools.checkIsInt(num) and  1 <= int(num) <= total:
+                return listItems[int(num)-1]
+            failureMessage('Incorrect number "%s", please try again:\n' % num)
+
+def printLine(line, endLine="\n"):
+    sys.stdout.write(line+endLine)
