@@ -16,7 +16,15 @@ from sqlalchemy.orm import sessionmaker
 
 from log import logging
 
-db_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/database.db'
+db_dir_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/'
+db_path = db_dir_path + 'database.db'
+
+try:
+    if not os.path.exists(db_dir_path):
+        os.mkdir(db_dir_path)
+except Exception, e:
+    logging.error("Can not create dir for database.")
+
 engine = create_engine('sqlite:///' + db_path)
 Base = declarative_base()
 
