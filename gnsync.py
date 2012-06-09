@@ -8,8 +8,9 @@ from geeknote import GeekNote
 if __name__ == "__main__":
     
     gn = GeekNote()
-    r = gn.createNote(title="note title", content="content")
-    
+    #r = gn.createNote(title="note title", content="content")
+    r = gn.findNotes(keywords="note", count=1)
+    print(r)
     
     #path = "/home/ivan/WebDevelop/geeknote/sync_dir_example/"
     #mask = '*'
