@@ -43,46 +43,41 @@ class GeekNote:
 
     def __init__(self):
         self.getStorage()
+        self.getUserStore()
         self.checkVersion()
 
         #io.preloader.setMessage('Check OAuth Token..')
         self.checkAuth()
 
     def getStorage(self):
-        if self.storage:
-            return self.storage
+        if GeekNote.storage:
+            return GeekNote.storage
 
-        self.storage = Storage()
-        return self.storage
-
-    def setUserStore(self, store):
-        self.userStore = store
-
+        GeekNote.storage = Storage()
+        return GeekNote.storage
 
     def getUserStore(self):
-        if self.userStore:
-            return self.userStore
+        if GeekNote.userStore:
+            return GeekNote.userStore
 
-        logging.error("User Store not exist")
+        userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
+        userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
+        GeekNote.userStore = UserStore.Client(userStoreProtocol)
+    
+        return GeekNote.userStore
 
-    def loadNoteStore(self):
+    def getNoteStore(self):
+        if GeekNote.noteStore:
+            return GeekNote.noteStore
+
         noteStoreUrl = self.getUserStore().getNoteStoreUrl(self.authToken)
         noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
         noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
-        self.noteStore = NoteStore.Client(noteStoreProtocol)
+        GeekNote.noteStore = NoteStore.Client(noteStoreProtocol)
 
-    def getNoteStore(self):
-        if self.noteStore:
-            return self.noteStore
-
-        self.loadNoteStore()
-        return self.noteStore
+        return GeekNote.noteStore
 
     def checkVersion(self):
-        userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
-        userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
-        self.setUserStore(UserStore.Client(userStoreProtocol))
-    
         versionOK = self.getUserStore().checkVersion("Python EDAMTest",
                                        UserStoreConstants.EDAM_VERSION_MAJOR,
                                        UserStoreConstants.EDAM_VERSION_MINOR)
@@ -406,7 +401,7 @@ class Notes(GeekNoteConnector):
                 notepadGuid = newNotepad.guid
             
             notepad = notepadGuid
-            logging.debug("search notebook")
+            logging.debug("Search notebook")
 
         
         io.preloader.setMessage("Saving note...")
