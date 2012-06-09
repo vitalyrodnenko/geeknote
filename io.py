@@ -187,10 +187,13 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
     sys.stdout.flush()
 
     if showSelector:
+        printLine("  0 : -Cancel-")
         while True:
             num = raw_input(": ")
             if tools.checkIsInt(num) and  1 <= int(num) <= total:
                 return listItems[int(num)-1]
+            if num == '0':
+                exit(1)
             failureMessage('Incorrect number "%s", please try again:\n' % num)
 
 def printLine(line, endLine="\n"):
