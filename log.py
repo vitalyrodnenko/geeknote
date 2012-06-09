@@ -8,10 +8,10 @@ DEBUG_FORMAT = "%(filename)s %(funcName)s %(lineno)d : %(message)s"
 logging.basicConfig(format=FORMAT)
 
 def log(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception, e:
-            logging.error("%s : %s", func.__name__, str(e))
-            return False
-    return wrapper
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception, e:
+                logging.error("%s : %s", func.__name__, str(e))
+                return False
+        return wrapper
