@@ -14,7 +14,7 @@ from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from log import logging
+from log import logging, log
 
 #db_dir_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/'
 #db_path = db_dir_path + 'database.db'
@@ -147,7 +147,7 @@ class Storage(object):
                 return False
         return wrapper
         
-    @logging   
+    @log   
     def createUser(self, oAuthToken, info_obj):
         """
         Create user. oAuthToken must be not empty string
@@ -169,7 +169,7 @@ class Storage(object):
         
         return True
     
-    @logging    
+    @log    
     def getUserToken(self):
         """
         Get user's oAuth token
@@ -179,7 +179,7 @@ class Storage(object):
         """
         return self.getUserprop('oAuthToken')
 
-    #@logging    
+    #@log    
     def getUserInfo(self):
         """
         Get user's oAuth token
@@ -194,7 +194,7 @@ class Storage(object):
             exit(1)
         return None
     
-    @logging    
+    @log    
     def getUserprops(self):
         """
         Get all user's properties
@@ -205,7 +205,7 @@ class Storage(object):
         props = self.session.query(Userprop).all()
         return [{item.key: item.value} for item in props]
     
-    @logging    
+    @log    
     def getUserprop(self, key):
         """
         Get user's property by key
@@ -218,7 +218,7 @@ class Storage(object):
         else:
             return None
     
-    @logging    
+    @log    
     def setUserprop(self, key, value):
         """
         Set single user's property. User's property must have key and value
@@ -235,7 +235,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def setSettings(self, settings):
         """
         Set multuple settings. Settings must be an instanse dict
@@ -259,7 +259,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def getSettings(self):
         """
         Get all settings
@@ -273,7 +273,7 @@ class Storage(object):
             result[item.key] = item.value
         return result
     
-    @logging    
+    @log    
     def setSetting(self, key, value):
         """
         Set single setting. Settings must have key and value
@@ -290,7 +290,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def getSetting(self, key):
         """
         Get setting by key
@@ -303,7 +303,7 @@ class Storage(object):
         else:
             return None
     
-    @logging    
+    @log    
     def setTags(self, tags):
         """
         Set tags. Tags must be an instanse of dict
@@ -327,7 +327,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def getTags(self):
         """
         Get all tags
@@ -341,7 +341,7 @@ class Storage(object):
             result[item.guid] = item.tag
         return result
     
-    @logging    
+    @log    
     def setNotebooks(self, notebooks):
         """
         Set notebooks. Notebooks must be an instanse of dict
@@ -365,7 +365,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def getNotebooks(self):
         """
         Get all notebooks
@@ -379,7 +379,7 @@ class Storage(object):
             result[item.guid] = item.name
         return result
         
-    @logging
+    @log
     def setSearch(self, search_obj):
         """
         Set searching.
@@ -397,7 +397,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging    
+    @log    
     def getSearch(self):
         """
         Get last searching
@@ -408,7 +408,7 @@ class Storage(object):
         search = self.session.query(Search).first()
         return pickle.loads(search.search_obj)
     
-    #@logging
+    #@log
     #def setSearch(self, searching):
     #    """
     #    Set searching. Searching must be an instanse of list of dicts
@@ -432,7 +432,7 @@ class Storage(object):
     #    self.session.commit()
     #    return True
     #
-    #@logging    
+    #@log    
     #def getSearch(self):
     #    """
     #    Get last searching
