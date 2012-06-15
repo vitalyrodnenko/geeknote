@@ -3,12 +3,57 @@
 import argparse
 import os, sys
 import glob
+import logging
 
 from geeknote import GeekNote
 from storage import Storage
-from log import logging, log
 import editor
 import tools
+
+# set default logger (write log to file)
+def_logpath = "{0}/GeekNoteSync.log".format(os.getenv('USERPROFILE') or os.getenv('HOME'))
+formatter = logging.Formatter('%(asctime)-15s : %(message)s')
+handler = logging.FileHandler(def_logpath)
+handler.setFormatter(formatter)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
+def log(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception, e:
+            logger.error("%s", str(e))
+    return wrapper
+
+@log
+def reset_logpath(logpath):
+    """
+    Reset logpath to path from command line
+    """
+    global logger
+    
+    if not logpath:
+        return
+    
+    # remove temporary log file if it's empty
+    if os.path.isfile(def_logpath):
+        if os.path.getsize(def_logpath) == 0:
+            os.remove(def_logpath)
+    
+    # save previous handlers    
+    handlers = logger.handlers
+    
+    # remove old handlers
+    for handler in handlers:
+        logger.removeHandler(handler)
+        
+    # try to set new file handler
+    handler = logging.FileHandler(logpath)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 class GNSync:
     
@@ -17,19 +62,14 @@ class GNSync:
     mask = None
     
     notebook_guid = None
+    all_set = False
     
     @log
     def __init__(self, notebook_name, path, mask):
-        #set log file
-        #if not log_path:
-        #    log_path = "{0}/GeekNoteSync.log".format(os.getenv('USERPROFILE') or os.getenv('HOME'))
-        
-        #logging.basicConfig(filename=log_path)
-        
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
-        
+            
         #set path
         if not path:
             raise Exception("Path to sync directories does not select.")
@@ -47,22 +87,25 @@ class GNSync:
             mask = "*.*"
             
         self.mask = mask
+        
+        logger.info('Sync Start')
          
         #set notebook
         self.notebook_guid, self.notebook_name = self._get_notebook(notebook_name)
+        
+        # all is Ok
+        self.all_set = True
     
     @log
     def sync(self):
         """
         Synchronize files to notes 
         """
+        if not self.all_set:
+            return
+        
         files =  self._get_files()
         notes = self._get_notes()
-        
-        #print(files)
-        #print(notes)
-        #print(self.notebook_name)
-        #print(self.notebook_guid)
 
         for f in files:
             has_note = False
@@ -76,7 +119,7 @@ class GNSync:
             if not has_note :
                 self._create_note(f)
                 
-        log.info('Sync Complite')
+        logger.info('Sync Complite')
     
     @log
     def _update_note(self, file_note, note):
@@ -86,13 +129,21 @@ class GNSync:
         body = open(file_note['path'], "r").read()
         body = editor.textToENML(body)
         
-        return GeekNote().updateNote(
+        result = GeekNote().updateNote(
             guid=note.guid,
             title=note.title,
             content=body,
-            notebook=self.notebook_guid)         
+            notebook=self.notebook_guid)
+        
+        if result:
+            logger.info('Note "{0}" was updated'.format(note.title))
+        else:
+            raise Exception('Note "{0}" was not updated'.format(note.title))
+            
+        return result
+        
     
-    @log    
+    @log  
     def _create_note(self, file_note):
         """
         Creates note from file
@@ -100,12 +151,19 @@ class GNSync:
         body = open(file_note['path'], "r").read()
         body = editor.textToENML(body)
         
-        return GeekNote().createNote(
+        result = GeekNote().createNote(
             title=file_note['name'],
             content=body,
-            notebook=self.notebook_guid)    
+            notebook=self.notebook_guid)
+        
+        if result:
+            logger.info('Note "{0}" was created'.format(file_note['name']))
+        else:
+            raise Exception('Note "{0}" was not created'.format(file_note['name']))
+            
+        return result
     
-    @log    
+    @log  
     def _get_notebook(self, notebook_name):
         """
         Get notebook guid and name. Takes default notebook if notebook's name does not
@@ -120,7 +178,14 @@ class GNSync:
                 guid = notebook[0].guid
             
             if not guid:
-                guid = GeekNote().createNotebook(notebook_name).guid
+                notebook = GeekNote().createNotebook(notebook_name)
+                
+                if(notebook):
+                    logger.info('Notebook "{0}" was created'.format(notebook_name))
+                else:
+                    raise Exception('Notebook "{0}" was not created'.format(notebook_name))
+                    
+                guid = notebook.guid
                 
             return (guid, notebook_name)
         else:
@@ -128,7 +193,7 @@ class GNSync:
                 if nb.defaultNotebook:
                     return (nb.guid, nb.name)
     
-    @log                
+    @log             
     def _get_files(self):
         """
         Get files by self.mask from self.path dir.
@@ -147,7 +212,7 @@ class GNSync:
         
         return files
     
-    @log    
+    @log 
     def _get_notes(self):
         """
         Get notes from evernote.
@@ -157,25 +222,24 @@ class GNSync:
             
 
 if __name__ == "__main__":
-    
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('--path', '-p', action='store', help='Path to synchronize directory')
         parser.add_argument('--mask', '-m', action='store', help='Mask of files to synchronize. Default is "*.*"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
-        #parser.add_argument('--log', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
+        parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         
         args = parser.parse_args()
     
         path = args.path if args.path else None
         mask = args.mask if args.mask else None
         notebook = args.notebook if args.notebook else None
-        #log_path = args.log_path if args.log_path else None
+        logpath = args.logpath if args.logpath else None
         
-        #GNS = GNSync('t2', '/home/www-dev/varche1/geeknote/sync_dir_example', '*.*', '/home/www-dev/varche1/geeknote/LOG.log')
+        reset_logpath(logpath)
         
         GNS = GNSync(notebook, path, mask)
         GNS.sync()
         
     except Exception, e:
-        pass
+        logger.error(str(e));
