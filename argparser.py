@@ -159,16 +159,12 @@ class argparser(object):
             if params.has_key('required') and arg not in self.INP:
                 return self.printErrorReqArgument(arg)
 
-
         # trim -- and ->_
         self.INP_DATA = dict([key.lstrip("-").replace("-", "_"), val] for key, val in self.INP_DATA.items() )
         return self.INP_DATA
 
 
     def printAutocomplete(self):
-
-        def printGrid(list):
-            print " ".join(list)
 
         # последнее веденное значение
         LAST_VAL = self.INP[-1] if self.LVL > 1 else None
@@ -206,26 +202,29 @@ class argparser(object):
             else:
                 print "" #"Please_input_%s" % INP_ARG.replace('-', '')
 
+    def printGrid(self, list):
+        out.printLine(" ".join(list))
+
     def printErrorCommand(self):
         out.printLine('Unexpected command "%s"' % (self.CMD))
         self.printHelp()
-        return ['error-cmd', self.CMD]
+        return ['error', 'error-cmd', self.CMD]
 
     def printErrorReqArgument(self, errorArg):
         out.printLine('Not found required argument "%s" for command "%s" ' % (errorArg, self.CMD))
         self.printHelp()
-        return ['error-req', self.CMD, errorArg]
+        return ['error', 'error-req', self.CMD, errorArg]
 
     def printErrorArgument(self, errorArg, errorVal=None):
         
         if errorVal is None:
             out.printLine('Unexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
             self.printHelp()
-            return ['error-arg', self.CMD, errorArg]
+            return ['error', 'error-arg', self.CMD, errorArg]
         
         out.printLine('Unexpected value "%s" for argument "%s"' % (errorVal, errorArg))
         self.printHelp()
-        return ['error-val', errorArg, errorVal]
+        return ['error', 'error-val', errorArg, errorVal]
 
     def printHelp(self):
         if self.CMD is None or not self.COMMANDS.has_key(self.CMD):
@@ -239,11 +238,12 @@ class argparser(object):
             tab = len(max(self.CMD_ARGS.keys()+self.CMD_FLAGS.keys(), key=len))
 
             out.printLine("Options for: %s" % self.CMD)
-            out.printLine("Avaible arguments:")
+            out.printLine("Available arguments:")
             for arg in self.CMD_ARGS:
                 out.printLine("%s : %s" % (arg.rjust(tab, " "), self.CMD_ARGS[arg]['help']))
 
-            out.printLine("Avaible flags:")
-            for flag in self.CMD_FLAGS:
-                out.printLine("%s : %s" % (flag.rjust(tab, " "), self.CMD_FLAGS[flag]['help']))
-        return ['help', ]
+            if self.CMD_FLAGS:
+                out.printLine("Available flags:")
+                for flag in self.CMD_FLAGS:
+                    out.printLine("%s : %s" % (flag.rjust(tab, " "), self.CMD_FLAGS[flag]['help']))
+        return ['info', 'help', ]

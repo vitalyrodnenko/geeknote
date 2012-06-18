@@ -26,6 +26,10 @@ class testArgparser(unittest.TestCase):
         parser = argparser(["testing", "--test_arg_err"])
         self.assertEqual(parser.parse(), ['error-arg', 'testing', '--test_arg_err'])
 
+    def testErrorNoArg(self):
+        parser = argparser(["testing"])
+        self.assertEqual(parser.parse(), ['error-req', '--test_req_arg'])
+
     def testErrorReq(self):
         parser = argparser(["testing", "--test_arg", "test_val"])
         self.assertEqual(parser.parse(), ['error-req', 'testing', '--test_req_arg'])
