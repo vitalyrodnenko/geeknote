@@ -30,7 +30,7 @@ from log import logging
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
 
-class GeekNote:
+class GeekNote(object):
 
     consumerKey = CONSUMER_KEY
     consumerSecret = CONSUMER_SECRET
@@ -45,8 +45,6 @@ class GeekNote:
         self.getStorage()
         self.getUserStore()
         self.checkVersion()
-
-        #io.preloader.setMessage('Check OAuth Token..')
         self.checkAuth()
 
     def getStorage(self):
