@@ -20,7 +20,8 @@ import argparse
 import locale
 import time
 
-import io
+import out
+from argparser import argparser
 from oauth import GeekNoteAuth
 from storage import Storage
 import editor
@@ -30,7 +31,7 @@ from log import logging
 CONSUMER_KEY = 'skaizer-1250'
 CONSUMER_SECRET = 'ed0fcc0c97c032a5'
 
-class GeekNote:
+class GeekNote(object):
 
     consumerKey = CONSUMER_KEY
     consumerSecret = CONSUMER_SECRET
@@ -43,52 +44,45 @@ class GeekNote:
 
     def __init__(self):
         self.getStorage()
+        self.getUserStore()
         self.checkVersion()
-
-        #io.preloader.setMessage('Check OAuth Token..')
         self.checkAuth()
 
     def getStorage(self):
-        if self.storage:
-            return self.storage
+        if GeekNote.storage:
+            return GeekNote.storage
 
-        self.storage = Storage()
-        return self.storage
-
-    def setUserStore(self, store):
-        self.userStore = store
-
+        GeekNote.storage = Storage()
+        return GeekNote.storage
 
     def getUserStore(self):
-        if self.userStore:
-            return self.userStore
+        if GeekNote.userStore:
+            return GeekNote.userStore
 
-        logging.error("User Store not exist")
+        userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
+        userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
+        GeekNote.userStore = UserStore.Client(userStoreProtocol)
+    
+        return GeekNote.userStore
 
-    def loadNoteStore(self):
+    def getNoteStore(self):
+        if GeekNote.noteStore:
+            return GeekNote.noteStore
+
         noteStoreUrl = self.getUserStore().getNoteStoreUrl(self.authToken)
         noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
         noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
-        self.noteStore = NoteStore.Client(noteStoreProtocol)
+        GeekNote.noteStore = NoteStore.Client(noteStoreProtocol)
 
-    def getNoteStore(self):
-        if self.noteStore:
-            return self.noteStore
-
-        self.loadNoteStore()
-        return self.noteStore
+        return GeekNote.noteStore
 
     def checkVersion(self):
-        userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
-        userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
-        self.setUserStore(UserStore.Client(userStoreProtocol))
-    
         versionOK = self.getUserStore().checkVersion("Python EDAMTest",
                                        UserStoreConstants.EDAM_VERSION_MAJOR,
                                        UserStoreConstants.EDAM_VERSION_MINOR)
         if not versionOK:
             logging.error("Old EDAM version")
-            exit(1)
+            return tools.exit()
 
     def checkAuth(self):
         self.authToken = self.getStorage().getUserToken()
@@ -224,10 +218,7 @@ class GeekNoteConnector(object):
     storage = None
     
     def connectToEvertone(self):
-        if self.evernote:
-            return
-
-        io.preloader.setMessage("Connect to Evernote...")
+        out.preloader.setMessage("Connect to Evernote...")
         self.evernote = GeekNote()
 
     def getEvernote(self):
@@ -252,7 +243,7 @@ class User(GeekNoteConnector):
         
         info = self.getEvernote().getUserInfo()
         #logging.debug("User info:" % str(info))
-        io.showUser(info, True)
+        out.showUser(info, True)
 
 
 
@@ -261,48 +252,48 @@ class Notebooks(GeekNoteConnector):
 
     def list(self):
         result = self.getEvernote().findNotebooks()
-        io.printList(result)
+        out.printList(result)
 
     def create(self, title):
         self.connectToEvertone()
-        io.preloader.setMessage("Creating notepad...")
+        out.preloader.setMessage("Creating notebook...")
         result = self.getEvernote().createNotebook(name=title)
 
         if result:
-            io.successMessage("Notepad successfully created")
+            out.successMessage("notebook successfully created")
         else:
-            io.failureMessage("Error while creating the note")
-            exit(1)
+            out.failureMessage("Error while creating the note")
+            return tools.exit()
 
         return result
 
-    def edit(self, notepad, title):
+    def edit(self, notebook, title):
 
-        notebook = self._searchNotebook(notepad)
+        notebook = self._searchNotebook(notebook)
 
-        io.preloader.setMessage("Updating notepad...")
+        out.preloader.setMessage("Updating notebook...")
         result = self.getEvernote().updateNotebook(guid=notebook.guid, name=title)
 
         if result:
-            io.successMessage("Notepad successfully updated")
+            out.successMessage("notebook successfully updated")
         else:
-            io.failureMessage("Error while creating the note")
-            exit(1)
+            out.failureMessage("Error while creating the note")
+            return tools.exit()
 
-    def remove(self, notepad):
+    def remove(self, notebook, force=None):
 
-        notebook = self._searchNotebook(notepad)
+        notebook = self._searchNotebook(notebook)
 
-        if not io.confirm('Are you sure you want to delete this notepad: "%s"' % notebook.name):
-            exit(1)
+        if not force and not out.confirm('Are you sure you want to delete this notebook: "%s"' % notebook.name):
+            return tools.exit()
 
-        io.preloader.setMessage("Deleting notepad...")
+        out.preloader.setMessage("Deleting notebook...")
         result = self.getEvernote().deleteNotebook(guid=notebook.guid)
 
         if result:
-            io.successMessage("Notepad successfully updated")
+            out.successMessage("notebook successfully updated")
         else:
-            io.failureMessage("Error while creating the note")
+            out.failureMessage("Error while creating the note")
 
     def _searchNotebook(self, notebook):
 
@@ -313,17 +304,17 @@ class Notebooks(GeekNoteConnector):
             notebook = notebook[0]
 
         else:
-            notebook = io.SelectSearchResult(result)
+            notebook = out.SelectSearchResult(result)
 
         logging.debug("Selected notebook: %s" % str(notebook))
         return notebook
 
-    def getNoteGUID(self, notepad):
-        if len(notepad) == 36 and notepad.find("-") == 4:
-            return notepad
+    def getNoteGUID(self, notebook):
+        if len(notebook) == 36 and notebook.find("-") == 4:
+            return notebook
 
         result = self.getEvernote().findNotebooks()
-        notebook = [item for item in result if item.name == notepad]
+        notebook = [item for item in result if item.name == notebook]
         if notebook:
             return notebook[0].guid
         else:
@@ -339,99 +330,50 @@ class Notes(GeekNoteConnector):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
 
-    def create(self, title, body, tags=None, notepad=None):
-
-        if body == "WRITE_IN_EDITOR":
-            logging.debug("launch system editor")
-            body = editor.edit()
-
-        else:
-            if os.path.isfile(body):
-                logging.debug("Load body file")
-                body = open(body, "r").read()
-
-            logging.debug("Convert body")
-            body = editor.textToENML(body)
-
-        if tags:
-            tags = tools.strip(tags.split(','))
-
-        if notepad:
-            notepadGuid = Notebooks().getNoteGUID(notepad)
-            if notepadGuid is None:
-                newNotepad = Notebooks().create(notepad)
-                notepadGuid = newNotepad.guid
-            
-            notepad = notepadGuid
-            logging.debug("search notebook")
+    def create(self, title, body, tags=None, notebook=None):
 
         self.connectToEvertone()
-        io.preloader.setMessage("Creating note...")
-        result = self.getEvernote().createNote(title=title, content=body, tags=tags, notebook=notepad)
+
+        inputData = self._parceInput(title, body, tags, notebook)
+
+        out.preloader.setMessage("Creating note...")
+        result = self.getEvernote().createNote(**inputData)
 
         if result:
-            io.successMessage("Note successfully created")
+            out.successMessage("Note successfully created")
         else:
-            io.failureMessage("Error while creating the note")
+            out.failureMessage("Error while creating the note")
 
-    def edit(self, note, title=None, body=None, tags=None, notepad=None):
+    def edit(self, note, title=None, body=None, tags=None, notebook=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not title:
-            title = note.title
-
-        if body:
-            if body == "WRITE_IN_EDITOR":
-                logging.debug("launch system editor")
-                self.getEvernote().loadNoteContent(note)
-                body = editor.edit(note.content)
-
-            else:
-                if os.path.isfile(body):
-                    logging.debug("Load body file")
-                    body = open(body, "r").read()
-
-                logging.debug("Convert body")
-                body = editor.textToENML(body)
-
-        if tags:
-            tags = tools.strip(tags.split(','))
-
-        if notepad:
-            notepadGuid = Notebooks().getNoteGUID(notepad)
-            if notepadGuid is None:
-                newNotepad = Notebooks().create(notepad)
-                notepadGuid = newNotepad.guid
-            
-            notepad = notepadGuid
-            logging.debug("search notebook")
-
+        inputData = self._parceInput(title, body, tags, notebook, note)
         
-        io.preloader.setMessage("Saving note...")
-        result = self.getEvernote().updateNote(guid=note.guid, title=title, content=body, tags=tags, notebook=notepad)
+        out.preloader.setMessage("Saving note...")
+        result = self.getEvernote().updateNote(guid=note.guid, **inputData)
 
         if result:
-            io.successMessage("Note successfully saved")
+            out.successMessage("Note successfully saved")
         else:
-            io.failureMessage("Error while saving the note")
+            out.failureMessage("Error while saving the note")
 
-    def remove(self, note):
+    def remove(self, note, force=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not io.confirm('Are you sure you want to delete this note: "%s"' % note.title):
-            exit(1)
+        if not force and not out.confirm('Are you sure you want to delete this note: "%s"' % note.title):
+            return tools.exit()
 
-        io.preloader.setMessage("Deleting note...")
+        out.preloader.setMessage("Deleting note...")
         result = self.getEvernote().deleteNote(note.guid)
 
         if result:
-            io.successMessage("Note successful deleted")
+            out.successMessage("Note successful deleted")
         else:
-            io.failureMessage("Error while deleting the note")
+            out.failureMessage("Error while deleting the note")
 
     def show(self, note):
 
@@ -439,11 +381,50 @@ class Notes(GeekNoteConnector):
 
         note = self._searchNote(note)
 
-        io.preloader.setMessage("Loading note...")
+        out.preloader.setMessage("Loading note...")
         self.getEvernote().loadNoteContent(note)
 
-        io.showNote(note)
+        out.showNote(note)
 
+    def _parceInput(self, title=None, body=None, tags=None, notebook=None, note=None):
+        result = {
+            "title": title,
+            "body": body,
+            "tags": tags,
+            "notebook": notebook,
+        }
+
+        if body:
+            if body == "WRITE_IN_EDITOR":
+                logging.debug("launch system editor")
+                if note:
+                    self.getEvernote().loadNoteContent(note)
+                    body = editor.edit(note.content)
+                else:
+                   body = editor.edit()
+                result['body'] = editor.textToENML(body)
+
+            else:
+                if isinstance(body, str) and os.path.isfile(body):
+                    logging.debug("Load body file")
+                    body = open(body, "r").read()
+
+                logging.debug("Convert body")
+                result['body'] = editor.textToENML(body)
+
+        if tags:
+            result['tags'] = tools.strip(tags.split(','))
+
+        if notebook:
+            notepadGuid = Notebooks().getNoteGUID(notebook)
+            if notepadGuid is None:
+                newNotepad = Notebooks().create(notebook)
+                notepadGuid = newNotepad.guid
+            
+            result['notebook'] = notepadGuid
+            logging.debug("Search notebook")
+
+        return result
 
     def _searchNote(self, note):
         note = tools.strip(note)
@@ -455,36 +436,52 @@ class Notes(GeekNoteConnector):
             # TMP <<<
 
         else:
-            if self.findExactOnUpdate:
-                request = 'intitle:"%s"' % note if note else None
-            else:
-                request = "intitle:%s" % note if note else None
-
+            request = self._createSearchRequest(search=note)
+            
             logging.debug("Search notes: %s" % request)
             result = self.getEvernote().findNotes(request, 20)
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
-                io.successMessage("Notes not found")
-                exit(1)
+                out.successMessage("Notes not found")
+                return tools.exit()
 
             elif result.totalNotes == 1 or self.selectFirstOnUpdate:
                 note = result.notes[0]
 
             else:
                 logging.debug("Choose notes: %s" % str(result.notes)) 
-                note = io.SelectSearchResult(result.notes)
+                note = out.SelectSearchResult(result.notes)
 
         logging.debug("Selected note: %s" % str(note))
         return note
 
 
-    def find(self, search=None, tags=None, notepads=None, date=None, count=None, exact_entry=None, content_search=None, url_only=None, ):
+    def find(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None, url_only=None, count=None, ):
+
+        request = self._createSearchRequest(search, tags, notebooks, date, exact_entry, content_search)
+
+        if not count:
+            count = 20
+        else:
+            count = int(count)
+
+        logging.debug("Search count: %s", count)
+
+        result = self.getEvernote().findNotes(request, count)
+
+        if result.totalNotes == 0:
+            out.successMessage("Notes not found")
+
+        # TODO Save result to storage
+        out.SearchResult(result.notes, request)
+
+    def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 
         request = ""
         if search:
             search = tools.strip(search)
-            if exact_entry:
+            if exact_entry or self.findExactOnUpdate:
                 search = '"%s"' % search
 
             if content_search:
@@ -496,62 +493,52 @@ class Notes(GeekNoteConnector):
             for tag in tools.strip(tags.split(',')):
 
                 if tag.startswith('-'):
-                    request +="-tag:%s " % tag[1:]
+                    request +='-tag:"%s" ' % tag[1:]
                 else:
-                    request +="tag:%s " % tag
+                    request +='tag:"%s" ' % tag
 
         if date:
             date = tools.strip(date.split('-'))
             try:
                 start_date =  time.strptime(date[0], "%d.%m.%Y")
-                request +="created:%s " % time.strftime("%Y%m%d", start_date)
-                
+                request +='created:"%s" ' % time.strftime("%Y%m%d", start_date)
+
                 if len(date) == 2:
-                    request += "-created:%s " % time.strftime("%Y%m%d", time.strptime(date[1], "%d.%m.%Y"))
+                    request += '-created:"%s" ' % time.strftime("%Y%m%d", time.strptime(date[1], "%d.%m.%Y"))
                 else:
-                    request += "-created:%s " % time.strftime("%Y%m%d", time.gmtime(time.mktime(start_date)+60*60*24*2))
-                
+                    request += '-created:"%s" ' % time.strftime("%Y%m%d", time.gmtime(time.mktime(start_date)+60*60*24*2))
+
             except ValueError, e:
-                io.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
-                exit(1)
+                out.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
+                return tools.exit()
 
-        if notepads:
-            for notepad in tools.strip(notepads.split(',')):
-                if notepad.startswith('-'):
-                    request += "-notebook:%s " % tools.strip(notepad[1:])
+        if notebooks:
+            for notebook in tools.strip(notebooks.split(',')):
+                if notebook.startswith('-'):
+                    request += '-notebook:"%s" ' % tools.strip(notebook[1:])
                 else:
-                    request += "notebook:%s " % tools.strip(notepad)
-
-        if not count:
-            count = 20
+                    request += 'notebook:"%s" ' % tools.strip(notebook)
 
         logging.debug("Search request: %s", request)
-        logging.debug("Search count: %s", count)
-        
-        result = self.getEvernote().findNotes(request, count)
+        return request
 
-        if result.totalNotes == 0:
-            io.successMessage("Notes not found")
+def main():
+    sys_argv = sys.argv[1:]
 
-        # TODO Save result to storage
-
-        io.SearchResult(result.notes, request)
-
-if __name__ == "__main__":
-
-    COMAND = sys.argv[1] if len(sys.argv) >= 2 else ""
+    COMAND = sys_argv[0] if len(sys.argv) >= 1 else ""
 
     # run check & run autocomplete
     if COMAND == "autocomplete":
-        sys.argv = sys.argv[2:] # remove autocomplete from args list
-        import argparser
-        
-        argparser.printAutocomplete()
-        exit(1)
+        aparser = argparser(sys_argv[1:])
+        aparser.printAutocomplete()
+        return tools.exit()
 
-    import argparser
+    aparser = argparser(sys_argv)
+    ARGS = aparser.parse()
 
-    ARGS = argparser.parse()
+    # error or help
+    if not ARGS:
+        return tools.exit()
 
     logging.debug("CLI options: %s", str(ARGS))
 
@@ -576,14 +563,17 @@ if __name__ == "__main__":
         Notes().find(**ARGS)
 
     # Notebooks
-    if COMAND == 'list-notepad':
+    if COMAND == 'list-notebook':
         Notebooks().list(**ARGS)
 
-    if COMAND == 'create-notepad':
+    if COMAND == 'create-notebook':
         Notebooks().create(**ARGS)
 
-    if COMAND == 'edit-notepad':
+    if COMAND == 'edit-notebook':
         Notebooks().edit(**ARGS)
 
-    if COMAND == 'remove-notepad':
+    if COMAND == 'remove-notebook':
         Notebooks().remove(**ARGS)
+
+if __name__ == "__main__":
+    main()

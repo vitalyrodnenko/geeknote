@@ -16,12 +16,8 @@ from sqlalchemy.orm import sessionmaker
 
 from log import logging
 
-
-db_dir_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/'
-db_path = db_dir_path + 'database.db'
-
-#db_dir_path = '/home/www-dev/varche1/'
-#db_path = db_dir_path + 'database.db'
+db_dir_path = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  '.geeknote')
+db_path = os.path.join(db_dir_path, 'database.db')
 
 try:
     if not os.path.exists(db_dir_path):
