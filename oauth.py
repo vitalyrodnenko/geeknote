@@ -26,7 +26,6 @@ class GeekNoteAuth(object):
         "access": "/OAuth.action",
         "token" : "/oauth",
         "login" : "/Login.action",
-        #"login" : "/Login.action;jsessionid=%s"
     }
 
     cookies = {}
@@ -34,8 +33,8 @@ class GeekNoteAuth(object):
     postData = {
         'login': {
             'login': 'Sign in',
-            'username': 'stepler',
-            'password': '5t3pl3r',
+            'username': '',
+            'password': '',
             'targetUrl': None,
         },
         'access': {
@@ -71,7 +70,7 @@ class GeekNoteAuth(object):
     def loadPage(self, url, uri=None, method="GET", params=""):
         if not url:
             logging.error("Request URL undefined")
-            exit(1)
+            tools.exit()
 
         if not uri:
             urlData = urlparse(url)
@@ -139,12 +138,12 @@ class GeekNoteAuth(object):
 
         if response.status != 200:
             logging.error("Unexpected response status on get temporary oauth_token 200 != %s", response.status)
-            exit(1)
+            tools.exit()
 
         responseData = self.parseResponse(response.data)
         if not responseData.has_key('oauth_token'):
             logging.error("OAuth temporary not found")
-            exit(1)
+            tools.exit()
 
         self.tmpOAuthToken = responseData['oauth_token']
 
@@ -155,11 +154,11 @@ class GeekNoteAuth(object):
 
         if response.status != 200:
             logging.error("Unexpected response status on login 200 != %s", response.status)
-            exit(1)
+            tools.exit()
 
         if not self.cookies.has_key('JSESSIONID'):
             logging.error("Not found value JSESSIONID in the response cookies")
-            exit(1)
+            tools.exit()
 
         # get login/password
         self.username, self.password = out.GetUserCredentials()
@@ -178,7 +177,7 @@ class GeekNoteAuth(object):
 
         if not response.location:
             logging.error("Target URL was not found in the response on login")
-            exit(1)
+            tools.exit()
 
         logging.debug("Success authorize, redirect to access page")
 
@@ -192,12 +191,12 @@ class GeekNoteAuth(object):
 
         if response.status != 302:
             logging.error("Unexpected response status on allowing access 302 != %s", response.status)
-            exit(1)
+            tools.exit()
 
         responseData = self.parseResponse(response.location)
         if not responseData.has_key('oauth_verifier'):
             logging.error("OAuth verifier not found")
-            exit(1)
+            tools.exit()
 
         self.verifierToken = responseData['oauth_verifier']
 
@@ -211,12 +210,12 @@ class GeekNoteAuth(object):
 
         if response.status != 200:
             logging.error("Unexpected response status on getting oauth token 200 != %s", response.status)
-            exit(1)
+            tools.exit()
 
         responseData = self.parseResponse(response.data)
         if not responseData.has_key('oauth_token'):
             logging.error("OAuth token not found")
-            exit(1)
+            tools.exit()
 
         logging.debug("OAuth token take : %s", responseData['oauth_token'])
         self.OAuthToken = responseData['oauth_token']
