@@ -20,67 +20,79 @@ COMMANDS_DICT = {
             "--title": {"help": "Set note title", "required": True},
             "--body": {"help": "Set note content", "required": True},
             "--tags": {"help": "Add tag to note"},
-            "--notepad": {"help": "Add location marker to note"}
+            "--notebook": {"help": "Add location marker to note"}
         }
     },
     "edit": {
         "help": "Create note",
+        "firstArg": "--note",
         "arguments": {
             "--note": {"help": "Set note title"},
             "--title": {"help": "Set note title"},
             "--body": {"help": "Set note content"},
             "--tags": {"help": "Add tag to note"},
-            "--notepad": {"help": "Add location marker to note"}
+            "--notebook": {"help": "Add location marker to note"}
         }
     },
     "remove": {
         "help": "Create note",
+        "firstArg": "--note",
         "arguments": {
             "--note": {"help": "Set note title"},
+        },
+        "flags": {
+            "--force": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
     "show": {
         "help": "Create note",
+        "firstArg": "--note",
         "arguments": {
             "--note": {"help": "Set note title"},
         }
     },
     "find": {
         "help": "Create note",
+        "firstArg": "--search",
         "arguments": {
             "--search": {"help": "Add tag to note"},
             "--tags": {"help": "Add tag to note"},
-            "--notepads": {"help": "Add location marker to note"},
+            "--notebooks": {"help": "Add location marker to note"},
             "--date": {"help": "Add location marker to note"},
-            "--count": {"help": "Add location marker to note"},
+            "--count": {"help": "Add location marker to note", "type": int},
         },
         "flags": {
             "--exact-entry": {"help": "Add tag to note", "value": True, "default": False},
             "--content-search": {"help": "Add tag to note", "value": True, "default": False},
-            "--url-only": {"help": "Add tag to note"},
+            "--url-only": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
     # Notebooks
-    "list-notepad": {
+    "list-notebook": {
         "help": "Create note",
     },
-    "create-notepad": {
+    "create-notebook": {
         "help": "Create note",
         "arguments": {
             "--title": {"help": "Set note title"},
         }
     },
-    "edit-notepad": {
+    "edit-notebook": {
         "help": "Create note",
+        "firstArg": "--notebook",
         "arguments": {
-            "--notepad": {"help": "Set note title"},
+            "--notebook": {"help": "Set note title"},
             "--title": {"help": "Set note title"},
         }
     },
-    "remove-notepad": {
+    "remove-notebook": {
         "help": "Create note",
+        "firstArg": "--notebook",
         "arguments": {
-            "--notepad": {"help": "Set note title"},
+            "--notebook": {"help": "Set note title"},
+        },
+        "flags": {
+            "--force": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
 }
@@ -113,13 +125,16 @@ class argparser(object):
         self.INP_DATA = {}
 
         if self.CMD == "--help":
-            return self.printHelp()
+            self.printHelp()
+            return False
 
         if self.CMD is None or not self.COMMANDS.has_key(self.CMD):
-            return self.printErrorCommand()
+            self.printErrorCommand()
+            return False
 
         if "--help" in self.INP:
-            return self.printHelp()
+            self.printHelp()
+            return False
 
         # подготовка к парсингу
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
@@ -128,6 +143,17 @@ class argparser(object):
                 self.INP_DATA[arg] = params['default']
 
         activeArg = None
+        # проверяем и подставляем первый адгумент по умолчанию
+        if self.COMMANDS[self.CMD].has_key('firstArg') and len(self.INP) > 0:
+            firstArg = self.COMMANDS[self.CMD]['firstArg']
+            # смотрим что первое знаение не аршумент по умолчанию, а другой аргумент
+            if self.INP[0] != firstArg and self.INP[0] in (self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()):
+                self.printErrorReqArgument(firstArg)
+                return False
+            elif self.INP[0] != firstArg:
+                self.INP = [firstArg, ] + self.INP
+        
+
         for item in self.INP:
             # Проверяем что ожидаем аргумент
             if activeArg is None:
@@ -141,23 +167,39 @@ class argparser(object):
 
                 # Ошибка параметр не найден
                 else:
-                    return self.printErrorArgument(item)
+                    self.printErrorArgument(item)
+                    return False
 
             else:
                 # Ошибка значения является параметром
                 if self.CMD_ARGS.has_key(item) or self.CMD_FLAGS.has_key(item):
-                    return self.printErrorArgument(activeArg, item)
+                    self.printErrorArgument(activeArg, item)
+                    return False
+
+                if self.CMD_ARGS[activeArg].has_key("type"):
+                    convType = self.CMD_ARGS[activeArg]['type']
+                    if convType not in ('int', 'str'):
+                        logging.error("Unsupported argument type: %s", convType)
+                        return False
+
+                    try:
+                        item = convType(item)
+                    except:
+                        self.printErrorArgument(activeArg, item)
+                        return False
 
                 self.INP_DATA[activeArg] = item
                 activeArg = None
 
         if activeArg is not None:
-            return self.printErrorArgument(activeArg, "")
+            self.printErrorArgument(activeArg, "")
+            return False
 
         # проверка, присутствует ли необходимый аргумент запросе
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
             if params.has_key('required') and arg not in self.INP:
-                return self.printErrorReqArgument(arg)
+                self.printErrorReqArgument(arg)
+                return False
 
         # trim -- and ->_
         self.INP_DATA = dict([key.lstrip("-").replace("-", "_"), val] for key, val in self.INP_DATA.items() )
@@ -208,23 +250,17 @@ class argparser(object):
     def printErrorCommand(self):
         out.printLine('Unexpected command "%s"' % (self.CMD))
         self.printHelp()
-        return ['error', 'error-cmd', self.CMD]
 
     def printErrorReqArgument(self, errorArg):
         out.printLine('Not found required argument "%s" for command "%s" ' % (errorArg, self.CMD))
         self.printHelp()
-        return ['error', 'error-req', self.CMD, errorArg]
 
     def printErrorArgument(self, errorArg, errorVal=None):
-        
         if errorVal is None:
             out.printLine('Unexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
-            self.printHelp()
-            return ['error', 'error-arg', self.CMD, errorArg]
-        
-        out.printLine('Unexpected value "%s" for argument "%s"' % (errorVal, errorArg))
+        else:
+            out.printLine('Unexpected value "%s" for argument "%s"' % (errorVal, errorArg))
         self.printHelp()
-        return ['error', 'error-val', errorArg, errorVal]
 
     def printHelp(self):
         if self.CMD is None or not self.COMMANDS.has_key(self.CMD):
@@ -246,4 +282,3 @@ class argparser(object):
                 out.printLine("Available flags:")
                 for flag in self.CMD_FLAGS:
                     out.printLine("%s : %s" % (flag.rjust(tab, " "), self.CMD_FLAGS[flag]['help']))
-        return ['info', 'help', ]

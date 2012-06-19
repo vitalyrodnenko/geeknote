@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from log import logging
+import sys
 
 def checkIsInt(value):
     try: 
@@ -42,6 +43,9 @@ def strip(data):
     
     raise Exception("Unexpected args type: %s. Expect list or dict" % type(data))
 
+def exit():
+    sys.exit(1)
+
 def confirm(prompt_str="Confirm", allow_empty=False, default=False):
     """
     Allows to ask user action from console. It asks a question and gives ability to answer Y or N.
@@ -61,3 +65,7 @@ def confirm(prompt_str="Confirm", allow_empty=False, default=False):
             return False
         else:
             print 'Please enter y or n.'
+
+class Struct:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)

@@ -18,6 +18,9 @@ def textToENML(content):
     """
     Create an ENML format of note.
     """
+    if not isinstance(content, str):
+        content = ""
+    
     content = unicode(content,"utf-8")
     contentENML = markdown.markdown(content).encode("utf-8")
 

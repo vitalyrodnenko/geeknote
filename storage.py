@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 
 from log import logging
 
-db_path = os.getenv('USERPROFILE') or os.getenv('HOME') + '/.geeknote/database.db'
+db_path = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'), 'geeknote', 'database.db')
 engine = create_engine('sqlite:///' + db_path)
 Base = declarative_base()
 

@@ -8,14 +8,11 @@ from log import logging
 from urllib import urlencode, unquote
 from urlparse import urlparse
 
-import io
+import out
+import tools
 
 CONSUMER_KEY = 'stepler-8439'
 CONSUMER_SECRET = '4b4e6661ed1f2a5c'
-
-class Struct:
-    def __init__(self, **entries): 
-        self.__dict__.update(entries)
 
 class AuthError(Exception):
     """Base class for exceptions in this module."""
@@ -105,7 +102,7 @@ class GeekNoteAuth(object):
         conn.close()
 
         logging.debug("Response : %s > %s", response.status, response.getheaders())
-        result = Struct(status=response.status, location=response.getheader('location', None), data=data)
+        result = tools.Struct(status=response.status, location=response.getheader('location', None), data=data)
 
         # update local cookies
         sk = Cookie.SimpleCookie(response.getheader("Set-Cookie", ""))
@@ -120,19 +117,19 @@ class GeekNoteAuth(object):
 
 
     def getToken(self):
-        io.preloader.setMessage('Authorize...')
+        out.preloader.setMessage('Authorize...')
         self.getTmpOAuthToken()
 
-        #io.preloader.setMessage('Authorize...')
+        #out.preloader.setMessage('Authorize...')
         self.login()
 
-        io.preloader.setMessage('Allow Access...')
+        out.preloader.setMessage('Allow Access...')
         self.allowAccess()
 
-        io.preloader.setMessage('Getting Token...')
+        out.preloader.setMessage('Getting Token...')
         self.getOAuthToken()
 
-        #io.preloader.stop()
+        #out.preloader.stop()
         return self.OAuthToken
 
 
@@ -165,7 +162,7 @@ class GeekNoteAuth(object):
             exit(1)
 
         # get login/password
-        self.username, self.password = io.GetUserCredentials()
+        self.username, self.password = out.GetUserCredentials()
 
         self.postData['login']['username'] = self.username
         self.postData['login']['password'] = self.password
