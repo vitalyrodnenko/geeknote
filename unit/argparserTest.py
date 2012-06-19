@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from argparser import *
 
+from argparser import *
 import unittest
 
 class testArgparser(unittest.TestCase):
@@ -18,6 +18,10 @@ class testArgparser(unittest.TestCase):
                 "--test_flag": {"help": "Add tag to note", "value": True, "default": False},
             }
         }
+
+    def testEmptyCommand(self):
+        parser = argparser([])
+        self.assertFalse(parser.parse(), False)
 
     def testErrorCommands(self):
         parser = argparser(["testing_err", ])

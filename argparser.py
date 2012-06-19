@@ -12,13 +12,22 @@ COMMANDS_DICT = {
             "--full": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
+    "login": {
+        "help": "Create note",
+    },
+    "logout": {
+        "help": "Create note",
+        "flags": {
+            "--force": {"help": "Add tag to note", "value": True, "default": False},
+        }
+    },
 
     # Notes
     "create": {
         "help": "Create note",
         "arguments": {
             "--title": {"help": "Set note title", "required": True},
-            "--body": {"help": "Set note content", "required": True},
+            "--content": {"help": "Set note content", "required": True},
             "--tags": {"help": "Add tag to note"},
             "--notebook": {"help": "Add location marker to note"}
         }
@@ -29,7 +38,7 @@ COMMANDS_DICT = {
         "arguments": {
             "--note": {"help": "Set note title"},
             "--title": {"help": "Set note title"},
-            "--body": {"help": "Set note content"},
+            "--content": {"help": "Set note content"},
             "--tags": {"help": "Add tag to note"},
             "--notebook": {"help": "Add location marker to note"}
         }
@@ -67,6 +76,7 @@ COMMANDS_DICT = {
             "--url-only": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
+
     # Notebooks
     "list-notebook": {
         "help": "Create note",
@@ -144,14 +154,17 @@ class argparser(object):
 
         activeArg = None
         # проверяем и подставляем первый адгумент по умолчанию
-        if self.COMMANDS[self.CMD].has_key('firstArg') and len(self.INP) > 0:
+        if self.COMMANDS[self.CMD].has_key('firstArg'):
             firstArg = self.COMMANDS[self.CMD]['firstArg']
-            # смотрим что первое знаение не аршумент по умолчанию, а другой аргумент
-            if self.INP[0] != firstArg and self.INP[0] in (self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()):
-                self.printErrorReqArgument(firstArg)
-                return False
-            elif self.INP[0] != firstArg:
-                self.INP = [firstArg, ] + self.INP
+            if len(self.INP) > 0:
+                # смотрим что первое знаение не аршумент по умолчанию, а другой аргумент
+                if self.INP[0] != firstArg and self.INP[0] in (self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()):
+                    self.printErrorReqArgument(firstArg)
+                    return False
+                elif self.INP[0] != firstArg:
+                    self.INP = [firstArg, ] + self.INP
+            else:
+                self.INP = [firstArg, ]
         
 
         for item in self.INP:

@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# add SqlAlchemy
-import os, sys
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-SQLALCHEMY = os.path.join(PROJECT_ROOT, 'lib')
-sys.path.append( SQLALCHEMY )
-
+import os 
 import datetime
 import pickle
 
@@ -165,6 +160,18 @@ class Storage(object):
         self.setUserprop('info', pickle.dumps(info_obj))
         
         return True
+
+    @logging  
+    def removeUser(self):
+        """
+        Remove user.
+        return True if all done
+        return False if something wrong
+        """
+        for item in self.session.query(Userprop).all():
+            self.session.delete(item)
+
+        return True
     
     @logging   
     def getUserToken(self):
@@ -175,6 +182,7 @@ class Storage(object):
         return False if something wrong
         """
         return self.getUserprop('oAuthToken')
+
 
     @logging   
     def getUserInfo(self):

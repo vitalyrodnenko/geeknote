@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import getpass
 import time
 import sys
@@ -137,7 +138,7 @@ def showUser(user, fullInfo):
     separator("#", "USER INFO")
     line('Username', user.username)
     line('Name', user.name)
-    line('eEail', user.email)
+    line('Email', user.email)
 
     if fullInfo:
         line('Upload limit', "%.2f" % (int(user.accounting.uploadLimit) / 1024 / 1024))

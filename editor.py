@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import os, sys
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-EVERNOTE_SDK = os.path.join(PROJECT_ROOT, 'lib')
-sys.path.append( EVERNOTE_SDK )
 
 import tempfile
 import html2text
 import markdown
-from tools import confirm
+import tools
+import out
+
 
 def ENMLtoText(contentENML):
     contentENML = contentENML.decode('utf-8')
@@ -20,9 +18,12 @@ def textToENML(content):
     """
     if not isinstance(content, str):
         content = ""
-    
-    content = unicode(content,"utf-8")
-    contentENML = markdown.markdown(content).encode("utf-8")
+    try:
+        content = unicode(content,"utf-8")
+        contentENML = markdown.markdown(content).encode("utf-8")
+    except:
+        out.failureMessage("Error. Content must be an UTF-8 encode.")
+        return tools.exit()
 
     body =  '<?xml version="1.0" encoding="UTF-8"?>'
     body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'

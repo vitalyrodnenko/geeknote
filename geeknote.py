@@ -1,11 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os, sys
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-EVERNOTE_SDK = os.path.join(PROJECT_ROOT, 'lib')
-sys.path.append( EVERNOTE_SDK )
+sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
-import sys
 import hashlib
 import binascii
 import time
@@ -88,18 +87,23 @@ class GeekNote(object):
         self.authToken = self.getStorage().getUserToken()
         logging.debug("oAuth token : %s", self.authToken)
         if self.authToken:
-            return
+            return True
 
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
         userInfo = self.getUserInfo()
         if not isinstance(userInfo, Types.User):
             logging.error("User info not get")
+            return False
 
         self.getStorage().createUser(self.authToken, userInfo)
+        return True
 
     def getUserInfo(self):
         return self.getUserStore().getUser(self.authToken)
+
+    def removeUser(self):
+        return self.getStorage().removeUser()
     
     """
     WORK WITH NOTEST
@@ -239,12 +243,31 @@ class GeekNoteConnector(object):
 class User(GeekNoteConnector):
     """ Work with auth User """
 
-    def info(self, full=True):
-        
+    def user(self, full=True):
         info = self.getEvernote().getUserInfo()
         #logging.debug("User info:" % str(info))
         out.showUser(info, True)
 
+    def login(self):
+        result = self.getEvernote().checkAuth()
+        if result:
+            out.successMessage("You successfully logged in")
+        else:
+            out.failureMessage("Login error")
+            return tools.exit()
+        #logging.debug("User info:" % str(info))
+
+    def logout(self, force=None):
+        if not force and not out.confirm('Are you sure you want logout?'):
+            return tools.exit()
+
+        result = self.getEvernote().removeUser()
+        if result:
+            out.successMessage("Logout successful")
+        else:
+            out.failureMessage("Logout error")
+            return tools.exit()
+        #logging.debug("User info:" % str(info))
 
 
 class Notebooks(GeekNoteConnector):
@@ -260,9 +283,9 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().createNotebook(name=title)
 
         if result:
-            out.successMessage("notebook successfully created")
+            out.successMessage("Notebook successfully created")
         else:
-            out.failureMessage("Error while creating the note")
+            out.failureMessage("Error while creating the notebook")
             return tools.exit()
 
         return result
@@ -275,25 +298,25 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().updateNotebook(guid=notebook.guid, name=title)
 
         if result:
-            out.successMessage("notebook successfully updated")
+            out.successMessage("Notebook successfully updated")
         else:
-            out.failureMessage("Error while creating the note")
+            out.failureMessage("Error while updating the notebook")
             return tools.exit()
 
     def remove(self, notebook, force=None):
 
         notebook = self._searchNotebook(notebook)
 
-        if not force and not out.confirm('Are you sure you want to delete this notebook: "%s"' % notebook.name):
+        if not force and not out.confirm('Are you sure you want to delete this notebook: "%s"?' % notebook.name):
             return tools.exit()
 
         out.preloader.setMessage("Deleting notebook...")
         result = self.getEvernote().deleteNotebook(guid=notebook.guid)
 
         if result:
-            out.successMessage("notebook successfully updated")
+            out.successMessage("Notebook successfully removed")
         else:
-            out.failureMessage("Error while creating the note")
+            out.failureMessage("Error while removing the notebook")
 
     def _searchNotebook(self, notebook):
 
@@ -330,11 +353,11 @@ class Notes(GeekNoteConnector):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
 
-    def create(self, title, body, tags=None, notebook=None):
+    def create(self, title, content, tags=None, notebook=None):
 
         self.connectToEvertone()
 
-        inputData = self._parceInput(title, body, tags, notebook)
+        inputData = self._parceInput(title, content, tags, notebook)
 
         out.preloader.setMessage("Creating note...")
         result = self.getEvernote().createNote(**inputData)
@@ -344,12 +367,12 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while creating the note")
 
-    def edit(self, note, title=None, body=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, body, tags, notebook, note)
+        inputData = self._parceInput(title, content, tags, notebook, note)
         
         out.preloader.setMessage("Saving note...")
         result = self.getEvernote().updateNote(guid=note.guid, **inputData)
@@ -364,7 +387,7 @@ class Notes(GeekNoteConnector):
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not force and not out.confirm('Are you sure you want to delete this note: "%s"' % note.title):
+        if not force and not out.confirm('Are you sure you want to delete this note: "%s"?' % note.title):
             return tools.exit()
 
         out.preloader.setMessage("Deleting note...")
@@ -386,31 +409,31 @@ class Notes(GeekNoteConnector):
 
         out.showNote(note)
 
-    def _parceInput(self, title=None, body=None, tags=None, notebook=None, note=None):
+    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
         result = {
             "title": title,
-            "body": body,
+            "content": content,
             "tags": tags,
             "notebook": notebook,
         }
 
-        if body:
-            if body == "WRITE_IN_EDITOR":
+        if content:
+            if content == "WRITE_IN_EDITOR":
                 logging.debug("launch system editor")
                 if note:
                     self.getEvernote().loadNoteContent(note)
-                    body = editor.edit(note.content)
+                    content = editor.edit(note.content)
                 else:
-                   body = editor.edit()
-                result['body'] = editor.textToENML(body)
+                   content = editor.edit()
+                result['content'] = editor.textToENML(content)
 
             else:
-                if isinstance(body, str) and os.path.isfile(body):
-                    logging.debug("Load body file")
-                    body = open(body, "r").read()
+                if isinstance(content, str) and os.path.isfile(content):
+                    logging.debug("Load content file")
+                    content = open(content, "r").read()
 
-                logging.debug("Convert body")
-                result['body'] = editor.textToENML(body)
+                logging.debug("Convert content")
+                result['content'] = editor.textToENML(content)
 
         if tags:
             result['tags'] = tools.strip(tags.split(','))
@@ -428,7 +451,7 @@ class Notes(GeekNoteConnector):
 
     def _searchNote(self, note):
         note = tools.strip(note)
-        if tools.checkIsInt(note):
+        if False and tools.checkIsInt(note):
             # TODO request in storage
             # TMP >>>
             result = self.getEvernote().findNotes(None, 1)
@@ -525,7 +548,7 @@ class Notes(GeekNoteConnector):
 def main():
     sys_argv = sys.argv[1:]
 
-    COMAND = sys_argv[0] if len(sys.argv) >= 1 else ""
+    COMAND = sys_argv[0] if len(sys_argv) >= 1 else ""
 
     # run check & run autocomplete
     if COMAND == "autocomplete":
@@ -537,14 +560,20 @@ def main():
     ARGS = aparser.parse()
 
     # error or help
-    if not ARGS:
+    if ARGS is False:
         return tools.exit()
 
     logging.debug("CLI options: %s", str(ARGS))
 
     # Users
     if COMAND == 'user':
-        User().info(**ARGS)
+        User().user(**ARGS)
+
+    if COMAND == 'login':
+        User().login(**ARGS)
+
+    if COMAND == 'logout':
+        User().logout(**ARGS)
 
     # Notes
     if COMAND == 'create':
