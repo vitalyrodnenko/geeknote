@@ -29,7 +29,7 @@ class Userprop(Base):
 
     id = Column(Integer, primary_key=True)
     key = Column(String(255))
-    value = Column(String(1000))
+    value = Column(PickleType())
 
     def __init__(self, key, value):
         self.key = key
@@ -144,6 +144,7 @@ class Storage(object):
     def createUser(self, oAuthToken, info_obj):
         """
         Create user. oAuthToken must be not empty string
+        info_obj must be not empty string
         Previous user and user's properties will be removed
         return True if all done
         return False if something wrong
@@ -158,7 +159,7 @@ class Storage(object):
             self.session.delete(item)
         
         self.setUserprop('oAuthToken', oAuthToken)
-        self.setUserprop('info', pickle.dumps(info_obj))
+        self.setUserprop('info', info_obj)
         
         return True
 
@@ -193,12 +194,7 @@ class Storage(object):
         return None if there is not oAuth token yet
         return False if something wrong
         """
-        info = self.getUserprop('info')
-        print info
-        if info:
-            print pickle.loads(info)
-            exit(1)
-        return None
+        return self.getUserprop('info')
     
     @logging   
     def getUserprops(self):
@@ -209,7 +205,7 @@ class Storage(object):
         return False if something wrong
         """
         props = self.session.query(Userprop).all()
-        return [{item.key: item.value} for item in props]
+        return [{item.key: pickle.loads(item.value)} for item in props]
     
     @logging   
     def getUserprop(self, key):
@@ -220,7 +216,7 @@ class Storage(object):
         """
         instance = self.session.query(Userprop).filter_by(key=key).first()
         if instance:
-            return instance.value
+            return pickle.loads(instance.value)
         else:
             return None
     
@@ -231,6 +227,8 @@ class Storage(object):
         return True if all done
         return False if something wrong
         """
+        value = pickle.dumps(value)
+
         instance = self.session.query(Userprop).filter_by(key=key).first()
         if instance:
             instance.value = value
@@ -257,9 +255,9 @@ class Storage(object):
                 
             instance = self.session.query(Setting).filter_by(key=key).first()
             if instance:
-                instance.value = settings[key]
+                instance.value = pickle.dumps(settings[key])
             else:
-                instance = Setting(key, settings[key])
+                instance = Setting(key, pickle.dumps(settings[key]))
                 self.session.add(instance)
         
         self.session.commit()
@@ -385,7 +383,7 @@ class Storage(object):
             result[item.guid] = item.name
         return result
         
-    # @logging
+    @logging
     def setSearch(self, search_obj):
         """
         Set searching.
@@ -403,7 +401,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    # @logging   
+    @logging   
     def getSearch(self):
         """
         Get last searching
