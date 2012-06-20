@@ -9,7 +9,8 @@ from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from log import logging
+# from log import logging
+import logging
 
 db_dir_path = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  '.geeknote')
 db_path = os.path.join(db_dir_path, 'database.db')
@@ -87,7 +88,7 @@ class Search(Base):
     __tablename__ = 'search'
 
     id = Column(Integer, primary_key=True)
-    search_obj = Column(Text)
+    search_obj = Column(PickleType())
     timestamp = Column(DateTime(), nullable = False)
 
     def __init__(self, search_obj):
@@ -384,7 +385,7 @@ class Storage(object):
             result[item.guid] = item.name
         return result
         
-    @logging
+    # @logging
     def setSearch(self, search_obj):
         """
         Set searching.
@@ -402,7 +403,7 @@ class Storage(object):
         self.session.commit()
         return True
     
-    @logging   
+    # @logging   
     def getSearch(self):
         """
         Get last searching
