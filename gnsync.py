@@ -11,7 +11,8 @@ import editor
 import tools
 
 # set default logger (write log to file)
-def_logpath = "{0}/GeekNoteSync.log".format(os.getenv('USERPROFILE') or os.getenv('HOME'))
+# def_logpath = "{0}/GeekNoteSync.log".format(os.getenv('USERPROFILE') or os.getenv('HOME'))
+def_logpath = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  'GeekNoteSync.log')
 formatter = logging.Formatter('%(asctime)-15s : %(message)s')
 handler = logging.FileHandler(def_logpath)
 handler.setFormatter(formatter)
@@ -77,8 +78,8 @@ class GNSync:
         if not os.path.exists(path):
             raise Exception("Path to sync directories does not exist.")
         
-        if path[-1] != '/':
-            path = path + '/'
+        # if path[-1] != '/':
+        #     path = path + '/'
         
         self.path = path
             
@@ -198,7 +199,9 @@ class GNSync:
         """
         Get files by self.mask from self.path dir.
         """ 
-        file_paths = glob.glob("{0}{1}".format(self.path, self.mask))
+        
+        # file_paths = glob.glob("{0}{1}".format(self.path, self.mask))
+        file_paths = glob.glob(os.path.join(self.path, self.mask))
         
         files = []
         for f in file_paths:
