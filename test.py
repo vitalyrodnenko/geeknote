@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+import os, sys
+
+# path to libs in unix systems
+sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
+
 import unittest
 import out
 import tools

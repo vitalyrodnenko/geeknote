@@ -8,7 +8,7 @@ _geeknote_command()
     args="${COMP_WORDS[*]}"
     IFS=$SAVE_IFS
     
-    COMPREPLY=( $(compgen -W "`python /home/skaizer/geeknote_autocomplete.py ${args}`" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "`geeknote autocomplete ${args}`" -- ${cur}) )
     
     return 0
 }

@@ -1,7 +1,12 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import os, sys
+
+# path to libs in unix systems
+sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
+
+import argparse
 import glob
 import logging
 
