@@ -5,13 +5,14 @@ import os, sys
 import glob
 import logging
 
+import markdown
+
 from geeknote import GeekNote
 from storage import Storage
 import editor
 import tools
 
 # set default logger (write log to file)
-# def_logpath = "{0}/GeekNoteSync.log".format(os.getenv('USERPROFILE') or os.getenv('HOME'))
 def_logpath = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  'GeekNoteSync.log')
 formatter = logging.Formatter('%(asctime)-15s : %(message)s')
 handler = logging.FileHandler(def_logpath)
@@ -66,7 +67,7 @@ class GNSync:
     all_set = False
     
     @log
-    def __init__(self, notebook_name, path, mask):
+    def __init__(self, notebook_name, path, mask, format):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -78,9 +79,6 @@ class GNSync:
         if not os.path.exists(path):
             raise Exception("Path to sync directories does not exist.")
         
-        # if path[-1] != '/':
-        #     path = path + '/'
-        
         self.path = path
             
         #set mask
@@ -88,6 +86,12 @@ class GNSync:
             mask = "*.*"
             
         self.mask = mask
+
+        #set format
+        if not format:
+            format = "plain"
+            
+        self.format = format
         
         logger.info('Sync Start')
          
@@ -127,13 +131,12 @@ class GNSync:
         """
         Updates note from file
         """
-        body = open(file_note['path'], "r").read()
-        body = editor.textToENML(body)
+        content = self._get_file_content(file_note['path'])
         
         result = GeekNote().updateNote(
             guid=note.guid,
             title=note.title,
-            content=body,
+            content=content,
             notebook=self.notebook_guid)
         
         if result:
@@ -149,12 +152,15 @@ class GNSync:
         """
         Creates note from file
         """
-        body = open(file_note['path'], "r").read()
-        body = editor.textToENML(body)
-        
+
+        content = self._get_file_content(file_note['path'])
+
+        if content is None:
+            return
+
         result = GeekNote().createNote(
             title=file_note['name'],
-            content=body,
+            content=content,
             notebook=self.notebook_guid)
         
         if result:
@@ -163,6 +169,41 @@ class GNSync:
             raise Exception('Note "{0}" was not created'.format(file_note['name']))
             
         return result
+
+    @log
+    def _get_file_content(self, path):
+        """
+        Get file content.
+        """
+        content = open(path, "r").read()
+        content = self._text_to_ENML(content)
+        
+        if content is None:
+            logger.warning("File {0}. Content must be an UTF-8 encode.".format(path))
+            return None
+
+        return content
+
+    @log
+    def _text_to_ENML(self, content):
+        """
+        Create an ENML format of note.
+        """
+        if not isinstance(content, str):
+            content = ""
+        try:
+            if self.format == 'markdown':
+                content = unicode(content,"utf-8")
+                content = markdown.markdown(content).encode("utf-8")
+            elif self.format == 'plain':
+                content = content.replace("\n", '<br></br>')
+        except:
+            return None
+
+        body =  '<?xml version="1.0" encoding="UTF-8"?>'
+        body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
+        body += '<en-note>%s</en-note>' % content
+        return body
     
     @log  
     def _get_notebook(self, notebook_name):
@@ -199,8 +240,7 @@ class GNSync:
         """
         Get files by self.mask from self.path dir.
         """ 
-        
-        # file_paths = glob.glob("{0}{1}".format(self.path, self.mask))
+    
         file_paths = glob.glob(os.path.join(self.path, self.mask))
         
         files = []
@@ -229,6 +269,7 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument('--path', '-p', action='store', help='Path to synchronize directory')
         parser.add_argument('--mask', '-m', action='store', help='Mask of files to synchronize. Default is "*.*"')
+        parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values ​​are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         
@@ -236,12 +277,13 @@ if __name__ == "__main__":
     
         path = args.path if args.path else None
         mask = args.mask if args.mask else None
+        format = args.format if args.format else None
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
         
         reset_logpath(logpath)
         
-        GNS = GNSync(notebook, path, mask)
+        GNS = GNSync(notebook, path, mask, format)
         GNS.sync()
         
     except Exception, e:
