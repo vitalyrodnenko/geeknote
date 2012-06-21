@@ -196,7 +196,7 @@ class GNSync:
                 content = unicode(content,"utf-8")
                 content = markdown.markdown(content).encode("utf-8")
             elif self.format == 'plain':
-                content = content.replace("\n", '<br></br>')
+                content = content.replace("\n", '<br />')
         except:
             return None
 
