@@ -5,6 +5,10 @@ import html2text
 import markdown
 import tools
 import out
+import sys
+import os
+import re
+import config
 
 
 def ENMLtoText(contentENML):
@@ -18,15 +22,16 @@ def textToENML(content):
     """
     if not isinstance(content, str):
         content = ""
-    try:
-        content = unicode(content,"utf-8")
-        contentENML = markdown.markdown(content).encode("utf-8")
-    except:
-        out.failureMessage("Error. Content must be an UTF-8 encode.")
-        return tools.exit()
+    # try:
+    content = re.sub(r'(\r|\n|\r\n)', '  \1', content) # create br tags
+    content = unicode(content,"utf-8")
+    contentENML = markdown.markdown(content).encode("utf-8")
+    # except:
+    #     out.failureMessage("Error. Content must be an UTF-8 encode.")
+    #     return tools.exit()
 
-    body =  '<?xml version="1.0" encoding="UTF-8"?>'
-    body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
+    body =  '<?xml version="1.0" encoding="UTF-8"?>\n'
+    body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
     body += '<en-note>%s</en-note>' % contentENML
     return body
 
@@ -52,11 +57,14 @@ def edit(content=None):
         editor = os.environ.get("EDITOR")
     if not (editor):
         # If default editor is not finded, then use nano as a default.
-        editor = "nano"
-    
+        if sys.platform == 'win32':
+            editor = config.DEF_WIN_EDITOR
+        else:
+            editor = config.DEF_UNIX_EDITOR
+
     # Make a system call to open file for editing.
     os.system(editor + " " + tmpFileName)
 
     newContent =  open(tmpFileName, 'r').read()
 
-    return textToENML(newContent)
+    return newContent

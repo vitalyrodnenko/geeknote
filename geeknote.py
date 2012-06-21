@@ -21,6 +21,7 @@ import time
 import signal
 
 import out
+import config
 from argparser import argparser
 from oauth import GeekNoteAuth
 from storage import Storage
@@ -28,25 +29,37 @@ import editor
 import tools
 from log import logging
 
-CONSUMER_KEY = 'skaizer-1250'
-CONSUMER_SECRET = 'ed0fcc0c97c032a5'
+
+try:
+    if not os.path.exists(config.APP_DIR):
+        os.mkdir(config.APP_DIR)
+except Exception, e:
+    logging.error("Can not create application dirictory.")
+    tools.exit()
 
 class GeekNote(object):
 
-    consumerKey = CONSUMER_KEY
-    consumerSecret = CONSUMER_SECRET
-    userStoreUri = "https://sandbox.evernote.com/edam/user"
+    consumerKey = config.CONSUMER_KEY
+    consumerSecret = config.CONSUMER_SECRET
+    userStoreUri = None
     authToken = None
-    #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
     userStore = None
     noteStore = None
     storage = None
 
     def __init__(self):
+        if config.DEV_MODE:
+            self.userStoreUri = "https://sandbox.evernote.com/edam/user"
+        else:
+            self.userStoreUri = "https://evernote.com/edam/user"
+
         self.getStorage()
+
         self.getUserStore()
         self.checkVersion()
-        self.checkAuth()
+
+        if not self.checkAuth():
+            self.auth()
 
     def getStorage(self):
         if GeekNote.storage:
@@ -89,7 +102,9 @@ class GeekNote(object):
         logging.debug("oAuth token : %s", self.authToken)
         if self.authToken:
             return True
+        return False
 
+    def auth(self):
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
         userInfo = self.getUserInfo()
@@ -244,14 +259,17 @@ class GeekNoteConnector(object):
 class User(GeekNoteConnector):
     """ Work with auth User """
 
-    def user(self, full=True):
-        info = self.getEvernote().getUserInfo()
+    def user(self, full=None):
+        if full:
+            info = self.getEvernote().getUserInfo()
+        else:
+            info = self.getStorage().getUserInfo()
         #logging.debug("User info:" % str(info))
-        out.showUser(info, True)
+        out.showUser(info, full)
 
     def login(self):
         result = self.getEvernote().checkAuth()
-        if result:
+        if result or self.getEvernote().auth():
             out.successMessage("You successfully logged in")
         else:
             out.failureMessage("Login error")
@@ -418,6 +436,9 @@ class Notes(GeekNoteConnector):
             "notebook": notebook,
         }
 
+        if title is None and note:
+            result['title'] = note.title
+
         if content:
             if content == "WRITE_IN_EDITOR":
                 logging.debug("launch system editor")
@@ -426,6 +447,7 @@ class Notes(GeekNoteConnector):
                     content = editor.edit(note.content)
                 else:
                    content = editor.edit()
+
                 result['content'] = editor.textToENML(content)
 
             else:
@@ -452,16 +474,15 @@ class Notes(GeekNoteConnector):
 
     def _searchNote(self, note):
         note = tools.strip(note)
-        if False and tools.checkIsInt(note):
-            # TODO request in storage
-            # TMP >>>
-            result = self.getEvernote().findNotes(None, 1)
-            note = result.notes[0]
-            # TMP <<<
+
+        # load search result
+        result = self.getStorage().getSearch()
+        if result and tools.checkIsInt(note) and int(note) < len(result.notes):
+            note = result.notes[int(note)-1]
 
         else:
             request = self._createSearchRequest(search=note)
-            
+
             logging.debug("Search notes: %s" % request)
             result = self.getEvernote().findNotes(request, 20)
 
@@ -497,7 +518,9 @@ class Notes(GeekNoteConnector):
         if result.totalNotes == 0:
             out.successMessage("Notes not found")
 
-        # TODO Save result to storage
+        # save search result
+        self.getStorage().setSearch(result)
+
         out.SearchResult(result.notes, request)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
@@ -593,16 +616,16 @@ def main():
         Notes().find(**ARGS)
 
     # Notebooks
-    if COMAND == 'list-notebook':
+    if COMAND == 'notebook-list':
         Notebooks().list(**ARGS)
 
-    if COMAND == 'create-notebook':
+    if COMAND == 'notebook-create':
         Notebooks().create(**ARGS)
 
-    if COMAND == 'edit-notebook':
+    if COMAND == 'notebook-edit':
         Notebooks().edit(**ARGS)
 
-    if COMAND == 'remove-notebook':
+    if COMAND == 'notebook-remove':
         Notebooks().remove(**ARGS)
 
 if __name__ == "__main__":

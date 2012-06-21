@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import config
 
-FORMAT = "%(asctime)-15s %(module)s : %(message)s"
-DEBUG_FORMAT = "%(filename)s %(funcName)s %(lineno)d : %(message)s"
-
-# logging.basicConfig(format=DEBUG_FORMAT, level=logging.DEBUG)
-logging.basicConfig(format=FORMAT)
+if config.DEBUG:
+    logging.basicConfig(format="%(filename)s %(funcName)s %(lineno)d : %(message)s", level=logging.DEBUG)
+else:
+    logging.basicConfig(format="%(asctime)-15s %(module)s : %(message)s", filename=config.ERROR_LOG)

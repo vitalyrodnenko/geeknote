@@ -84,16 +84,16 @@ COMMANDS_DICT = {
     },
 
     # Notebooks
-    "list-notebook": {
+    "notebook-list": {
         "help": "Create note",
     },
-    "create-notebook": {
+    "notebook-create": {
         "help": "Create note",
         "arguments": {
             "--title": {"help": "Set note title"},
         }
     },
-    "edit-notebook": {
+    "notebook-edit": {
         "help": "Create note",
         "firstArg": "--notebook",
         "arguments": {
@@ -101,7 +101,7 @@ COMMANDS_DICT = {
             "--title": {"help": "Set note title"},
         }
     },
-    "remove-notebook": {
+    "notebook-remove": {
         "help": "Create note",
         "firstArg": "--notebook",
         "arguments": {

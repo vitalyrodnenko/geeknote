@@ -81,15 +81,17 @@ class preloader(object):
 @preloaderPause
 def GetUserCredentials():
     """Prompts the user for a username and password."""
-    
-    email = None
-    password = None
-    if email is None:
-        email = raw_input("Email: ")
-        
-    if password is None:
-        password = getpass.getpass("Password for %s: " % email)
-    
+    try:
+        email = None
+        password = None
+        if email is None:
+            email = raw_input("Email: ")
+            
+        if password is None:
+            password = getpass.getpass("Password for %s: " % email)
+    except KeyboardInterrupt:
+        tools.KeyboardInterruptSignalHendler(None, None)
+
     return (email, password)
 
 @preloaderStop
@@ -109,13 +111,16 @@ def SelectSearchResult(listItems):
 def confirm(message):
     printLine(message)
     sys.stdout.flush()
-    while True:
-        answer = raw_input("Yes/No: ")
-        if answer.lower() in ["yes", "ye", "y"]:
-            return True
-        if answer.lower() in ["no", "n"]:
-            return False
-        failureMessage('Incorrect answer "%s", please try again:\n' % answer)
+    try:
+        while True:
+            answer = raw_input("Yes/No: ")
+            if answer.lower() in ["yes", "ye", "y"]:
+                return True
+            if answer.lower() in ["no", "n"]:
+                return False
+            failureMessage('Incorrect answer "%s", please try again:\n' % answer)
+    except KeyboardInterrupt:
+        tools.KeyboardInterruptSignalHendler(None, None)
 
 @preloaderStop
 def showNote(note):
@@ -189,13 +194,16 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
 
     if showSelector:
         printLine("  0 : -Cancel-")
-        while True:
-            num = raw_input(": ")
-            if tools.checkIsInt(num) and  1 <= int(num) <= total:
-                return listItems[int(num)-1]
-            if num == '0':
-                exit(1)
-            failureMessage('Incorrect number "%s", please try again:\n' % num)
+        try:
+            while True:
+                num = raw_input(": ")
+                if tools.checkIsInt(num) and  1 <= int(num) <= total:
+                    return listItems[int(num)-1]
+                if num == '0':
+                    exit(1)
+                failureMessage('Incorrect number "%s", please try again:\n' % num)
+        except KeyboardInterrupt:
+            tools.KeyboardInterruptSignalHendler(None, None)
 
 def printLine(line, endLine="\n"):
     sys.stdout.write(line+endLine)
