@@ -18,6 +18,7 @@ import evernote.edam.error.ttypes as Errors
 import argparse
 import locale
 import time
+import signal
 
 import out
 from argparser import argparser
@@ -605,4 +606,5 @@ def main():
         Notebooks().remove(**ARGS)
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, tools.KeyboardInterruptSignalHendler)
     main()

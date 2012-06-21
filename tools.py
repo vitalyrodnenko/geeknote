@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import out
 from log import logging
 import sys
 
@@ -46,6 +47,10 @@ def strip(data):
 
 def exit():
     sys.exit(1)
+
+def KeyboardInterruptSignalHendler(signal, frame):
+    out.printLine("\nYou pressed Ctrl+C!")
+    exit()
 
 class Struct:
     def __init__(self, **entries): 

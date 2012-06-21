@@ -21,6 +21,12 @@ COMMANDS_DICT = {
             "--force": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
+    "aettings": {
+        "help": "Create note",
+        "arguments": {
+            "--editor": {"help": "Set note title"},
+        }
+    },
 
     # Notes
     "create": {
