@@ -2,9 +2,6 @@
 
 import os, sys
 
-# path to libs in unix systems
-sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-
 from log import logging
 import out
 

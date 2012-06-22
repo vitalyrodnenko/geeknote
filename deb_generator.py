@@ -19,7 +19,7 @@ p.section="utils"
 p.arch="all"
 
 # application
-p["/usr/bin"] = ["geeknote.py|geeknote", "gnsync.py|gnsync"]
+p["/usr/bin"] = ["deb/geeknote.py|geeknote", "deb/gnsync.py|gnsync"]
 
 # bash auto complite
 p["/etc/bash_completion.d"] = ["bash_completion/geeknote|geeknote"]
@@ -41,7 +41,7 @@ for root, dirs, files in os.walk(dir_name):
   		items[install_dir].extend(fake_file)
 
 # project files
-project_files = ["geeknote.py" ,"argparser.py", "editor.py", "log.py", "oauth.py", "out.py", "storage.py", "tools.py"]
+project_files = ["geeknote.py", "gnsync.py" ,"argparser.py", "editor.py", "log.py", "oauth.py", "out.py", "storage.py", "tools.py"]
 items[install_dir].extend(project_files)
 
 for key, value in items.items():

@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-
-# path to libs in unix systems
-sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-
 import getpass
 import time
 import thread
