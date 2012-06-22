@@ -9,6 +9,7 @@ import sys
 import os
 import re
 import config
+from storage import Storage
 
 
 def ENMLtoText(contentENML):
@@ -16,24 +17,27 @@ def ENMLtoText(contentENML):
     content = html2text.html2text(contentENML)
     return content.encode('utf-8')
 
+def wrapENML(contentHTML):
+    body =  '<?xml version="1.0" encoding="UTF-8"?>\n'
+    body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
+    body += '<en-note>%s</en-note>' % contentHTML
+    return body
+
 def textToENML(content):
     """
     Create an ENML format of note.
     """
     if not isinstance(content, str):
         content = ""
-    # try:
-    content = re.sub(r'(\r|\n|\r\n)', '  \1', content) # create br tags
-    content = unicode(content,"utf-8")
-    contentENML = markdown.markdown(content).encode("utf-8")
-    # except:
-    #     out.failureMessage("Error. Content must be an UTF-8 encode.")
-    #     return tools.exit()
+    try:
+        content = unicode(content,"utf-8")
+        content = re.sub(r'(\r|\n|\r\n)', r'  \1', content) # add 2 space for cteating br tags
+        contentHTML = markdown.markdown(content).encode("utf-8")
+    except:
+        out.failureMessage("Error. Content must be an UTF-8 encode.")
+        return None
 
-    body =  '<?xml version="1.0" encoding="UTF-8"?>\n'
-    body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
-    body += '<en-note>%s</en-note>' % contentENML
-    return body
+    return wrapENML(contentHTML)
 
 def edit(content=None):
     """
@@ -52,15 +56,21 @@ def edit(content=None):
     os.close(tmpFileHandler)
     
     # Try to find default editor in the system.
-    editor = os.environ.get("editor")
-    if not (editor):
-        editor = os.environ.get("EDITOR")
-    if not (editor):
+    storage = Storage()
+    editor = storage.getUserprop('editor')
+    print editor
+    if not editor:
         # If default editor is not finded, then use nano as a default.
         if sys.platform == 'win32':
             editor = config.DEF_WIN_EDITOR
         else:
             editor = config.DEF_UNIX_EDITOR
+
+    if not editor:
+        editor = os.environ.get("editor")
+
+    if not editor:
+        editor = os.environ.get("EDITOR")
 
     # Make a system call to open file for editing.
     os.system(editor + " " + tmpFileName)

@@ -207,3 +207,6 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
 
 def printLine(line, endLine="\n"):
     sys.stdout.write(line+endLine)
+
+def printAbout():
+    printLine('About geeknote')

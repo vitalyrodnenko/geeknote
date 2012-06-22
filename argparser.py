@@ -21,10 +21,10 @@ COMMANDS_DICT = {
             "--force": {"help": "Add tag to note", "value": True, "default": False},
         }
     },
-    "aettings": {
+    "settings": {
         "help": "Create note",
         "arguments": {
-            "--editor": {"help": "Set note title"},
+            "--editor": {"help": "Set system editor", "emptyValue": '#GET#'},
         }
     },
 
@@ -70,7 +70,7 @@ COMMANDS_DICT = {
         "help": "Create note",
         "firstArg": "--search",
         "arguments": {
-            "--search": {"help": "Add tag to note"},
+            "--search": {"help": "Add tag to note", "emptyValue": "*"},
             "--tags": {"help": "Add tag to note"},
             "--notebooks": {"help": "Add location marker to note"},
             "--date": {"help": "Add location marker to note"},
@@ -112,11 +112,14 @@ COMMANDS_DICT = {
         }
     },
 }
+
 class argparser(object):
 
     COMMANDS = COMMANDS_DICT
+    sys_argv = None
 
     def __init__(self, sys_argv):
+        self.sys_argv = sys_argv
         self.LVL = len(sys_argv)
         self.INPUT = sys_argv
 
@@ -140,11 +143,22 @@ class argparser(object):
     def parse(self):
         self.INP_DATA = {}
 
+        if self.CMD is None:
+            out.printAbout()
+            return False
+
+        if self.CMD == "autocomplete":
+            # подставляем аргументы для автозаполнения
+            # делаем смещение на 1 аргумент, т.к. 1 это autocomplete
+            self.__init__(self.sys_argv[1:])
+            self.printAutocomplete()
+            return False
+
         if self.CMD == "--help":
             self.printHelp()
             return False
 
-        if self.CMD is None or not self.COMMANDS.has_key(self.CMD):
+        if not self.COMMANDS.has_key(self.CMD):
             self.printErrorCommand()
             return False
 
@@ -159,6 +173,7 @@ class argparser(object):
                 self.INP_DATA[arg] = params['default']
 
         activeArg = None
+        ACTIVE_CMD = None
         # проверяем и подставляем первый адгумент по умолчанию
         if self.COMMANDS[self.CMD].has_key('firstArg'):
             firstArg = self.COMMANDS[self.CMD]['firstArg']
@@ -179,6 +194,7 @@ class argparser(object):
                 # Действия для аргумента
                 if self.CMD_ARGS.has_key(item):
                     activeArg = item
+                    ACTIVE_CMD = self.CMD_ARGS[activeArg]
 
                 # Действия для флага
                 elif self.CMD_FLAGS.has_key(item):
@@ -190,14 +206,21 @@ class argparser(object):
                     return False
 
             else:
-                # Ошибка значения является параметром
+                activeArgTmp = None
+                # Значения является параметром
                 if self.CMD_ARGS.has_key(item) or self.CMD_FLAGS.has_key(item):
-                    self.printErrorArgument(activeArg, item)
-                    return False
+                    # "Активный" аргумент имеет параметр emptyValue
+                    if ACTIVE_CMD.has_key("emptyValue"):
+                        activeArgTmp = item # запоминаем новый "активный" аргумент
+                        item = ACTIVE_CMD['emptyValue'] # подменяем значение на emptyValue
+                    # Ошибка, "активный" аргумент не имеет значений
+                    else:
+                        self.printErrorArgument(activeArg, item)
+                        return False
 
-                if self.CMD_ARGS[activeArg].has_key("type"):
-                    convType = self.CMD_ARGS[activeArg]['type']
-                    if convType not in ('int', 'str'):
+                if ACTIVE_CMD.has_key("type"):
+                    convType = ACTIVE_CMD['type']
+                    if convType not in (int, str):
                         logging.error("Unsupported argument type: %s", convType)
                         return False
 
@@ -208,11 +231,18 @@ class argparser(object):
                         return False
 
                 self.INP_DATA[activeArg] = item
-                activeArg = None
+                activeArg = activeArgTmp # тут или пусто, или новый "активный" аргумент
 
+        # если остались "активные" аршументы
         if activeArg is not None:
-            self.printErrorArgument(activeArg, "")
-            return False
+            # если есть параметр emptyValue
+            if ACTIVE_CMD.has_key("emptyValue"):
+                self.INP_DATA[activeArg] = ACTIVE_CMD['emptyValue']
+
+            # инече ошибка
+            else:
+                self.printErrorArgument(activeArg, "")
+                return False
 
         # проверка, присутствует ли необходимый аргумент запросе
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
@@ -226,7 +256,6 @@ class argparser(object):
 
 
     def printAutocomplete(self):
-
         # последнее веденное значение
         LAST_VAL = self.INP[-1] if self.LVL > 1 else None
         PREV_LAST_VAL = self.INP[-2] if self.LVL > 2 else None

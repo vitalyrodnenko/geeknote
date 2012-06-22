@@ -164,7 +164,7 @@ class Storage(object):
         """
         for item in self.session.query(Userprop).all():
             self.session.delete(item)
-
+        self.session.commit()
         return True
     
     @logging   
