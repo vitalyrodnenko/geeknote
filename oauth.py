@@ -15,18 +15,12 @@ from urlparse import urlparse
 
 import out
 import tools
-
-CONSUMER_KEY = 'stepler-8439'
-CONSUMER_SECRET = '4b4e6661ed1f2a5c'
-
-class AuthError(Exception):
-    """Base class for exceptions in this module."""
-    pass
+import config
 
 class GeekNoteAuth(object):
 
     url = {
-        "base"  : "sandbox.evernote.com",
+        "base"  : None,
         "oauth" : "/OAuth.action?oauth_token=%s",
         "access": "/OAuth.action",
         "token" : "/oauth",
@@ -57,13 +51,18 @@ class GeekNoteAuth(object):
     OAuthToken = None
     incorrectLogin = 0
 
+    def __init__(self):
+        if config.DEV_MODE:
+            self.url['base'] = "sandbox.evernote.com"
+        else:
+            self.url['base'] = "evernote.com"
 
     def getTokenRequestData(self, **kwargs):
         params = {
-            'oauth_consumer_key': CONSUMER_KEY, 
-            'oauth_signature': CONSUMER_SECRET+'%26', 
+            'oauth_consumer_key': config.CONSUMER_KEY,
+            'oauth_signature': config.CONSUMER_SECRET+'%26',
             'oauth_signature_method': 'PLAINTEXT',
-            'oauth_timestamp': str(int(time.time())), 
+            'oauth_timestamp': str(int(time.time())),
             'oauth_nonce': uuid.uuid4().hex
         }
 

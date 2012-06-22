@@ -181,34 +181,13 @@ class GNSync:
         Get file content.
         """
         content = open(path, "r").read()
-        content = self._text_to_ENML(content)
+        content = editor.textToENML(content)
         
         if content is None:
             logger.warning("File {0}. Content must be an UTF-8 encode.".format(path))
             return None
 
         return content
-
-    @log
-    def _text_to_ENML(self, content):
-        """
-        Create an ENML format of note.
-        """
-        if not isinstance(content, str):
-            content = ""
-        try:
-            if self.format == 'markdown':
-                content = unicode(content,"utf-8")
-                content = markdown.markdown(content).encode("utf-8")
-            elif self.format == 'plain':
-                content = content.replace("\n", '<br />')
-        except:
-            return None
-
-        body =  '<?xml version="1.0" encoding="UTF-8"?>'
-        body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-        body += '<en-note>%s</en-note>' % content
-        return body
     
     @log  
     def _get_notebook(self, notebook_name):

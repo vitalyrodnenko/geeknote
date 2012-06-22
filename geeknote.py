@@ -22,8 +22,10 @@ import evernote.edam.error.ttypes as Errors
 import argparse
 import locale
 import time
+import signal
 
 import out
+import config
 from argparser import argparser
 from oauth import GeekNoteAuth
 from storage import Storage
@@ -31,25 +33,69 @@ import editor
 import tools
 from log import logging
 
-CONSUMER_KEY = 'skaizer-1250'
-CONSUMER_SECRET = 'ed0fcc0c97c032a5'
+
+try:
+    if not os.path.exists(config.APP_DIR):
+        os.mkdir(config.APP_DIR)
+except Exception, e:
+    logging.error("Can not create application dirictory.")
+    tools.exit()
+
+def GeekNoneDBConnectOnly(func):
+    def wrapper(*args, **kwargs):
+        GeekNote.skipInitConnection = True
+        return func(*args, **kwargs)
+    return wrapper
 
 class GeekNote(object):
 
-    consumerKey = CONSUMER_KEY
-    consumerSecret = CONSUMER_SECRET
-    userStoreUri = "https://sandbox.evernote.com/edam/user"
+    consumerKey = config.CONSUMER_KEY
+    consumerSecret = config.CONSUMER_SECRET
+    userStoreUri = None
     authToken = None
-    #authToken = "S=s1:U=2265a:E=13ee295740c:C=1378ae4480c:P=185:A=stepler-8439:H=8bfb5c7a5bd5517eb885034cf5d515b2"
     userStore = None
     noteStore = None
     storage = None
+    skipInitConnection = False
 
     def __init__(self):
+        if config.DEV_MODE:
+            self.userStoreUri = "https://sandbox.evernote.com/edam/user"
+        else:
+            self.userStoreUri = "https://evernote.com/edam/user"
+
         self.getStorage()
+
+        if self.skipInitConnection is True:
+            return
+
         self.getUserStore()
-        self.checkVersion()
-        self.checkAuth()
+
+        if not self.checkAuth():
+            self.auth()
+
+    def EdamException(func):
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Errors.EDAMUserException as e:
+                logging.error("Error: %s : %s", func.__name__, str(e))
+
+                errorCode = int(e.errorCode)
+                if errorCode == 9:
+                    storage = Storage()
+                    storage.removeUser()
+                    GeekNote()
+                    return func(*args, **kwargs)
+
+                elif errorCode == 3:
+                    out.failureMessage("Sorry, you do not have permissions to do this operation.")
+
+                else:
+                    out.failureMessage("Sorry, operation has failed.")
+
+                tools.exit()
+        return wrapper
 
     def getStorage(self):
         if GeekNote.storage:
@@ -66,6 +112,8 @@ class GeekNote(object):
         userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
         GeekNote.userStore = UserStore.Client(userStoreProtocol)
     
+        self.checkVersion()
+
         return GeekNote.userStore
 
     def getNoteStore(self):
@@ -92,7 +140,9 @@ class GeekNote(object):
         logging.debug("oAuth token : %s", self.authToken)
         if self.authToken:
             return True
+        return False
 
+    def auth(self):
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
         userInfo = self.getUserInfo()
@@ -112,12 +162,18 @@ class GeekNote(object):
     """
     WORK WITH NOTEST
     """
-    def findNotes(self, keywords, count):
-        nf = NoteStore.NoteFilter()
-        if keywords:
-            nf.words = keywords
-        return self.getNoteStore().findNotes(self.authToken, nf, 0, count)
+    @EdamException
+    def findNotes(self, keywords, count, createOrder=False):
+        
+        noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
+        if createOrder:
+            noteFilter.order = Types.NoteSortOrder.CREATED
 
+        if keywords:
+            noteFilter.words = keywords
+        return self.getNoteStore().findNotes(self.authToken, noteFilter, 0, count)
+
+    @EdamException
     def loadNoteContent(self, note):
         """ modify Note object """
         if not isinstance(note, Types.Note):
@@ -125,6 +181,7 @@ class GeekNote(object):
 
         note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
 
+    @EdamException
     def createNote(self, title, content, tags=None, notebook=None):
         note = Types.Note()
         note.title = title
@@ -145,6 +202,7 @@ class GeekNote(object):
             logging.error("Error: %s", str(e))
             return False
 
+    @EdamException
     def updateNote(self, guid, title=None, content=None, tags=None, notebook=None):
         note = Types.Note()
         note.guid = guid
@@ -169,6 +227,7 @@ class GeekNote(object):
             logging.error("Error: %s", str(e))
             return False
 
+    @EdamException
     def deleteNote(self, guid):
         logging.debug("Delete note with guid: %s", guid)
         try: 
@@ -181,9 +240,11 @@ class GeekNote(object):
     """
     WORK WITH NOTEBOOKS
     """
+    @EdamException
     def findNotebooks(self):
         return self.getNoteStore().listNotebooks(self.authToken)
 
+    @EdamException
     def createNotebook(self, name):
         notebook = Types.Notebook()
         notebook.name = name
@@ -197,6 +258,7 @@ class GeekNote(object):
             logging.error("Error: %s", str(e))
             return False
 
+    @EdamException
     def updateNotebook(self, guid, name):
         notebook = Types.Notebook()
         notebook.name = name
@@ -211,6 +273,7 @@ class GeekNote(object):
             logging.error("Error: %s", str(e))
             return False
 
+    @EdamException
     def deleteNotebook(self, guid):
         logging.debug("Delete notebook : %s", guid)
         try: 
@@ -224,7 +287,7 @@ class GeekNote(object):
 class GeekNoteConnector(object):
     evernote = None
     storage = None
-    
+
     def connectToEvertone(self):
         out.preloader.setMessage("Connect to Evernote...")
         self.evernote = GeekNote()
@@ -247,21 +310,28 @@ class GeekNoteConnector(object):
 class User(GeekNoteConnector):
     """ Work with auth User """
 
-    def user(self, full=True):
-        info = self.getEvernote().getUserInfo()
-        #logging.debug("User info:" % str(info))
-        out.showUser(info, True)
+    @GeekNoneDBConnectOnly
+    def user(self, full=None):
+        if full:
+            info = self.getEvernote().getUserInfo()
+        else:
+            info = self.getStorage().getUserInfo()
+        out.showUser(info, full)
 
     def login(self):
         result = self.getEvernote().checkAuth()
-        if result:
+        if result or self.getEvernote().auth():
             out.successMessage("You successfully logged in")
         else:
             out.failureMessage("Login error")
             return tools.exit()
-        #logging.debug("User info:" % str(info))
 
+    @GeekNoneDBConnectOnly
     def logout(self, force=None):
+        if not self.getEvernote().checkAuth():
+            out.successMessage("You already logged out")
+            return tools.exit()
+
         if not force and not out.confirm('Are you sure you want logout?'):
             return tools.exit()
 
@@ -271,8 +341,18 @@ class User(GeekNoteConnector):
         else:
             out.failureMessage("Logout error")
             return tools.exit()
-        #logging.debug("User info:" % str(info))
 
+    @GeekNoneDBConnectOnly
+    def settings(self, editor=None):
+        if editor:
+            if editor == '#GET#':
+                editor = self.getStorage().getUserprop('editor')
+                if not editor:
+                    editor = config.DEF_WIN_EDITOR if sys.platform == 'win32' else config.DEF_UNIX_EDITOR
+                out.successMessage("Current editor is: %s" % editor)
+            else:
+                self.getStorage().setUserprop('editor', editor)
+                out.successMessage("Editor successfully saved")
 
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
@@ -421,23 +501,30 @@ class Notes(GeekNoteConnector):
             "notebook": notebook,
         }
 
+        if title is None and note:
+            result['title'] = note.title
+
         if content:
-            if content == "WRITE_IN_EDITOR":
+            if content == config.EDITOR_OPEN_PARAM:
                 logging.debug("launch system editor")
                 if note:
                     self.getEvernote().loadNoteContent(note)
                     content = editor.edit(note.content)
                 else:
                    content = editor.edit()
-                result['content'] = editor.textToENML(content)
 
-            else:
-                if isinstance(content, str) and os.path.isfile(content):
-                    logging.debug("Load content file")
-                    content = open(content, "r").read()
+            elif isinstance(content, str) and os.path.isfile(content):
+                logging.debug("Load content file")
+                content = open(content, "r").read()
+                content = editor.ENMLtoText(content)
 
-                logging.debug("Convert content")
-                result['content'] = editor.textToENML(content)
+            logging.debug("Convert content")
+            content = editor.textToENML(content)
+            if content is None:
+                logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
+                tools.exit()
+
+            result['content'] = content
 
         if tags:
             result['tags'] = tools.strip(tags.split(','))
@@ -455,16 +542,15 @@ class Notes(GeekNoteConnector):
 
     def _searchNote(self, note):
         note = tools.strip(note)
-        if False and tools.checkIsInt(note):
-            # TODO request in storage
-            # TMP >>>
-            result = self.getEvernote().findNotes(None, 1)
-            note = result.notes[0]
-            # TMP <<<
+
+        # load search result
+        result = self.getStorage().getSearch()
+        if result and tools.checkIsInt(note) and 1 <= int(note) <= len(result.notes):
+            note = result.notes[int(note)-1]
 
         else:
             request = self._createSearchRequest(search=note)
-            
+
             logging.debug("Search notes: %s" % request)
             result = self.getEvernote().findNotes(request, 20)
 
@@ -495,12 +581,15 @@ class Notes(GeekNoteConnector):
 
         logging.debug("Search count: %s", count)
 
-        result = self.getEvernote().findNotes(request, count)
+        createFilter = True if search == "*" else False
+        result = self.getEvernote().findNotes(request, count, createFilter)
 
         if result.totalNotes == 0:
             out.successMessage("Notes not found")
 
-        # TODO Save result to storage
+        # save search result
+        self.getStorage().setSearch(result)
+
         out.SearchResult(result.notes, request)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
@@ -549,64 +638,89 @@ class Notes(GeekNoteConnector):
         logging.debug("Search request: %s", request)
         return request
 
+# парсинг входного потока и подстановка аргументов
+def modifyArgsByStdinStream():
+    content = sys.stdin.read()
+    content = editor.ENMLtoText(content)
+
+    if not content:
+        out.failureMessage("Input stream is empty")
+        return (None, False)
+    """
+    if COMMAND in ('create', 'edit') and isinstance(ARGS, dict):
+        ARGS['content'] = content
+        return (COMMAND, ARGS)
+    """
+    ARGS = {
+        'title': ' '.join(content.split(' ', 5)[:-1]),
+        'content': content
+    }
+
+    return ('create', ARGS)
+
+
 def main():
-    sys_argv = sys.argv[1:]
 
-    COMAND = sys_argv[0] if len(sys_argv) >= 1 else ""
+    # if terminal
+    if sys.stdin.isatty():
+        sys_argv = sys.argv[1:]
+        COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
 
-    # run check & run autocomplete
-    if COMAND == "autocomplete":
-        aparser = argparser(sys_argv[1:])
-        aparser.printAutocomplete()
-        return tools.exit()
+        aparser = argparser(sys_argv)
+        ARGS = aparser.parse()
 
-    aparser = argparser(sys_argv)
-    ARGS = aparser.parse()
+    # if input stream
+    else:
+        COMMAND, ARGS = modifyArgsByStdinStream()
 
     # error or help
-    if ARGS is False:
+    if COMMAND is None or ARGS is False:
         return tools.exit()
 
     logging.debug("CLI options: %s", str(ARGS))
 
     # Users
-    if COMAND == 'user':
+    if COMMAND == 'user':
         User().user(**ARGS)
 
-    if COMAND == 'login':
+    if COMMAND == 'login':
         User().login(**ARGS)
 
-    if COMAND == 'logout':
+    if COMMAND == 'logout':
         User().logout(**ARGS)
 
+    if COMMAND == 'settings':
+        User().settings(**ARGS)
+
     # Notes
-    if COMAND == 'create':
+    if COMMAND == 'create':
         Notes().create(**ARGS)
 
-    if COMAND == 'edit':
+    if COMMAND == 'edit':
         Notes().edit(**ARGS)
 
-    if COMAND == 'remove':
+    if COMMAND == 'remove':
         Notes().remove(**ARGS)
 
-    if COMAND == 'show':
+    if COMMAND == 'show':
         Notes().show(**ARGS)
 
-    if COMAND == 'find':
+    if COMMAND == 'find':
         Notes().find(**ARGS)
 
     # Notebooks
-    if COMAND == 'list-notebook':
+    if COMMAND == 'notebook-list':
         Notebooks().list(**ARGS)
 
-    if COMAND == 'create-notebook':
+    if COMMAND == 'notebook-create':
         Notebooks().create(**ARGS)
 
-    if COMAND == 'edit-notebook':
+    if COMMAND == 'notebook-edit':
         Notebooks().edit(**ARGS)
 
-    if COMAND == 'remove-notebook':
+    if COMMAND == 'notebook-remove':
         Notebooks().remove(**ARGS)
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, tools.KeyboardInterruptSignalHendler)
     main()

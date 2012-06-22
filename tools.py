@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, sys
-
-# path to libs in unix systems
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-
+import out
 from log import logging
 
 def checkIsInt(value):
@@ -50,6 +46,10 @@ def strip(data):
 
 def exit():
     sys.exit(1)
+
+def KeyboardInterruptSignalHendler(signal, frame):
+    out.printLine("\nYou pressed Ctrl+C!")
+    exit()
 
 class Struct:
     def __init__(self, **entries): 

@@ -31,7 +31,7 @@ class testNotes(unittest.TestCase):
         if not isinstance(testData, dict): return
 
         self.assertEqual(testData['title'], "title")
-        self.assertEqual(testData['body'], editor.textToENML("test body"))
+        self.assertEqual(testData['content'], editor.textToENML("test body"))
         self.assertEqual(testData["tags"], ["tag1", ])
 
     def test_parceInput2(self):
@@ -40,7 +40,7 @@ class testNotes(unittest.TestCase):
         if not isinstance(testData, dict): return
 
         self.assertEqual(testData['title'], "title")
-        self.assertEqual(testData['body'], editor.textToENML("note content from text editor"))
+        self.assertEqual(testData['content'], editor.textToENML("note content from text editor"))
         self.assertEqual(testData["tags"], ["tag1", "tag2"])
 
     def test_createSearchRequest1(self):

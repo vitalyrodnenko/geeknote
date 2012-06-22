@@ -14,18 +14,10 @@ from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# from log import logging
 import logging
+import config
 
-db_dir_path = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  '.geeknote')
-db_path = os.path.join(db_dir_path, 'database.db')
-
-try:
-    if not os.path.exists(db_dir_path):
-        os.mkdir(db_dir_path)
-except Exception, e:
-    logging.error("Can not create dir for database.")
-
+db_path = os.path.join(config.APP_DIR, 'database.db')
 engine = create_engine('sqlite:///' + db_path)
 Base = declarative_base()
 
@@ -177,7 +169,7 @@ class Storage(object):
         """
         for item in self.session.query(Userprop).all():
             self.session.delete(item)
-
+        self.session.commit()
         return True
     
     @logging   

@@ -12,7 +12,8 @@ class testArgparser(unittest.TestCase):
             "firstArg": "--test_req_arg",
             "arguments": {
                 "--test_req_arg": {"help": "Set note title", "required": True},
-                "--test_arg": {"help": "Add tag to note"},
+                "--test_arg": {"help": "Add tag to note", "emptyValue": None},
+                "--test_arg2": {"help": "Add tag to note",},
             },
             "flags": {
                 "--test_flag": {"help": "Add tag to note", "value": True, "default": False},
@@ -58,6 +59,14 @@ class testArgparser(unittest.TestCase):
     def testSuccessCommand3(self):
         parser = argparser(["testing", "test_def_val"])
         self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_flag": False})
+
+    def testSuccessCommand4(self):
+        parser = argparser(["testing", "test_def_val", "--test_arg"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_flag": False})
+
+    def testSuccessCommand5(self):
+        parser = argparser(["testing", "test_def_val", "--test_arg", "--test_arg2", "test_arg2_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_arg2": "test_arg2_val", "test_flag": False})
 
 def suite():
     suite = unittest.TestSuite()
