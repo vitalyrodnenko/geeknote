@@ -5,6 +5,15 @@ import os, sys
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
+import config
+
+try:
+    if not os.path.exists(config.APP_DIR):
+        os.mkdir(config.APP_DIR)
+except Exception, e:
+    logging.error("Can not create application dirictory.")
+    tools.exit()
+
 import hashlib
 import binascii
 import time
@@ -21,7 +30,7 @@ import time
 import signal
 
 import out
-import config
+
 from argparser import argparser
 from oauth import GeekNoteAuth
 from storage import Storage
@@ -30,12 +39,7 @@ import tools
 from log import logging
 
 
-try:
-    if not os.path.exists(config.APP_DIR):
-        os.mkdir(config.APP_DIR)
-except Exception, e:
-    logging.error("Can not create application dirictory.")
-    tools.exit()
+
 
 def GeekNoneDBConnectOnly(func):
     def wrapper(*args, **kwargs):
@@ -656,7 +660,6 @@ def modifyArgsByStdinStream():
 
 
 def main():
-
     # if terminal
     if sys.stdin.isatty():
         sys_argv = sys.argv[1:]

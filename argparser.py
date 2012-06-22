@@ -264,7 +264,7 @@ class argparser(object):
 
         # печатаем корневые команды
         if self.CMD is None:
-            self.printGrid(CMD_LIST)
+            self.printGrid(self.CMD_LIST)
 
         # работа с корневыми командами
         elif not self.INP:
@@ -282,12 +282,12 @@ class argparser(object):
         else:
 
             # фильтруем аргументы которые еще не ввели
-            if self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(LAST_VAL) :
-                printGrid([item for item in ARGS_FLAGS_LIST if item not in INP]) 
+            # if PREV_LAST_VAL in ARGS_FLAGS_LIST or LAST_VAL in ARGS_FLAGS_LIST: # self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(LAST_VAL) :
+            self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP]) 
 
             # автозаполнение для неполной команды
             elif not self.CMD_ARGS.has_key(PREV_LAST_VAL):
-                self.printGrid([item for item in ARGS_FLAGS_LIST if item not in INP and item.startswith(LAST_VAL)])
+                self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP and item.startswith(LAST_VAL)])
 
             # обработка аргумента
             else:
