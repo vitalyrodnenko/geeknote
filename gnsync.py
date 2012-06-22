@@ -2,10 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-
-# path to libs in unix systems
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-
 import argparse
 import glob
 import logging
@@ -248,7 +244,7 @@ class GNSync:
         return GeekNote().findNotes(keywords, 10000).notes
             
 
-if __name__ == "__main__":
+def main():
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('--path', '-p', action='store', help='Path to synchronize directory')
@@ -272,3 +268,6 @@ if __name__ == "__main__":
         
     except Exception, e:
         logger.error(str(e));
+
+if __name__ == "__main__":
+    main()

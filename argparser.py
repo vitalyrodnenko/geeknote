@@ -2,9 +2,6 @@
 
 import os, sys
 
-# path to libs in unix systems
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-
 from log import logging
 import out
 
@@ -285,7 +282,7 @@ class argparser(object):
         else:
 
             # фильтруем аргументы которые еще не ввели
-            if self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(self.LAST_VAL) :
+            if self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(LAST_VAL) :
                 printGrid([item for item in ARGS_FLAGS_LIST if item not in INP]) 
 
             # автозаполнение для неполной команды
