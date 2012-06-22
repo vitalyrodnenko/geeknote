@@ -6,8 +6,8 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
 # path to libs in unix systems
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone', 'lib'))
+sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
+sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone', 'lib'))
 
 import hashlib
 import binascii

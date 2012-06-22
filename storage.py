@@ -3,8 +3,8 @@
 import os, sys
 
 # path to libs in unix systems
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
-sys.path.append( os.path.join('/', 'usr', 'local', 'lib', 'geeknone', 'lib'))
+sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone'))
+sys.path.insert(0, os.path.join('/', 'usr', 'local', 'lib', 'geeknone', 'lib'))
 
 import datetime
 import pickle
