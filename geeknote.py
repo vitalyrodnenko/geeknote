@@ -17,6 +17,7 @@ except Exception, e:
 import hashlib
 import binascii
 import time
+from datetime import datetime
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
 import evernote.edam.userstore.UserStore as UserStore
@@ -312,6 +313,10 @@ class User(GeekNoteConnector):
 
     @GeekNoneDBConnectOnly
     def user(self, full=None):
+        if not self.getEvernote().checkAuth():
+            out.failureMessage("You not logged in")
+            return tools.exit()
+
         if full:
             info = self.getEvernote().getUserInfo()
         else:
@@ -319,8 +324,11 @@ class User(GeekNoteConnector):
         out.showUser(info, full)
 
     def login(self):
-        result = self.getEvernote().checkAuth()
-        if result or self.getEvernote().auth():
+        if self.getEvernote().checkAuth():
+            out.successMessage("You already logged in")
+            return tools.exit()
+
+        if self.getEvernote().auth():
             out.successMessage("You successfully logged in")
         else:
             out.failureMessage("Login error")
@@ -501,6 +509,9 @@ class Notes(GeekNoteConnector):
             "notebook": notebook,
         }
 
+        if note and title is None and content is None and tags is None and notebook is None:
+            content = config.EDITOR_OPEN_PARAM
+
         if title is None and note:
             result['title'] = note.title
 
@@ -595,15 +606,12 @@ class Notes(GeekNoteConnector):
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 
         request = ""
-        if search:
-            search = tools.strip(search)
-            if exact_entry or self.findExactOnUpdate:
-                search = '"%s"' % search
-
-            if content_search:
-                request += "any:%s " % search 
-            else:
-                request += "intitle:%s " % search
+        if notebooks:
+            for notebook in tools.strip(notebooks.split(',')):
+                if notebook.startswith('-'):
+                    request += '-notebook:"%s" ' % tools.strip(notebook[1:])
+                else:
+                    request += 'notebook:"%s" ' % tools.strip(notebook)
 
         if tags:
             for tag in tools.strip(tags.split(',')):
@@ -616,24 +624,24 @@ class Notes(GeekNoteConnector):
         if date:
             date = tools.strip(date.split('-'))
             try:
-                start_date =  time.strptime(date[0], "%d.%m.%Y")
-                request +='created:"%s" ' % time.strftime("%Y%m%d", start_date)
-
+                dateStruct = time.strptime(date[0]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
+                request +='created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
                 if len(date) == 2:
-                    request += '-created:"%s" ' % time.strftime("%Y%m%d", time.strptime(date[1], "%d.%m.%Y"))
-                else:
-                    request += '-created:"%s" ' % time.strftime("%Y%m%d", time.gmtime(time.mktime(start_date)+60*60*24*2))
-
+                    dateStruct = time.strptime(date[1]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
+                request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)+60*60*24))
             except ValueError, e:
                 out.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
                 return tools.exit()
 
-        if notebooks:
-            for notebook in tools.strip(notebooks.split(',')):
-                if notebook.startswith('-'):
-                    request += '-notebook:"%s" ' % tools.strip(notebook[1:])
-                else:
-                    request += 'notebook:"%s" ' % tools.strip(notebook)
+        if search:
+            search = tools.strip(search)
+            if exact_entry or self.findExactOnUpdate:
+                search = '"%s"' % search
+
+            if content_search:
+                request += "%s" % search 
+            else:
+                request += "intitle:%s" % search
 
         logging.debug("Search request: %s", request)
         return request

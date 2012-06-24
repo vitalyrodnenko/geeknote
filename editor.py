@@ -15,8 +15,8 @@ from storage import Storage
 
 
 def ENMLtoText(contentENML):
-    contentENML = contentENML.decode('utf-8')
-    content = html2text.html2text(contentENML)
+    content = html2text.html2text(contentENML.decode('utf-8'))
+    content = re.sub(r' *\n', os.linesep, content)
     return content.encode('utf-8')
 
 def wrapENML(contentHTML):
@@ -33,8 +33,10 @@ def textToENML(content):
         content = ""
     try:
         content = unicode(content,"utf-8")
-        content = re.sub(r'(\r|\n|\r\n)', r'  \1', content) # add 2 space for cteating br tags
+        # add 2 space before new line in paragraph for cteating br tags
+        content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
         contentHTML = markdown.markdown(content).encode("utf-8")
+        contentHTML = re.sub(r'\n', r'', contentHTML) # remove all new-lines characters in html
     except:
         out.failureMessage("Error. Content must be an UTF-8 encode.")
         return None
@@ -60,7 +62,7 @@ def edit(content=None):
     # Try to find default editor in the system.
     storage = Storage()
     editor = storage.getUserprop('editor')
-    print editor
+    
     if not editor:
         # If default editor is not finded, then use nano as a default.
         if sys.platform == 'win32':

@@ -82,17 +82,17 @@ class preloader(object):
 def GetUserCredentials():
     """Prompts the user for a username and password."""
     try:
-        email = None
+        login = None
         password = None
-        if email is None:
-            email = raw_input("Email: ")
+        if login is None:
+            login = raw_input("Login: ")
             
         if password is None:
-            password = getpass.getpass("Password for %s: " % email)
+            password = getpass.getpass("Password: ")
     except KeyboardInterrupt:
         tools.KeyboardInterruptSignalHendler(None, None)
 
-    return (email, password)
+    return (login, password)
 
 @preloaderStop
 def SearchResult(listItems, request):
@@ -183,13 +183,16 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
     for key, item in enumerate(listItems):
         key += 1
 
-        printLine("%s : %s" % (str(key).rjust(3, " "), item.title if hasattr(item, 'title') else item.name))
-        
+        printLine("%s : %s %s" % (
+            str(key).rjust(3, " "), 
+            item.title if hasattr(item, 'title') else item.name, 
+            '#'+printDate(item.created) if hasattr(item, 'created') else ''))
+
         if key%showByStep == 0 and key < total:
             printLine("-- More --", "\r")
             tools.getch()
             printLine(" "*12, "\r")
-        
+
     sys.stdout.flush()
 
     if showSelector:
@@ -204,6 +207,9 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
                 failureMessage('Incorrect number "%s", please try again:\n' % num)
         except KeyboardInterrupt:
             tools.KeyboardInterruptSignalHendler(None, None)
+
+def printDate(timestamp):
+    return time.strftime("%d.%m.%Y", time.localtime(timestamp/1000))
 
 def printLine(line, endLine="\n"):
     sys.stdout.write(line+endLine)

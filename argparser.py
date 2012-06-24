@@ -282,8 +282,8 @@ class argparser(object):
         else:
 
             # фильтруем аргументы которые еще не ввели
-            # if PREV_LAST_VAL in ARGS_FLAGS_LIST or LAST_VAL in ARGS_FLAGS_LIST: # self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(LAST_VAL) :
-            self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP]) 
+            if self.CMD_ARGS.has_key(PREV_LAST_VAL) or self.CMD_FLAGS.has_key(LAST_VAL) :
+                self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP]) 
 
             # автозаполнение для неполной команды
             elif not self.CMD_ARGS.has_key(PREV_LAST_VAL):
