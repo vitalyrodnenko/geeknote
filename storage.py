@@ -89,27 +89,22 @@ class Search(Base):
 
     def __repr__(self):
         return "<Search('{0}')>".format(self.timestamp)
-        
-#class Search(Base):
-#    __tablename__ = 'search'
-#
-#    id = Column(Integer, primary_key=True)
-#    uuid = Column(String(255))
-#    name = Column(String(255))
-#    stype = Column(String(255))
-#    snippet = Column(Text())
-#    timestamp = Column(DateTime(), nullable = False)
-#
-#    def __init__(self, uuid, name, stype, snippet):
-#        self.uuid = uuid
-#        self.name = name
-#        self.stype = stype
-#        self.snippet = snippet
-#        self.timestamp = datetime.datetime.now()
-#
-#    def __repr__(self):
-#        return "<Search('{0}')>".format(self.name)
-        
+
+class SyncItem(Base):
+    __tablename__ = 'sync_items'
+
+    id = Column(Integer, primary_key=True)
+    path = Column(String(1000), nullable = False)
+    file = Column(String(1000), nullable = False)
+    note_guid = Column(String(1000), nullable = False)
+
+    def __init__(self, path, file, note_guid):
+        self.path = path
+        self.file = file
+        self.note_guid = note_guid
+
+    def __repr__(self):
+        return "<SyncItem('{0} - {1}')>".format(os.path.join(self.path, self.file), self.note_guid)   
 
 class Storage(object):
     """
@@ -403,41 +398,93 @@ class Storage(object):
         """
         search = self.session.query(Search).first()
         return pickle.loads(search.search_obj)
+
+    @logging   
+    def setSyncitem(self, path, file, note_guid):
+        """
+        Set sync item. Sync item must have path, file, and note_guid
+        return True if all done
+        return False if something wrong
+        """
+        instance = self.session.query(SyncItem).filter_by(path=path, file=file).first()
+        if instance:
+            instance.note_guid = note_guid
+        else:
+            instance = SyncItem(path, file, note_guid)
+            self.session.add(instance)
+        
+        self.session.commit()
+        return True
     
-    #@logging 
-    #def setSearch(self, searching):
-    #    """
-    #    Set searching. Searching must be an instanse of list of dicts
-    #    Previous searching items will be removed
-    #    return True if all done
-    #    return False if something wrong
-    #    """
-    #    if not isinstance(searching, list):
-    #        raise Exception("Wrong searching")
-    #        
-    #    for item in self.session.query(Search).all():
-    #        self.session.delete(item)
-    #    
-    #    for item in searching:
-    #        if not item['uuid'] or not item['name'] or not item['stype'] or not item['snippet']:
-    #            raise Exception("Wrong searching item")
-    #            
-    #        instance = Search(item['uuid'], item['name'], item['stype'], item['snippet'])
-    #        self.session.add(instance)
-    #    
-    #    self.session.commit()
-    #    return True
-    #
-    #@logging   
-    #def getSearch(self):
-    #    """
-    #    Get last searching
-    #    return list of dicts of last searching if all done
-    #    return [] there are not any searching yet
-    #    return False if something wrong
-    #    """
-    #    searching = self.session.query(Search).all()
-    #    return [
-    #        {'uuid': item.uuid, 'name': item.name, 'stype': item.stype, 'snippet': item.snippet}
-    #        for item in searching]
+    @logging   
+    def getSyncitem(self, path, file):
+        """
+        Get sync item by path, file
+        return note_guid
+        return None if there is not guid path, file
+        return False if something wrong
+        """
+        instance = self.session.query(SyncItem).filter_by(path=path, file=file).first()
+        if instance:
+            return instance.note_guid
+        else:
+            return None
+
+    @logging   
+    def getSyncitems(self, path):
+        """
+        Get all sync items
+        return list of sync items if all done
+        return [] there are not any sync item yet
+        return False if something wrong
+        """
+        items = self.session.query(SyncItem).filter_by(path=path)
+        result = {}
+        for item in items:
+            key = os.path.join(item.path, item.file)
+            result[key] = item.note_guid
+        return result
+
+    @logging   
+    def getAllSyncitems(self):
+        """
+        Get all sync items
+        return list of sync items if all done
+        return [] there are not any sync item yet
+        return False if something wrong
+        """
+        items = self.session.query(SyncItem).all()
+        result = {}
+        for item in items:
+            key = os.path.join(item.path, item.file)
+            result[key] = item.note_guid
+        return result
+
+    @logging  
+    def removeSyncitem(self, path, file):
+        """
+        Remove sync item.
+        return True if all done
+        return False if something wrong
+        """
+        instance = self.session.query(SyncItem).filter_by(path=path, file=file).first()
+        if instance:
+            self.session.delete(instance)
+            return True
+        else:
+            raise Exception("File path '{0}' does not exist in data base.".format(os.path.join(item.path, item.file)))
+
+    @logging  
+    def removeSyncitemByGuid(self, note_guid):
+        """
+        Remove sync item.
+        return True if all done
+        return False if something wrong
+        """
+        instance = self.session.query(SyncItem).filter_by(note_guid=guid).first()
+        if instance:
+            self.session.delete(instance)
+            return True
+        else:
+            raise Exception("Note guid '{0}' does not exist in data base.".format(note_guid))
     
