@@ -97,7 +97,7 @@ class GNSync:
         logger.info('Sync Start')
          
         #set notebook
-        self.notebook_guid, self.notebook_name = self._get_notebook(notebook_name)
+        self.notebook_guid, self.notebook_name = self._get_notebook(notebook_name, path)
         
         # all is Ok
         self.all_set = True
@@ -186,34 +186,32 @@ class GNSync:
         return content
     
     @log  
-    def _get_notebook(self, notebook_name):
+    def _get_notebook(self, notebook_name, path):
         """
         Get notebook guid and name. Takes default notebook if notebook's name does not
         select.
         """
         notebooks = GeekNote().findNotebooks()
+
+        if not notebook_name:
+            notebook_name = os.path.basename(os.path.realpath(path))
         
-        if notebook_name:
-            notebook = [item for item in notebooks if item.name == notebook_name]
-            guid = None
-            if notebook:
-                guid = notebook[0].guid
+        notebook = [item for item in notebooks if item.name == notebook_name]
+        guid = None
+        if notebook:
+            guid = notebook[0].guid
+        
+        if not guid:
+            notebook = GeekNote().createNotebook(notebook_name)
             
-            if not guid:
-                notebook = GeekNote().createNotebook(notebook_name)
+            if(notebook):
+                logger.info('Notebook "{0}" was created'.format(notebook_name))
+            else:
+                raise Exception('Notebook "{0}" was not created'.format(notebook_name))
                 
-                if(notebook):
-                    logger.info('Notebook "{0}" was created'.format(notebook_name))
-                else:
-                    raise Exception('Notebook "{0}" was not created'.format(notebook_name))
-                    
-                guid = notebook.guid
-                
-            return (guid, notebook_name)
-        else:
-            for nb in notebooks:
-                if nb.defaultNotebook:
-                    return (nb.guid, nb.name)
+            guid = notebook.guid
+            
+        return (guid, notebook_name)
     
     @log             
     def _get_files(self):
