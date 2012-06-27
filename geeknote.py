@@ -42,6 +42,7 @@ from log import logging
 
 
 
+# decorator to disable evernote connection on create instance of GeekNote
 def GeekNoneDBConnectOnly(func):
     def wrapper(*args, **kwargs):
         GeekNote.skipInitConnection = True
@@ -83,6 +84,8 @@ class GeekNote(object):
                 logging.error("Error: %s : %s", func.__name__, str(e))
 
                 errorCode = int(e.errorCode)
+
+                # auth-token error, re-auth
                 if errorCode == 9:
                     storage = Storage()
                     storage.removeUser()
@@ -417,7 +420,6 @@ class Notebooks(GeekNoteConnector):
 
         if notebook:
             notebook = notebook[0]
-
         else:
             notebook = out.SelectSearchResult(result)
 
@@ -509,6 +511,7 @@ class Notes(GeekNoteConnector):
             "notebook": notebook,
         }
 
+        # if get note without params
         if note and title is None and content is None and tags is None and notebook is None:
             content = config.EDITOR_OPEN_PARAM
 
@@ -668,66 +671,71 @@ def modifyArgsByStdinStream():
 
 
 def main():
-    # if terminal
-    if sys.stdin.isatty():
-        sys_argv = sys.argv[1:]
-        COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
+    try:
+        # if terminal
+        if sys.stdin.isatty():
+            sys_argv = sys.argv[1:]
+            COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
 
-        aparser = argparser(sys_argv)
-        ARGS = aparser.parse()
+            aparser = argparser(sys_argv)
+            ARGS = aparser.parse()
 
-    # if input stream
-    else:
-        COMMAND, ARGS = modifyArgsByStdinStream()
+        # if input stream
+        else:
+            COMMAND, ARGS = modifyArgsByStdinStream()
 
-    # error or help
-    if COMMAND is None or ARGS is False:
-        return tools.exit()
+        # error or help
+        if COMMAND is None or ARGS is False:
+            return tools.exit()
 
-    logging.debug("CLI options: %s", str(ARGS))
+        logging.debug("CLI options: %s", str(ARGS))
 
-    # Users
-    if COMMAND == 'user':
-        User().user(**ARGS)
+        # Users
+        if COMMAND == 'user':
+            User().user(**ARGS)
 
-    if COMMAND == 'login':
-        User().login(**ARGS)
+        if COMMAND == 'login':
+            User().login(**ARGS)
 
-    if COMMAND == 'logout':
-        User().logout(**ARGS)
+        if COMMAND == 'logout':
+            User().logout(**ARGS)
 
-    if COMMAND == 'settings':
-        User().settings(**ARGS)
+        if COMMAND == 'settings':
+            User().settings(**ARGS)
 
-    # Notes
-    if COMMAND == 'create':
-        Notes().create(**ARGS)
+        # Notes
+        if COMMAND == 'create':
+            Notes().create(**ARGS)
 
-    if COMMAND == 'edit':
-        Notes().edit(**ARGS)
+        if COMMAND == 'edit':
+            Notes().edit(**ARGS)
 
-    if COMMAND == 'remove':
-        Notes().remove(**ARGS)
+        if COMMAND == 'remove':
+            Notes().remove(**ARGS)
 
-    if COMMAND == 'show':
-        Notes().show(**ARGS)
+        if COMMAND == 'show':
+            Notes().show(**ARGS)
 
-    if COMMAND == 'find':
-        Notes().find(**ARGS)
+        if COMMAND == 'find':
+            Notes().find(**ARGS)
 
-    # Notebooks
-    if COMMAND == 'notebook-list':
-        Notebooks().list(**ARGS)
+        # Notebooks
+        if COMMAND == 'notebook-list':
+            Notebooks().list(**ARGS)
 
-    if COMMAND == 'notebook-create':
-        Notebooks().create(**ARGS)
+        if COMMAND == 'notebook-create':
+            Notebooks().create(**ARGS)
 
-    if COMMAND == 'notebook-edit':
-        Notebooks().edit(**ARGS)
+        if COMMAND == 'notebook-edit':
+            Notebooks().edit(**ARGS)
 
-    if COMMAND == 'notebook-remove':
-        Notebooks().remove(**ARGS)
+        if COMMAND == 'notebook-remove':
+            Notebooks().remove(**ARGS)
+
+    except (KeyboardInterrupt, SystemExit, tools.ExitException):
+        return
+    except:
+        return
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, tools.KeyboardInterruptSignalHendler)
     main()

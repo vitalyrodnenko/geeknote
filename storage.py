@@ -89,27 +89,6 @@ class Search(Base):
 
     def __repr__(self):
         return "<Search('{0}')>".format(self.timestamp)
-        
-#class Search(Base):
-#    __tablename__ = 'search'
-#
-#    id = Column(Integer, primary_key=True)
-#    uuid = Column(String(255))
-#    name = Column(String(255))
-#    stype = Column(String(255))
-#    snippet = Column(Text())
-#    timestamp = Column(DateTime(), nullable = False)
-#
-#    def __init__(self, uuid, name, stype, snippet):
-#        self.uuid = uuid
-#        self.name = name
-#        self.stype = stype
-#        self.snippet = snippet
-#        self.timestamp = datetime.datetime.now()
-#
-#    def __repr__(self):
-#        return "<Search('{0}')>".format(self.name)
-        
 
 class Storage(object):
     """
@@ -403,41 +382,3 @@ class Storage(object):
         """
         search = self.session.query(Search).first()
         return pickle.loads(search.search_obj)
-    
-    #@logging 
-    #def setSearch(self, searching):
-    #    """
-    #    Set searching. Searching must be an instanse of list of dicts
-    #    Previous searching items will be removed
-    #    return True if all done
-    #    return False if something wrong
-    #    """
-    #    if not isinstance(searching, list):
-    #        raise Exception("Wrong searching")
-    #        
-    #    for item in self.session.query(Search).all():
-    #        self.session.delete(item)
-    #    
-    #    for item in searching:
-    #        if not item['uuid'] or not item['name'] or not item['stype'] or not item['snippet']:
-    #            raise Exception("Wrong searching item")
-    #            
-    #        instance = Search(item['uuid'], item['name'], item['stype'], item['snippet'])
-    #        self.session.add(instance)
-    #    
-    #    self.session.commit()
-    #    return True
-    #
-    #@logging   
-    #def getSearch(self):
-    #    """
-    #    Get last searching
-    #    return list of dicts of last searching if all done
-    #    return [] there are not any searching yet
-    #    return False if something wrong
-    #    """
-    #    searching = self.session.query(Search).all()
-    #    return [
-    #        {'uuid': item.uuid, 'name': item.name, 'stype': item.stype, 'snippet': item.snippet}
-    #        for item in searching]
-    

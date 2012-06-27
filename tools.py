@@ -45,8 +45,11 @@ def strip(data):
     
     raise Exception("Unexpected args type: %s. Expect list or dict" % type(data))
 
-def exit():
-    sys.exit(1)
+class ExitException(Exception):
+    pass
+
+def exit(message='exit'):
+    raise ExitException(message)
 
 def KeyboardInterruptSignalHendler(signal, frame):
     out.printLine("\nYou pressed Ctrl+C!")

@@ -3,9 +3,10 @@
 import os
 
 # Evernote config
-# !!! DO NOT EDIT !!!
+# !!! DO NOT EDIT !!! >>>
 CONSUMER_KEY = "skaizer-1250"
 CONSUMER_SECRET = "ed0fcc0c97c032a5"
+# !!! DO NOT EDIT !!! <<<
 
 # Application path 
 APP_DIR = os.path.join(os.getenv("USERPROFILE") or os.getenv("HOME"),  ".geeknote")
