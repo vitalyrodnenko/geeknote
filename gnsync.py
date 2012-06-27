@@ -112,42 +112,21 @@ class GNSync:
         
         files =  self._get_files()
         notes = self._get_notes()
-        dir_notes = Storage().getSyncitems(self.path)
-
-        self._clean_db_notes(notes)
-
-        # print(notes)
-        # print("\n")
-        # print(files)
 
         for f in files:
             has_note = False
-            # print(os.path.join(self.path, f["name"]))
-            # print(dir_notes)
-            if os.path.join(self.path, f["name"]) in dir_notes.keys():
-                for n in notes:
-                    if f['name'] == n.title:
-                        has_note = True
-                        if f['mtime'] > n.updated:
-                            self._update_note(f, n)
-                            break
+            for n in notes:
+                if f['name'] == n.title:
+                    has_note = True
+                    if f['mtime'] > n.updated:
+                        self._update_note(f, n)
+                        break
                     
             if not has_note :
                 self._create_note(f)
                 
         logger.info('Sync Complite')
     
-    @log
-    def _clean_db_notes(self, notes):
-        """
-        Clean already deleted note's guid from data base
-        """
-        dir_notes = Storage().getSyncitems(self.path)
-
-        for note in notes:
-            if note.guid not in dir_notes.values():
-                Storage().removeSyncitemByGuid(note.guid)
-
     @log
     def _update_note(self, file_note, note):
         """
@@ -186,7 +165,6 @@ class GNSync:
             notebook=self.notebook_guid)
         
         if result:
-            Storage().setSyncitem(self.path, file_note['name'], result.guid)
             logger.info('Note "{0}" was created'.format(file_note['name']))
         else:
             raise Exception('Note "{0}" was not created'.format(file_note['name']))

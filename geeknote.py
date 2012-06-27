@@ -200,7 +200,8 @@ class GeekNote(object):
         logging.debug("New note : %s", note)
 
         try: 
-            return self.getNoteStore().createNote(self.authToken, note)
+            self.getNoteStore().createNote(self.authToken, note)
+            return True
         except Exception, e:
             logging.error("Error: %s", str(e))
             return False
