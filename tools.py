@@ -3,6 +3,7 @@
 import out
 from log import logging
 import sys
+import shlex
 
 def checkIsInt(value):
     try: 
@@ -49,6 +50,7 @@ class ExitException(Exception):
     pass
 
 def exit(message='exit'):
+    out.preloader.exit()
     raise ExitException(message)
 
 def KeyboardInterruptSignalHendler(signal, frame):
@@ -58,3 +60,20 @@ def KeyboardInterruptSignalHendler(signal, frame):
 class Struct:
     def __init__(self, **entries): 
         self.__dict__.update(entries)
+
+def decodeArgs(args):
+    args_string = ' '.join(args)
+    args_string = stdinEncode(args_string)
+    return shlex.split(args_string)
+
+def stdoutEncode(data):
+    try:
+        return data.decode("utf8").encode(sys.stdout.encoding)
+    except:
+        return data
+
+def stdinEncode(data):
+    try:
+        return data.decode(sys.stdin.encoding).encode("utf8")
+    except:
+        return data

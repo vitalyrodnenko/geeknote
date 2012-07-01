@@ -15,8 +15,11 @@ import config
 
 class GeekNoteAuth(object):
 
+    consumerKey = config.CONSUMER_KEY
+    consumerSecret = config.CONSUMER_SECRET
+
     url = {
-        "base"  : None,
+        "base"  : "www.evernote.com",
         "oauth" : "/OAuth.action?oauth_token=%s",
         "access": "/OAuth.action",
         "token" : "/oauth",
@@ -50,13 +53,13 @@ class GeekNoteAuth(object):
     def __init__(self):
         if config.DEV_MODE:
             self.url['base'] = "sandbox.evernote.com"
-        else:
-            self.url['base'] = "evernote.com"
+            self.consumerKey = config.CONSUMER_KEY_SANDBOX
+            self.consumerSecret = config.CONSUMER_SECRET_SANDBOX
 
     def getTokenRequestData(self, **kwargs):
         params = {
-            'oauth_consumer_key': config.CONSUMER_KEY,
-            'oauth_signature': config.CONSUMER_SECRET+'%26',
+            'oauth_consumer_key': self.consumerKey,
+            'oauth_signature': self.consumerSecret+'%26',
             'oauth_signature_method': 'PLAINTEXT',
             'oauth_timestamp': str(int(time.time())),
             'oauth_nonce': uuid.uuid4().hex
@@ -119,7 +122,6 @@ class GeekNoteAuth(object):
         out.preloader.setMessage('Authorize...')
         self.getTmpOAuthToken()
 
-        #out.preloader.setMessage('Authorize...')
         self.login()
 
         out.preloader.setMessage('Allow Access...')
@@ -171,6 +173,10 @@ class GeekNoteAuth(object):
 
         if not response.location and response.status == 200:
             if self.incorrectLogin < 3:
+                out.preloader.stop()
+                out.printLine('Sorry, incorrect login or password')
+                out.preloader.setMessage('Authorize...')
+                self.incorrectLogin += 1
                 return self.login()
             else:
                 logging.error("Incorrect login or password")

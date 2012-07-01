@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-
 import tempfile
-import html2text
-import markdown
+import lib.html2text as html2text
+import lib.markdown as markdown
 import tools
 import out
 import sys
@@ -12,6 +11,7 @@ import os
 import re
 import config
 from storage import Storage
+from log import logging
 
 
 def ENMLtoText(contentENML):
@@ -78,8 +78,11 @@ def edit(content=None):
         editor = os.environ.get("EDITOR")
 
     # Make a system call to open file for editing.
-    os.system(editor + " " + tmpFileName)
+    logging.debug("launch system editor: %s %s" % (editor, tmpFileName))
 
+    out.preloader.stop()
+    os.system(editor + " " + tmpFileName)
+    out.preloader.launch()
     newContent =  open(tmpFileName, 'r').read()
 
     return newContent

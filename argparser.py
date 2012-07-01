@@ -179,11 +179,8 @@ class argparser(object):
         if self.COMMANDS[self.CMD].has_key('firstArg'):
             firstArg = self.COMMANDS[self.CMD]['firstArg']
             if len(self.INP) > 0:
-                # смотрим что первое знаение не аршумент по умолчанию, а другой аргумент
-                if self.INP[0] != firstArg and self.INP[0] in (self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()):
-                    self.printErrorReqArgument(firstArg)
-                    return False
-                elif self.INP[0] != firstArg:
+                # смотрим что первое знаение не аргумент по умолчанию, а другой аргумент
+                if self.INP[0] not in (self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()):
                     self.INP = [firstArg, ] + self.INP
             else:
                 self.INP = [firstArg, ]
@@ -306,7 +303,7 @@ class argparser(object):
 
     def printErrorArgument(self, errorArg, errorVal=None):
         if errorVal is None:
-            out.printLine('Unexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
+            out.printLine('абвUnexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
         else:
             out.printLine('Unexpected value "%s" for argument "%s"' % (errorVal, errorArg))
         self.printHelp()

@@ -7,39 +7,29 @@ sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
 import config
 
-try:
-    if not os.path.exists(config.APP_DIR):
-        os.mkdir(config.APP_DIR)
-except Exception, e:
-    logging.error("Can not create application dirictory.")
-    tools.exit()
-
 import hashlib
 import binascii
 import time
 from datetime import datetime
-import thrift.protocol.TBinaryProtocol as TBinaryProtocol
-import thrift.transport.THttpClient as THttpClient
-import evernote.edam.userstore.UserStore as UserStore
-import evernote.edam.userstore.constants as UserStoreConstants
-import evernote.edam.notestore.NoteStore as NoteStore
-import evernote.edam.type.ttypes as Types
-import evernote.edam.error.ttypes as Errors
-import argparse
+import lib.thrift.protocol.TBinaryProtocol as TBinaryProtocol
+import lib.thrift.transport.THttpClient as THttpClient
+import lib.evernote.edam.userstore.UserStore as UserStore
+import lib.evernote.edam.userstore.constants as UserStoreConstants
+import lib.evernote.edam.notestore.NoteStore as NoteStore
+import lib.evernote.edam.type.ttypes as Types
+import lib.evernote.edam.error.ttypes as Errors
+
 import locale
 import time
 import signal
 
 import out
-
 from argparser import argparser
 from oauth import GeekNoteAuth
 from storage import Storage
 import editor
 import tools
 from log import logging
-
-
 
 
 # decorator to disable evernote connection on create instance of GeekNote
@@ -53,18 +43,21 @@ class GeekNote(object):
 
     consumerKey = config.CONSUMER_KEY
     consumerSecret = config.CONSUMER_SECRET
-    userStoreUri = None
+    userStoreUri = "https://evernote.com/edam/user"
     authToken = None
     userStore = None
     noteStore = None
     storage = None
     skipInitConnection = False
 
-    def __init__(self):
+    def __init__(self, skipInitConnection=False):
+        if skipInitConnection:
+            self.skipInitConnection = True
+
         if config.DEV_MODE:
             self.userStoreUri = "https://sandbox.evernote.com/edam/user"
-        else:
-            self.userStoreUri = "https://evernote.com/edam/user"
+            self.consumerKey = config.CONSUMER_KEY_SANDBOX
+            self.consumerSecret = config.CONSUMER_SECRET_SANDBOX
 
         self.getStorage()
 
@@ -150,7 +143,7 @@ class GeekNote(object):
         GNA = GeekNoteAuth()
         self.authToken = GNA.getToken()
         userInfo = self.getUserInfo()
-        if not isinstance(userInfo, Types.User):
+        if not isinstance(userInfo, object):
             logging.error("User info not get")
             return False
 
@@ -180,8 +173,8 @@ class GeekNote(object):
     @EdamException
     def loadNoteContent(self, note):
         """ modify Note object """
-        if not isinstance(note, Types.Note):
-            raise Exception("Note content must be an instanse of Note, '%s' given." % type(content))
+        if not isinstance(note, object):
+            raise Exception("Note content must be an instanse of Note, '%s' given." % type(note))
 
         note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
 
@@ -326,6 +319,7 @@ class User(GeekNoteConnector):
             info = self.getStorage().getUserInfo()
         out.showUser(info, full)
 
+    @GeekNoneDBConnectOnly
     def login(self):
         if self.getEvernote().checkAuth():
             out.successMessage("You already logged in")
@@ -510,16 +504,17 @@ class Notes(GeekNoteConnector):
             "tags": tags,
             "notebook": notebook,
         }
+        result = tools.strip(result)
 
         # if get note without params
         if note and title is None and content is None and tags is None and notebook is None:
-            content = config.EDITOR_OPEN_PARAM
+            content = config.EDITOR_OPEN
 
         if title is None and note:
             result['title'] = note.title
 
         if content:
-            if content == config.EDITOR_OPEN_PARAM:
+            if content == config.EDITOR_OPEN:
                 logging.debug("launch system editor")
                 if note:
                     self.getEvernote().loadNoteContent(note)
@@ -652,16 +647,13 @@ class Notes(GeekNoteConnector):
 # парсинг входного потока и подстановка аргументов
 def modifyArgsByStdinStream():
     content = sys.stdin.read()
+    content = tools.stdinEncode(content)
     content = editor.ENMLtoText(content)
 
     if not content:
         out.failureMessage("Input stream is empty")
         return (None, False)
-    """
-    if COMMAND in ('create', 'edit') and isinstance(ARGS, dict):
-        ARGS['content'] = content
-        return (COMMAND, ARGS)
-    """
+
     ARGS = {
         'title': ' '.join(content.split(' ', 5)[:-1]),
         'content': content
@@ -669,12 +661,16 @@ def modifyArgsByStdinStream():
 
     return ('create', ARGS)
 
-
-def main():
+def main(args=None):
     try:
         # if terminal
         if sys.stdin.isatty():
             sys_argv = sys.argv[1:]
+            if isinstance(args, list):
+                sys_argv = args
+
+            sys_argv = tools.decodeArgs(sys_argv)
+
             COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
 
             aparser = argparser(sys_argv)
@@ -733,9 +729,13 @@ def main():
             Notebooks().remove(**ARGS)
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
-        return
-    except:
-        return
+        pass
+
+    except Exception, e:
+        logging.error("App error: %s", str(e))
+
+    # перывание для preloader'а
+    tools.exit()
 
 if __name__ == "__main__":
     main()

@@ -18,7 +18,7 @@ def preloaderPause(fn, *args, **kwargs):
         preloader.launch()
 
         return result
-    
+
     return wrapped
 
 def preloaderStop(fn, *args, **kwargs):
@@ -30,7 +30,7 @@ def preloaderStop(fn, *args, **kwargs):
         preloader.stop()
         result = fn(*args, **kwargs)
         return result
-    
+
     return wrapped
 
 
@@ -62,18 +62,21 @@ class preloader(object):
         preloader.isLaunch = False
 
     @staticmethod
+    def exit():
+        preloader.stop()
+        thread.exit()
+
+    @staticmethod
     def draw():
         if not preloader.isLaunch:
             return
 
         printLine(preloader.clearLine, "")
         if preloader.counter == -1:
-            sys.stdout.flush()
             return
 
         preloader.counter += 1
         printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
-        sys.stdout.flush()
 
         time.sleep(0.3)
         preloader.draw()
@@ -85,10 +88,10 @@ def GetUserCredentials():
         login = None
         password = None
         if login is None:
-            login = raw_input("Login: ")
+            login = rawInput("Login: ")
             
         if password is None:
-            password = getpass.getpass("Password: ")
+            password = rawInput("Password: ")
     except KeyboardInterrupt:
         tools.KeyboardInterruptSignalHendler(None, None)
 
@@ -110,10 +113,9 @@ def SelectSearchResult(listItems):
 @preloaderStop
 def confirm(message):
     printLine(message)
-    sys.stdout.flush()
     try:
         while True:
-            answer = raw_input("Yes/No: ")
+            answer = rawInput("Yes/No: ")
             if answer.lower() in ["yes", "ye", "y"]:
                 return True
             if answer.lower() in ["no", "n"]:
@@ -132,7 +134,6 @@ def showNote(note):
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
     printLine(editor.ENMLtoText(note.content))
-    sys.stdout.flush()
 
 @preloaderStop
 def showUser(user, fullInfo):
@@ -148,20 +149,17 @@ def showUser(user, fullInfo):
     if fullInfo:
         line('Upload limit', "%.2f" % (int(user.accounting.uploadLimit) / 1024 / 1024))
         line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000 )) )
-    sys.stdout.flush()
 
 
 @preloaderStop
 def successMessage(message):
     """ Вывод сообщения """
     printLine(message, "\n")
-    sys.stdout.flush()
 
 @preloaderStop
 def failureMessage(message):
     """ Вывод сообщения """
     printLine(message, "\n")
-    sys.stdout.flush()
 
 def separator(symbol="", title=""):
     size = 40
@@ -183,23 +181,21 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
     for key, item in enumerate(listItems):
         key += 1
 
-        printLine("%s : %s %s" % (
-            str(key).rjust(3, " "), 
-            item.title if hasattr(item, 'title') else item.name, 
-            '#'+printDate(item.created) if hasattr(item, 'created') else ''))
+        printLine("%s : %s%s" % (
+            str(key).rjust(3, " "),
+            printDate(item.created).ljust(12, " ") if hasattr(item, 'created') else '',
+            item.title if hasattr(item, 'title') else item.name))
 
         if key%showByStep == 0 and key < total:
             printLine("-- More --", "\r")
             tools.getch()
             printLine(" "*12, "\r")
 
-    sys.stdout.flush()
-
     if showSelector:
         printLine("  0 : -Cancel-")
         try:
             while True:
-                num = raw_input(": ")
+                num = rawInput(": ")
                 if tools.checkIsInt(num) and  1 <= int(num) <= total:
                     return listItems[int(num)-1]
                 if num == '0':
@@ -208,11 +204,24 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
         except KeyboardInterrupt:
             tools.KeyboardInterruptSignalHendler(None, None)
 
+def rawInput(message, isPass=False):
+    if isPass:
+        data = getpass.getpass(message)
+    else:
+        data = raw_input(message)
+    return tools.stdinEncode(data)
+    
+
 def printDate(timestamp):
     return time.strftime("%d.%m.%Y", time.localtime(timestamp/1000))
 
 def printLine(line, endLine="\n"):
-    sys.stdout.write(line+endLine)
+    message = line+endLine
+    message = tools.stdoutEncode(message)
+    try:
+        sys.stdout.write(message)
+    except :
+        pass
 
 def printAbout():
     printLine('About geeknote')
