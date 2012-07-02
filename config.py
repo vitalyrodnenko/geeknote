@@ -27,7 +27,7 @@ DEF_UNIX_EDITOR = "nano"
 DEF_WIN_EDITOR = "notepad.exe"
 EDITOR_OPEN = "WRITE"
 
-DEV_MODE = True
+DEV_MODE = False
 DEBUG = False
 
 # Url view the note

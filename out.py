@@ -130,10 +130,11 @@ def confirm(message):
 
 @preloaderStop
 def showNote(note):
-
     separator("#", "TITLE")
     printLine(note.title)
-    separator("=", "CONTENT")
+    separator("=", "META")
+    printLine("Created: "+printDate(note.created).ljust(15, " ")+"Updated: "+printDate(note.updated).ljust(15, " "))
+    separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
@@ -169,7 +170,7 @@ def separator(symbol="", title=""):
     size = 40
     if title:
         sw = (size - len(title) + 2) / 2
-        printLine("%s %s %s" % (symbol*sw, title, symbol*sw))
+        printLine("%s %s %s" % (symbol*sw, title, symbol*(sw-(len(title)+1)%2)))
 
     else:
         printLine(symbol*size+"\n")
