@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-
 import tempfile
-import html2text
-import markdown
+import lib.html2text as html2text
+import lib.markdown as markdown
 import tools
 import out
 import sys
@@ -12,6 +11,7 @@ import os
 import re
 import config
 from storage import Storage
+from log import logging
 
 
 def ENMLtoText(contentENML):
@@ -38,11 +38,11 @@ def textToENML(content):
         contentHTML = markdown.markdown(content).encode("utf-8")
         # remove all new-lines characters in html
         contentHTML = re.sub(r'\n', r'', contentHTML)
+        return wrapENML(contentHTML)
     except:
-        out.failureMessage("Error. Content must be an UTF-8 encode.")
-        return None
-
-    return wrapENML(contentHTML)
+        logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
+        out.failureMessage("Error while parsing text to html. Content must be an UTF-8 encode.")
+        return tools.exit()
 
 def edit(content=None):
     """
@@ -78,8 +78,11 @@ def edit(content=None):
         editor = os.environ.get("EDITOR")
 
     # Make a system call to open file for editing.
-    os.system(editor + " " + tmpFileName)
+    logging.debug("launch system editor: %s %s" % (editor, tmpFileName))
 
+    out.preloader.stop()
+    os.system(editor + " " + tmpFileName)
+    out.preloader.launch()
     newContent =  open(tmpFileName, 'r').read()
 
     return newContent

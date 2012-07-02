@@ -263,7 +263,10 @@ def main():
         
         GNS = GNSync(notebook, path, mask, format)
         GNS.sync()
-        
+
+    except (KeyboardInterrupt, SystemExit, tools.ExitException):
+        pass
+
     except Exception, e:
         logger.error(str(e));
 
