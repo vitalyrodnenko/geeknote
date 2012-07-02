@@ -62,7 +62,7 @@ class preloader(object):
         if not config.IS_OUT_TERMINAL:
             return
         preloader.counter = -1
-        preloader.draw()
+        printLine(preloader.clearLine, "")
         preloader.isLaunch = False
 
     @staticmethod
@@ -72,18 +72,19 @@ class preloader(object):
 
     @staticmethod
     def draw():
-        if not preloader.isLaunch:
-            return
+        try:
+            if not preloader.isLaunch:
+                return
 
-        printLine(preloader.clearLine, "")
-        if preloader.counter == -1:
-            return
+            while preloader.counter >= 0:
+                printLine(preloader.clearLine, "")
+                preloader.counter += 1
+                printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
 
-        preloader.counter += 1
-        printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
-
-        time.sleep(0.3)
-        preloader.draw()
+                time.sleep(0.3)
+                raise 
+        except:
+            pass
 
 @preloaderPause
 def GetUserCredentials():
@@ -93,11 +94,11 @@ def GetUserCredentials():
         password = None
         if login is None:
             login = rawInput("Login: ")
-            
+
         if password is None:
             password = rawInput("Password: ", True)
-    except KeyboardInterrupt:
-        tools.KeyboardInterruptSignalHendler(None, None)
+    except (KeyboardInterrupt, SystemExit):
+        tools.exit()
 
     return (login, password)
 
@@ -125,15 +126,16 @@ def confirm(message):
             if answer.lower() in ["no", "n"]:
                 return False
             failureMessage('Incorrect answer "%s", please try again:\n' % answer)
-    except KeyboardInterrupt:
-        tools.KeyboardInterruptSignalHendler(None, None)
+    except (KeyboardInterrupt, SystemExit):
+        tools.exit()
 
 @preloaderStop
 def showNote(note):
-
     separator("#", "TITLE")
     printLine(note.title)
-    separator("=", "CONTENT")
+    separator("=", "META")
+    printLine("Created: "+printDate(note.created).ljust(15, " ")+"Updated: "+printDate(note.updated).ljust(15, " "))
+    separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
@@ -169,7 +171,7 @@ def separator(symbol="", title=""):
     size = 40
     if title:
         sw = (size - len(title) + 2) / 2
-        printLine("%s %s %s" % (symbol*sw, title, symbol*sw))
+        printLine("%s %s %s" % (symbol*sw, title, symbol*(sw-(len(title)+1)%2)))
 
     else:
         printLine(symbol*size+"\n")
@@ -209,8 +211,8 @@ def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=Fa
                 if num == '0':
                     exit(1)
                 failureMessage('Incorrect number "%s", please try again:\n' % num)
-        except KeyboardInterrupt:
-            tools.KeyboardInterruptSignalHendler(None, None)
+        except (KeyboardInterrupt, SystemExit):
+            tools.exit()
 
 def rawInput(message, isPass=False):
     if isPass:

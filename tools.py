@@ -4,6 +4,7 @@ import out
 from log import logging
 import sys
 import shlex
+import time
 
 def checkIsInt(value):
     try: 
@@ -51,10 +52,10 @@ class ExitException(Exception):
 
 def exit(message='exit'):
     out.preloader.exit()
+    time.sleep(0.33)
     raise ExitException(message)
 
 def KeyboardInterruptSignalHendler(signal, frame):
-    out.printLine("\nYou pressed Ctrl+C!")
     exit()
 
 class Struct:

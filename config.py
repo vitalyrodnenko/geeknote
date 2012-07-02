@@ -6,8 +6,8 @@ import os, sys
 # !!! DO NOT EDIT !!! >>>
 USER_BASE_URL = "www.evernote.com"
 USER_STORE_URI = "https://www.evernote.com/edam/user"
-CONSUMER_KEY = "skaizer-1250"
-CONSUMER_SECRET = "ed0fcc0c97c032a5"
+CONSUMER_KEY = "skaizer-5314"
+CONSUMER_SECRET = "6f4f9183b3120801"
 
 USER_BASE_URL_SANDBOX = "sandbox.evernote.com"
 USER_STORE_URI_SANDBOX = "https://sandbox.evernote.com/edam/user"
@@ -27,7 +27,7 @@ DEF_UNIX_EDITOR = "nano"
 DEF_WIN_EDITOR = "notepad.exe"
 EDITOR_OPEN = "WRITE"
 
-DEV_MODE = True
+DEV_MODE = False
 DEBUG = False
 
 # Url view the note
