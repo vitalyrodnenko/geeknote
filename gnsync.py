@@ -177,7 +177,7 @@ class GNSync:
         Get file content.
         """
         content = open(path, "r").read()
-        content = editor.textToENML(content)
+        content = editor.textToENML(content=content, raise_ex=True)
         
         if content is None:
             logger.warning("File {0}. Content must be an UTF-8 encode.".format(path))

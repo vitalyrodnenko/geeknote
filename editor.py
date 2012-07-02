@@ -25,7 +25,7 @@ def wrapENML(contentHTML):
     body += '<en-note>%s</en-note>' % contentHTML
     return body
 
-def textToENML(content):
+def textToENML(content, raise_ex=False):
     """
     Create an ENML format of note.
     """
@@ -40,6 +40,9 @@ def textToENML(content):
         contentHTML = re.sub(r'\n', r'', contentHTML)
         return wrapENML(contentHTML)
     except:
+        if raise_ex:
+            raise Exception("Error while parsing text to html. Content must be an UTF-8 encode.")
+            
         logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
         out.failureMessage("Error while parsing text to html. Content must be an UTF-8 encode.")
         return tools.exit()
