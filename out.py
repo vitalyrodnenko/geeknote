@@ -62,7 +62,7 @@ class preloader(object):
         if not config.IS_OUT_TERMINAL:
             return
         preloader.counter = -1
-        preloader.draw()
+        printLine(preloader.clearLine, "")
         preloader.isLaunch = False
 
     @staticmethod
@@ -72,18 +72,18 @@ class preloader(object):
 
     @staticmethod
     def draw():
-        if not preloader.isLaunch:
-            return
+        try:
+            if not preloader.isLaunch:
+                return
 
-        printLine(preloader.clearLine, "")
-        if preloader.counter == -1:
-            return
+            while preloader.counter >= 0:
+                printLine(preloader.clearLine, "")
+                preloader.counter += 1
+                printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
 
-        preloader.counter += 1
-        printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
-
-        time.sleep(0.3)
-        preloader.draw()
+                time.sleep(0.3)
+        except (KeyboardInterrupt, SystemExit, tools.ExitException):
+            pass
 
 @preloaderPause
 def GetUserCredentials():
@@ -97,7 +97,7 @@ def GetUserCredentials():
         if password is None:
             password = rawInput("Password: ", True)
     except KeyboardInterrupt:
-        tools.KeyboardInterruptSignalHendler(None, None)
+        tools.exit()
 
     return (login, password)
 
