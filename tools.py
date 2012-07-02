@@ -62,9 +62,7 @@ class Struct:
         self.__dict__.update(entries)
 
 def decodeArgs(args):
-    args_string = ' '.join(args)
-    args_string = stdinEncode(args_string)
-    return shlex.split(args_string)
+    return map(lambda val: stdinEncode(val), args)
 
 def stdoutEncode(data):
     try:

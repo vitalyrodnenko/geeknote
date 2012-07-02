@@ -6,6 +6,7 @@ import time
 import thread
 import tools
 import editor
+import config
 
 def preloaderPause(fn, *args, **kwargs):
     def wrapped(*args, **kwargs):
@@ -36,7 +37,6 @@ def preloaderStop(fn, *args, **kwargs):
 
 class preloader(object):
 
-    #progress = "\|/-"
     progress = (">  ", ">> ", ">>>", " >>", "  >", "   ")
     clearLine = "\r"+" "*40+"\r"
     message = None
@@ -51,12 +51,16 @@ class preloader(object):
 
     @staticmethod
     def launch():
+        if not config.IS_OUT_TERMINAL:
+            return
         preloader.counter = 0
         preloader.isLaunch = True
         thread.start_new_thread(preloader.draw, ())
 
     @staticmethod
     def stop():
+        if not config.IS_OUT_TERMINAL:
+            return
         preloader.counter = -1
         preloader.draw()
         preloader.isLaunch = False
@@ -91,23 +95,23 @@ def GetUserCredentials():
             login = rawInput("Login: ")
             
         if password is None:
-            password = rawInput("Password: ")
+            password = rawInput("Password: ", True)
     except KeyboardInterrupt:
         tools.KeyboardInterruptSignalHendler(None, None)
 
     return (login, password)
 
 @preloaderStop
-def SearchResult(listItems, request):
+def SearchResult(listItems, request, **kwargs):
     """Печать результатов поиска"""
     printLine("Search request: %s" % request)
-    printList(listItems)
+    printList(listItems, **kwargs)
 
 
 @preloaderStop
-def SelectSearchResult(listItems):
+def SelectSearchResult(listItems, **kwargs):
     """Выбор результата поиска"""
-    return printList(listItems, showSelector=True)
+    return printList(listItems, showSelector=True, **kwargs)
 
 
 @preloaderStop
@@ -171,7 +175,7 @@ def separator(symbol="", title=""):
         printLine(symbol*size+"\n")
 
 @preloaderStop
-def printList(listItems, title="", showSelector=False, showByStep=20):
+def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=False):
 
     if title:
         separator("=", title)
@@ -181,10 +185,14 @@ def printList(listItems, title="", showSelector=False, showByStep=20):
     for key, item in enumerate(listItems):
         key += 1
 
-        printLine("%s : %s%s" % (
+        printLine("%s : %s%s%s" % (
             str(key).rjust(3, " "),
+            #print date
             printDate(item.created).ljust(12, " ") if hasattr(item, 'created') else '',
-            item.title if hasattr(item, 'title') else item.name))
+            #print title
+            item.title if hasattr(item, 'title') else item.name,
+            #print noteUrl
+            " "+(config.NOTE_URL % item.guid) if showUrl else '',))
 
         if key%showByStep == 0 and key < total:
             printLine("-- More --", "\r")

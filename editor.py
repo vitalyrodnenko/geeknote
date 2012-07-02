@@ -38,11 +38,11 @@ def textToENML(content):
         contentHTML = markdown.markdown(content).encode("utf-8")
         # remove all new-lines characters in html
         contentHTML = re.sub(r'\n', r'', contentHTML)
+        return wrapENML(contentHTML)
     except:
-        out.failureMessage("Error. Content must be an UTF-8 encode.")
-        return None
-
-    return wrapENML(contentHTML)
+        logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
+        out.failureMessage("Error while parsing text to html. Content must be an UTF-8 encode.")
+        return tools.exit()
 
 def edit(content=None):
     """

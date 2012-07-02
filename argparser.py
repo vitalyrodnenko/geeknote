@@ -8,108 +8,107 @@ import out
 COMMANDS_DICT = {
     # User
     "user": {
-        "help": "Create note",
+        "help": "Show information about active user.",
         "flags": {
-            "--full": {"help": "Add tag to note", "value": True, "default": False},
+            "--full": {"help": "Show full information.", "value": True, "default": False},
         }
     },
     "login": {
-        "help": "Create note",
+        "help": "Authorize in Evernote.",
     },
     "logout": {
-        "help": "Create note",
+        "help": "Logout from Evernote.",
         "flags": {
-            "--force": {"help": "Add tag to note", "value": True, "default": False},
+            "--force": {"help": "Don't ask about logging out.", "value": True, "default": False},
         }
     },
     "settings": {
-        "help": "Create note",
+        "help": "Show and edit current settings.",
         "arguments": {
-            "--editor": {"help": "Set system editor", "emptyValue": '#GET#'},
+            "--editor": {"help": "Set the editor, which use to edit and create notes.", "emptyValue": '#GET#'},
         }
     },
 
     # Notes
     "create": {
-        "help": "Create note",
+        "help": "Create note in evernote.",
         "arguments": {
-            "--title": {"help": "Set note title", "required": True},
-            "--content": {"help": "Set note content", "required": True},
-            "--tags": {"help": "Add tag to note"},
-            "--notebook": {"help": "Add location marker to note"}
+            "--title": {"help": "The note title.", "required": True},
+            "--content": {"help": "The note content.", "required": True},
+            "--tags": {"help": "One tag or the list of tags which will be added to the note."},
+            "--notebook": {"help": "Set the notebook where to save note."}
         }
     },
     "edit": {
-        "help": "Create note",
+        "help": "Edit note in Evernote.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "Set note title"},
-            "--title": {"help": "Set note title"},
-            "--content": {"help": "Set note content"},
-            "--tags": {"help": "Add tag to note"},
-            "--notebook": {"help": "Add location marker to note"}
+            "--note": {"help": "The name or ID from the previous search of a note to edit."},
+            "--title": {"help": "Set new title of the note."},
+            "--content": {"help": "Set new content of the note."},
+            "--tags": {"help": "Set new list o tags for the note."},
+            "--notebook": {"help": "Assign new notebook for the note."}
         }
     },
     "remove": {
-        "help": "Create note",
+        "help": "Remove note from Evernote.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "Set note title"},
+            "--note": {"help": "The name or ID from the previous search of a note to remove."},
         },
         "flags": {
-            "--force": {"help": "Add tag to note", "value": True, "default": False},
+            "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
         }
     },
     "show": {
-        "help": "Create note",
+        "help": "Output note in the terminal.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "Set note title"},
+            "--note": {"help": "The name or ID from the previous search of a note to show."},
         }
     },
     "find": {
-        "help": "Create note",
+        "help": "Search notes in Evernote.",
         "firstArg": "--search",
         "arguments": {
-            "--search": {"help": "Add tag to note", "emptyValue": "*"},
-            "--tags": {"help": "Add tag to note"},
-            "--notebooks": {"help": "Add location marker to note"},
-            "--date": {"help": "Add location marker to note"},
-            "--count": {"help": "Add location marker to note", "type": int},
+            "--search": {"help": "Text to search.", "emptyValue": "*"},
+            "--tags": {"help": "Notes with which tag/tags to search."},
+            "--notebooks": {"help": "In which notebook search the note."},
+            "--date": {"help": "Set date in format dd.mm.yyyy or date range dd.mm.yyyy-dd.mm.yyyy."},
+            "--count": {"help": "How many notes show in the result list.", "type": int},
         },
         "flags": {
-            "--exact-entry": {"help": "Add tag to note", "value": True, "default": False},
-            "--content-search": {"help": "Add tag to note", "value": True, "default": False},
-            "--url-only": {"help": "Add tag to note", "value": True, "default": False},
+            "--exact-entry": {"help": "Search for exact entry of the request.", "value": True, "default": False},
+            "--content-search": {"help": "Search by content, not by title.", "value": True, "default": False},
         }
     },
 
     # Notebooks
     "notebook-list": {
-        "help": "Create note",
+        "help": "Show the list of existing notebooks in your Evernote.",
     },
     "notebook-create": {
-        "help": "Create note",
+        "help": "Create new notebook.",
         "arguments": {
-            "--title": {"help": "Set note title"},
+            "--title": {"help": "Set the title of new notebook."},
         }
     },
     "notebook-edit": {
-        "help": "Create note",
+        "help": "Edit/rename notebook.",
         "firstArg": "--notebook",
         "arguments": {
-            "--notebook": {"help": "Set note title"},
-            "--title": {"help": "Set note title"},
+            "--notebook": {"help": "The name of a notebook to rename."},
+            "--title": {"help": "Set the new name of notebook."},
         }
     },
     "notebook-remove": {
-        "help": "Create note",
+        "help": "Remove notebook.",
         "firstArg": "--notebook",
         "arguments": {
-            "--notebook": {"help": "Set note title"},
+            "--notebook": {"help": "The name of a notebook to remove."},
         },
         "flags": {
-            "--force": {"help": "Add tag to note", "value": True, "default": False},
+            "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
         }
     },
 }
@@ -303,7 +302,7 @@ class argparser(object):
 
     def printErrorArgument(self, errorArg, errorVal=None):
         if errorVal is None:
-            out.printLine('абвUnexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
+            out.printLine('Unexpected argument "%s" for command "%s"' % (errorArg, self.CMD))
         else:
             out.printLine('Unexpected value "%s" for argument "%s"' % (errorVal, errorArg))
         self.printHelp()

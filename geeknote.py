@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
+import traceback
+
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
@@ -11,6 +13,8 @@ import hashlib
 import binascii
 import time
 from datetime import datetime
+from urlparse import urlparse
+import re
 import lib.thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import lib.thrift.transport.THttpClient as THttpClient
 import lib.evernote.edam.userstore.UserStore as UserStore
@@ -25,7 +29,9 @@ import signal
 
 import out
 from argparser import argparser
+
 from oauth import GeekNoteAuth
+
 from storage import Storage
 import editor
 import tools
@@ -41,9 +47,9 @@ def GeekNoneDBConnectOnly(func):
 
 class GeekNote(object):
 
+    userStoreUri = config.USER_STORE_URI
     consumerKey = config.CONSUMER_KEY
     consumerSecret = config.CONSUMER_SECRET
-    userStoreUri = "https://evernote.com/edam/user"
     authToken = None
     userStore = None
     noteStore = None
@@ -53,11 +59,6 @@ class GeekNote(object):
     def __init__(self, skipInitConnection=False):
         if skipInitConnection:
             self.skipInitConnection = True
-
-        if config.DEV_MODE:
-            self.userStoreUri = "https://sandbox.evernote.com/edam/user"
-            self.consumerKey = config.CONSUMER_KEY_SANDBOX
-            self.consumerSecret = config.CONSUMER_SECRET_SANDBOX
 
         self.getStorage()
 
@@ -310,7 +311,7 @@ class User(GeekNoteConnector):
     @GeekNoneDBConnectOnly
     def user(self, full=None):
         if not self.getEvernote().checkAuth():
-            out.failureMessage("You not logged in")
+            out.failureMessage("You not logged in.")
             return tools.exit()
 
         if full:
@@ -322,29 +323,29 @@ class User(GeekNoteConnector):
     @GeekNoneDBConnectOnly
     def login(self):
         if self.getEvernote().checkAuth():
-            out.successMessage("You already logged in")
+            out.successMessage("You have already logged in.")
             return tools.exit()
 
         if self.getEvernote().auth():
-            out.successMessage("You successfully logged in")
+            out.successMessage("You have successfully logged in.")
         else:
-            out.failureMessage("Login error")
+            out.failureMessage("Login error.")
             return tools.exit()
 
     @GeekNoneDBConnectOnly
     def logout(self, force=None):
         if not self.getEvernote().checkAuth():
-            out.successMessage("You already logged out")
+            out.successMessage("You have already logged out.")
             return tools.exit()
 
-        if not force and not out.confirm('Are you sure you want logout?'):
+        if not force and not out.confirm('Are you sure you want to logout?'):
             return tools.exit()
 
         result = self.getEvernote().removeUser()
         if result:
-            out.successMessage("Logout successful")
+            out.successMessage("You have successfully logged out.")
         else:
-            out.failureMessage("Logout error")
+            out.failureMessage("Logout error.")
             return tools.exit()
 
     @GeekNoneDBConnectOnly
@@ -357,7 +358,7 @@ class User(GeekNoteConnector):
                 out.successMessage("Current editor is: %s" % editor)
             else:
                 self.getStorage().setUserprop('editor', editor)
-                out.successMessage("Editor successfully saved")
+                out.successMessage("Changes have been saved.")
 
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
@@ -372,9 +373,9 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().createNotebook(name=title)
 
         if result:
-            out.successMessage("Notebook successfully created")
+            out.successMessage("Notebook has been successfully created.")
         else:
-            out.failureMessage("Error while creating the notebook")
+            out.failureMessage("Error while the process of creating the notebook.")
             return tools.exit()
 
         return result
@@ -387,9 +388,9 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().updateNotebook(guid=notebook.guid, name=title)
 
         if result:
-            out.successMessage("Notebook successfully updated")
+            out.successMessage("Notebook has been successfully updated.")
         else:
-            out.failureMessage("Error while updating the notebook")
+            out.failureMessage("Error while the updating the notebook.")
             return tools.exit()
 
     def remove(self, notebook, force=None):
@@ -403,9 +404,9 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().deleteNotebook(guid=notebook.guid)
 
         if result:
-            out.successMessage("Notebook successfully removed")
+            out.successMessage("Notebook has been successfully removed.")
         else:
-            out.failureMessage("Error while removing the notebook")
+            out.failureMessage("Error while removing the notebook.")
 
     def _searchNotebook(self, notebook):
 
@@ -451,9 +452,9 @@ class Notes(GeekNoteConnector):
         result = self.getEvernote().createNote(**inputData)
 
         if result:
-            out.successMessage("Note successfully created")
+            out.successMessage("Note has been successfully created.")
         else:
-            out.failureMessage("Error while creating the note")
+            out.failureMessage("Error while creating the note.")
 
     def edit(self, note, title=None, content=None, tags=None, notebook=None):
 
@@ -466,9 +467,9 @@ class Notes(GeekNoteConnector):
         result = self.getEvernote().updateNote(guid=note.guid, **inputData)
 
         if result:
-            out.successMessage("Note successfully saved")
+            out.successMessage("Note has been successfully saved.")
         else:
-            out.failureMessage("Error while saving the note")
+            out.failureMessage("Error while saving the note.")
 
     def remove(self, note, force=None):
 
@@ -482,16 +483,16 @@ class Notes(GeekNoteConnector):
         result = self.getEvernote().deleteNote(note.guid)
 
         if result:
-            out.successMessage("Note successful deleted")
+            out.successMessage("Note has been successful deleted.")
         else:
-            out.failureMessage("Error while deleting the note")
+            out.failureMessage("Error while deleting the note.")
 
     def show(self, note):
 
         self.connectToEvertone()
 
         note = self._searchNote(note)
-
+        
         out.preloader.setMessage("Loading note...")
         self.getEvernote().loadNoteContent(note)
 
@@ -523,15 +524,11 @@ class Notes(GeekNoteConnector):
                    content = editor.edit()
 
             elif isinstance(content, str) and os.path.isfile(content):
-                logging.debug("Load content file")
+                logging.debug("Load content from the file")
                 content = open(content, "r").read()
-                content = editor.ENMLtoText(content)
 
             logging.debug("Convert content")
             content = editor.textToENML(content)
-            if content is None:
-                logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
-                tools.exit()
 
             result['content'] = content
 
@@ -565,7 +562,7 @@ class Notes(GeekNoteConnector):
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
-                out.successMessage("Notes not found")
+                out.successMessage("Notes have not been found.")
                 return tools.exit()
 
             elif result.totalNotes == 1 or self.selectFirstOnUpdate:
@@ -594,12 +591,13 @@ class Notes(GeekNoteConnector):
         result = self.getEvernote().findNotes(request, count, createFilter)
 
         if result.totalNotes == 0:
-            out.successMessage("Notes not found")
+            out.successMessage("Notes have not been found.")
 
         # save search result
+        # print result
         self.getStorage().setSearch(result)
 
-        out.SearchResult(result.notes, request)
+        out.SearchResult(result.notes, request, showUrl=url_only)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 
@@ -648,14 +646,21 @@ class Notes(GeekNoteConnector):
 def modifyArgsByStdinStream():
     content = sys.stdin.read()
     content = tools.stdinEncode(content)
-    content = editor.ENMLtoText(content)
 
     if not content:
-        out.failureMessage("Input stream is empty")
-        return (None, False)
+        out.failureMessage("Input stream is empty.")
+        return tools.exit()
+
+    title = ' '.join(content.split(' ', 5)[:-1])
+    title = re.sub(r'(\r\n|\r|\n)', r' ', title)
+    if not title:
+        out.failureMessage("Error while crating title of note from stream.")
+        return tools.exit()
+    elif len(title) > 50:
+        title = title[0:50] + '...'
 
     ARGS = {
-        'title': ' '.join(content.split(' ', 5)[:-1]),
+        'title': title,
         'content': content
     }
 
@@ -664,7 +669,7 @@ def modifyArgsByStdinStream():
 def main(args=None):
     try:
         # if terminal
-        if sys.stdin.isatty():
+        if config.IS_IN_TERMINAL:
             sys_argv = sys.argv[1:]
             if isinstance(args, list):
                 sys_argv = args
@@ -732,6 +737,7 @@ def main(args=None):
         pass
 
     except Exception, e:
+        traceback.print_exc()
         logging.error("App error: %s", str(e))
 
     # перывание для preloader'а

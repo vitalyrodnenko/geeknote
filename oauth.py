@@ -19,7 +19,7 @@ class GeekNoteAuth(object):
     consumerSecret = config.CONSUMER_SECRET
 
     url = {
-        "base"  : "www.evernote.com",
+        "base"  : config.USER_BASE_URL,
         "oauth" : "/OAuth.action?oauth_token=%s",
         "access": "/OAuth.action",
         "token" : "/oauth",
@@ -49,12 +49,6 @@ class GeekNoteAuth(object):
     verifierToken = None
     OAuthToken = None
     incorrectLogin = 0
-
-    def __init__(self):
-        if config.DEV_MODE:
-            self.url['base'] = "sandbox.evernote.com"
-            self.consumerKey = config.CONSUMER_KEY_SANDBOX
-            self.consumerSecret = config.CONSUMER_SECRET_SANDBOX
 
     def getTokenRequestData(self, **kwargs):
         params = {
