@@ -101,6 +101,8 @@ COMMANDS_DICT = {
             "--title": {"help": "Set the new name of notebook."},
         }
     },
+}
+"""
     "notebook-remove": {
         "help": "Remove notebook.",
         "firstArg": "--notebook",
@@ -111,8 +113,7 @@ COMMANDS_DICT = {
             "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
         }
     },
-}
-
+"""
 class argparser(object):
 
     COMMANDS = COMMANDS_DICT

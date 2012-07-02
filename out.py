@@ -82,7 +82,8 @@ class preloader(object):
                 printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
 
                 time.sleep(0.3)
-        except (KeyboardInterrupt, SystemExit, tools.ExitException):
+                raise 
+        except:
             pass
 
 @preloaderPause
@@ -93,10 +94,10 @@ def GetUserCredentials():
         password = None
         if login is None:
             login = rawInput("Login: ")
-            
+
         if password is None:
             password = rawInput("Password: ", True)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
         tools.exit()
 
     return (login, password)
@@ -125,8 +126,8 @@ def confirm(message):
             if answer.lower() in ["no", "n"]:
                 return False
             failureMessage('Incorrect answer "%s", please try again:\n' % answer)
-    except KeyboardInterrupt:
-        tools.KeyboardInterruptSignalHendler(None, None)
+    except (KeyboardInterrupt, SystemExit):
+        tools.exit()
 
 @preloaderStop
 def showNote(note):
@@ -210,8 +211,8 @@ def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=Fa
                 if num == '0':
                     exit(1)
                 failureMessage('Incorrect number "%s", please try again:\n' % num)
-        except KeyboardInterrupt:
-            tools.KeyboardInterruptSignalHendler(None, None)
+        except (KeyboardInterrupt, SystemExit):
+            tools.exit()
 
 def rawInput(message, isPass=False):
     if isPass:
