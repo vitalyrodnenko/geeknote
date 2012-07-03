@@ -3,16 +3,12 @@ geeknote
 
 Geeknote - is a command line client for Evernote, that can be use on Linux, FreeBSD and OS X.
 It allows you to:
-   * save notes in your Evernote account;
-   * make search;
-   * edit note directly in console using any editor;
-   * save URL to your Evernote in formats: clean (text only), clean + pdf (pdf format).
-   * … ect.
-
-It can be used by:
-   * really geeks who love console commands and love Evernote.
-   * system administrators who can use Evernote as a log database for some important messages.
-   * developers in their projects.
+   * create notes in your Evernote;
+   * create tags, notebooks;
+   * use Evernote search in console with different filters;
+   * edit note directly in console using any editor: nano, vim, mcedit;
+   * sync your local files, directories with Evernote;
+   * use Evernote with cron or any scripts.
 
 Geeknote has been written on Python, so you can use open source package anywhere you have Python, even in Windows if you like.
 
@@ -36,6 +32,10 @@ You can install Geeknote as a deb package or as a python script.
 
 ### Requirements
 Geeknote needs **Python 2.x** from **2.4 and older**.
+
+Geeknote **doesn't work with Ubuntu 12.04**. Unfortunately this is the problem of Evernote SDK for Python. We wrote to authors of Evernote SDK, they know about it too and promise to solve the problem in a couple of months. This is the [registered issue](https://bugs.launchpad.net/ubuntu/+source/openssl/+bug/965371). We release an updated version of Geeknote as soon as Evernote SDK for Python will get update.
+
+This issue is suitable **only for Ubuntu 12.04**.
 
 ## Settings
 Geeknote has some settings that you should know.
@@ -102,9 +102,9 @@ The main functionality that we need is creating notes in Evernote.
 This command allows us to create a new note in Evernote. Geeknote has designed for using in console, so we have some restrictions like inability to use double quotes in **--content** option. But there is a method to avoid it - use stdin stream or file synchronization, we show it later in documentation.
 
 ### Examples
-    $ geeknote create --title "Shopping list 22.04.2012" \
-                      --content "Don't forget to buy milk, turkey and chips." \
-                      --notebook "Family" \
+    $ geeknote create --title "Shopping list 22.04.2012"
+                      --content "Don't forget to buy milk, turkey and chips."
+                      --notebook "Family"
                       --tags "shop, holiday, important"
 
 ## Editing notes
@@ -164,7 +164,7 @@ For example:
 
     $ geeknote find --search "Shopping"
 
-    Total found: 2
+	  Total found: 2
 	    1 : Shopping list 22.04.2012
 	    2 : Shopping list 25.04.2012
     
@@ -362,7 +362,7 @@ gnsync - is an additional application, that is install with Geeknote. gnsync all
 The application *gnsync* is very usefull in system adminstration. Because of you can syncronize you local logs, statuses and any other production information with Evernote. And have the 
 
 ### Examples
-    $ geeknote --path "Shopping list 22.04.2012" \
-                      --content "Don't forget to buy milk, turkey and chips." \
-                      --notebook "Family" \
-                      --tags "shop, holiday, important"
+    $ gnsync --path /home/project/xmpp/logs/
+             --mask "*.logs"
+             --logpath /home/user/logs/xmpp2evernote.log
+             --notebook "XMPP logs"
