@@ -74,8 +74,12 @@ class GeekNote(object):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except Errors.EDAMUserException as e:
+            except Exception, e:
                 logging.error("Error: %s : %s", func.__name__, str(e))
+
+                if not hasattr(e, 'errorCode'):
+                    out.failureMessage("Sorry, operation has failed!!!.")
+                    tools.exit()
 
                 errorCode = int(e.errorCode)
 
@@ -90,9 +94,10 @@ class GeekNote(object):
                     out.failureMessage("Sorry, you do not have permissions to do this operation.")
 
                 else:
-                    out.failureMessage("Sorry, operation has failed.")
+                    return False
 
                 tools.exit()
+
         return wrapper
 
     def getStorage(self):
@@ -193,12 +198,8 @@ class GeekNote(object):
 
         logging.debug("New note : %s", note)
 
-        try: 
-            self.getNoteStore().createNote(self.authToken, note)
-            return True
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
+        self.getNoteStore().createNote(self.authToken, note)
+        return True
 
     @EdamException
     def updateNote(self, guid, title=None, content=None, tags=None, notebook=None):
@@ -218,22 +219,15 @@ class GeekNote(object):
 
         logging.debug("Update note : %s", note)
 
-        try: 
-            self.getNoteStore().updateNote(self.authToken, note)
-            return True
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
+        self.getNoteStore().updateNote(self.authToken, note)
+        return True
 
     @EdamException
-    def deleteNote(self, guid):
+    def removeNote(self, guid):
         logging.debug("Delete note with guid: %s", guid)
-        try: 
-            self.getNoteStore().deleteNote(self.authToken, guid)
-            return True
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
+
+        self.getNoteStore().deleteNote(self.authToken, guid)
+        return True
 
     """
     WORK WITH NOTEBOOKS
@@ -249,12 +243,8 @@ class GeekNote(object):
 
         logging.debug("New notebook : %s", notebook)
 
-        try: 
-            result = self.getNoteStore().createNotebook(self.authToken, notebook)
-            return result
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
+        result = self.getNoteStore().createNotebook(self.authToken, notebook)
+        return result
 
     @EdamException
     def updateNotebook(self, guid, name):
@@ -264,23 +254,50 @@ class GeekNote(object):
 
         logging.debug("Update notebook : %s", notebook)
 
-        try: 
-            self.getNoteStore().updateNotebook(self.authToken, notebook)
-            return True
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
+        self.getNoteStore().updateNotebook(self.authToken, notebook)
+        return True
 
     @EdamException
-    def deleteNotebook(self, guid):
+    def removeNotebook(self, guid):
         logging.debug("Delete notebook : %s", guid)
-        try: 
-            self.getNoteStore().expungeNotebook(self.authToken, guid)
-            return True
-        except Exception, e:
-            logging.error("Error: %s", str(e))
-            return False
 
+        self.getNoteStore().expungeNotebook(self.authToken, guid)
+        return True
+
+    """
+    WORK WITH TAGS
+    """
+    @EdamException
+    def findTags(self):
+        return self.getNoteStore().listTags(self.authToken)
+
+    @EdamException
+    def createTag(self, name):
+        tag = Types.Tag()
+        tag.name = name
+
+        logging.debug("New tag : %s", tag)
+
+        result = self.getNoteStore().createTag(self.authToken, tag)
+        return result
+
+    @EdamException
+    def updateTag(self, guid, name):
+        tag = Types.Tag()
+        tag.name = name
+        tag.guid = guid
+
+        logging.debug("Update tag : %s", tag)
+
+        self.getNoteStore().updateTag(self.authToken, tag)
+        return True
+
+    @EdamException
+    def removeTag(self, guid):
+        logging.debug("Delete tag : %s", guid)
+
+        self.getNoteStore().expungeTag(self.authToken, guid)
+        return True
 
 class GeekNoteConnector(object):
     evernote = None
@@ -360,6 +377,64 @@ class User(GeekNoteConnector):
                 self.getStorage().setUserprop('editor', editor)
                 out.successMessage("Changes have been saved.")
 
+class Tags(GeekNoteConnector):
+    """ Work with auth Notebooks """
+
+    def list(self):
+        result = self.getEvernote().findTags()
+        out.printList(result)
+
+    def create(self, title):
+        self.connectToEvertone()
+        out.preloader.setMessage("Creating tag...")
+        result = self.getEvernote().createTag(name=title)
+
+        if result:
+            out.successMessage("Tag has been successfully created.")
+        else:
+            out.failureMessage("Error while the process of creating the tag.")
+            return tools.exit()
+
+        return result
+
+    def edit(self, tag, title):
+        tag = self._searchTag(tag)
+
+        out.preloader.setMessage("Updating tag...")
+        result = self.getEvernote().updateTag(guid=tag.guid, name=title)
+
+        if result:
+            out.successMessage("Tag has been successfully updated.")
+        else:
+            out.failureMessage("Error while the updating the tag.")
+            return tools.exit()
+
+    def remove(self, tag, force=None):
+        tag = self._searchTag(tag)
+
+        if not force and not out.confirm('Are you sure you want to delete this tag: "%s"?' % tag.name):
+            return tools.exit()
+
+        out.preloader.setMessage("Deleting tag...")
+        result = self.getEvernote().removeTag(guid=tag.guid)
+
+        if result:
+            out.successMessage("Tag has been successfully removed.")
+        else:
+            out.failureMessage("Error while removing the tag.")
+
+    def _searchTag(self, tag):
+        result = self.getEvernote().findTags()
+        tag = [item for item in result if item.name == tag]
+
+        if tag:
+            tag = tag[0]
+        else:
+            tag = out.SelectSearchResult(result)
+
+        logging.debug("Selected tag: %s" % str(tag))
+        return tag
+
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
 
@@ -381,7 +456,6 @@ class Notebooks(GeekNoteConnector):
         return result
 
     def edit(self, notebook, title):
-
         notebook = self._searchNotebook(notebook)
 
         out.preloader.setMessage("Updating notebook...")
@@ -394,14 +468,13 @@ class Notebooks(GeekNoteConnector):
             return tools.exit()
 
     def remove(self, notebook, force=None):
-
         notebook = self._searchNotebook(notebook)
 
         if not force and not out.confirm('Are you sure you want to delete this notebook: "%s"?' % notebook.name):
             return tools.exit()
 
         out.preloader.setMessage("Deleting notebook...")
-        result = self.getEvernote().deleteNotebook(guid=notebook.guid)
+        result = self.getEvernote().removeNotebook(guid=notebook.guid)
 
         if result:
             out.successMessage("Notebook has been successfully removed.")
@@ -431,7 +504,6 @@ class Notebooks(GeekNoteConnector):
             return notebook[0].guid
         else:
             return None
-
 
 class Notes(GeekNoteConnector):
     """ Work with Notes """
@@ -480,7 +552,7 @@ class Notes(GeekNoteConnector):
             return tools.exit()
 
         out.preloader.setMessage("Deleting note...")
-        result = self.getEvernote().deleteNote(note.guid)
+        result = self.getEvernote().removeNote(note.guid)
 
         if result:
             out.successMessage("Note has been successful deleted.")
@@ -734,6 +806,19 @@ def main(args=None):
 
         if COMMAND == 'notebook-remove':
             Notebooks().remove(**ARGS)
+
+        # Tags
+        if COMMAND == 'tag-list':
+            Tags().list(**ARGS)
+
+        if COMMAND == 'tag-create':
+            Tags().create(**ARGS)
+
+        if COMMAND == 'tag-edit':
+            Tags().edit(**ARGS)
+
+        if COMMAND == 'tag-remove':
+            Tags().remove(**ARGS)
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
         pass

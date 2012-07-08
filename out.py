@@ -82,7 +82,6 @@ class preloader(object):
                 printLine("%s : %s" % (preloader.progress[preloader.counter % len(preloader.progress)], preloader.message), "")
 
                 time.sleep(0.3)
-                raise 
         except:
             pass
 
@@ -234,4 +233,7 @@ def printLine(line, endLine="\n"):
         pass
 
 def printAbout():
-    printLine('About geeknote')
+    printLine('Version: %s' % str(config.VERSION))
+    printLine('Geeknote - a command line client for Evernote.')
+    printLine('Use geeknote --help to read documentation.')
+    printLine('And visit www.geeknote.me to check for updates.')
