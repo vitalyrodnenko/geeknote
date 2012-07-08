@@ -101,8 +101,37 @@ COMMANDS_DICT = {
             "--title": {"help": "Set the new name of notebook."},
         }
     },
+
+    # Tags
+    "tag-list": {
+        "help": "Show the list of existing tags in your Evernote.",
+    },
+    "tag-create": {
+        "help": "Create new tag.",
+        "arguments": {
+            "--title": {"help": "Set the title of new tag."},
+        }
+    },
+    "tag-edit": {
+        "help": "Edit/rename tag.",
+        "firstArg": "--tag",
+        "arguments": {
+            "--tag": {"help": "The name of a tag to rename."},
+            "--title": {"help": "Set the new name of tag."},
+        }
+    },
 }
 """
+    "tag-remove": {
+        "help": "Remove tag.",
+        "firstArg": "--tag",
+        "arguments": {
+            "--tag": {"help": "The name of a tag to remove."},
+        },
+        "flags": {
+            "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
+        }
+    },
     "notebook-remove": {
         "help": "Remove notebook.",
         "firstArg": "--notebook",
@@ -114,6 +143,7 @@ COMMANDS_DICT = {
         }
     },
 """
+
 class argparser(object):
 
     COMMANDS = COMMANDS_DICT
