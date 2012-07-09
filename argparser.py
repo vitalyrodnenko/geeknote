@@ -114,9 +114,9 @@ COMMANDS_DICT = {
     },
     "tag-edit": {
         "help": "Edit/rename tag.",
-        "firstArg": "--tag",
+        "firstArg": "--tagname",
         "arguments": {
-            "--tag": {"help": "The name of a tag to rename."},
+            "--tagname": {"help": "The name of a tag to rename."},
             "--title": {"help": "Set the new name of tag."},
         }
     },
@@ -124,9 +124,9 @@ COMMANDS_DICT = {
 """
     "tag-remove": {
         "help": "Remove tag.",
-        "firstArg": "--tag",
+        "firstArg": "--tagname",
         "arguments": {
-            "--tag": {"help": "The name of a tag to remove."},
+            "--tagname": {"help": "The name of a tag to remove."},
         },
         "flags": {
             "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
