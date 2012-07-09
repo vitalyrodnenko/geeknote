@@ -31,7 +31,7 @@ You can install Geeknote as a deb package or as a python script.
     $ sudo dpkg -i geeknote_latest.deb
 
 ### Requirements
-Geeknote needs **Python 2.x** from **2.4 and older**.
+Geeknote needs **Python 2.x** from **2.4 and later**.
 
 Geeknote **doesn't work with Ubuntu 12.04**. Unfortunately this is the problem of Evernote SDK for Python. We wrote to authors of Evernote SDK, they know about it too and promise to solve the problem in a couple of months. This is the [registered issue](https://bugs.launchpad.net/ubuntu/+source/openssl/+bug/965371). We release an updated version of Geeknote as soon as Evernote SDK for Python will get update.
 
