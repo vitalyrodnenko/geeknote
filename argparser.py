@@ -78,6 +78,7 @@ COMMANDS_DICT = {
             "--count": {"help": "How many notes show in the result list.", "type": int},
         },
         "flags": {
+            "--with-url": {"help": "Add direct url of each note in results to Evernote web-version.", "value": True, "default": False},
             "--exact-entry": {"help": "Search for exact entry of the request.", "value": True, "default": False},
             "--content-search": {"help": "Search by content, not by title.", "value": True, "default": False},
         }

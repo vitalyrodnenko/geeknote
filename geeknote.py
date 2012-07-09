@@ -648,7 +648,7 @@ class Notes(GeekNoteConnector):
         return note
 
 
-    def find(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None, url_only=None, count=None, ):
+    def find(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None, with_url=None, count=None, ):
 
         request = self._createSearchRequest(search, tags, notebooks, date, exact_entry, content_search)
 
@@ -669,7 +669,7 @@ class Notes(GeekNoteConnector):
         # print result
         self.getStorage().setSearch(result)
 
-        out.SearchResult(result.notes, request, showUrl=url_only)
+        out.SearchResult(result.notes, request, showUrl=with_url)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 

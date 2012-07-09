@@ -193,7 +193,7 @@ def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=Fa
             #print title
             item.title if hasattr(item, 'title') else item.name,
             #print noteUrl
-            " "+(config.NOTE_URL % item.guid) if showUrl else '',))
+            " "+(">>> "+config.NOTE_URL % item.guid) if showUrl else '',))
 
         if key%showByStep == 0 and key < total:
             printLine("-- More --", "\r")
