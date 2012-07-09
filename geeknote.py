@@ -397,8 +397,8 @@ class Tags(GeekNoteConnector):
 
         return result
 
-    def edit(self, tag, title):
-        tag = self._searchTag(tag)
+    def edit(self, tagname, title):
+        tag = self._searchTag(tagname)
 
         out.preloader.setMessage("Updating tag...")
         result = self.getEvernote().updateTag(guid=tag.guid, name=title)
@@ -409,8 +409,8 @@ class Tags(GeekNoteConnector):
             out.failureMessage("Error while the updating the tag.")
             return tools.exit()
 
-    def remove(self, tag, force=None):
-        tag = self._searchTag(tag)
+    def remove(self, tagname, force=None):
+        tag = self._searchTag(tagname)
 
         if not force and not out.confirm('Are you sure you want to delete this tag: "%s"?' % tag.name):
             return tools.exit()
