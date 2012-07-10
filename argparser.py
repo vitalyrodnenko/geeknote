@@ -33,54 +33,54 @@ COMMANDS_DICT = {
     "create": {
         "help": "Create note in evernote.",
         "arguments": {
-            "--title": {"help": "The note title.", "required": True},
-            "--content": {"help": "The note content.", "required": True},
-            "--tags": {"help": "One tag or the list of tags which will be added to the note."},
-            "--notebook": {"help": "Set the notebook where to save note."}
+            "--title":      {"altName": "-t", "help": "The note title.", "required": True},
+            "--content":    {"altName": "-c", "help": "The note content.", "required": True},
+            "--tags":       {"altName": "-tg","help": "One tag or the list of tags which will be added to the note."},
+            "--notebook":   {"altName": "-nb", "help": "Set the notebook where to save note."}
         }
     },
     "edit": {
         "help": "Edit note in Evernote.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "The name or ID from the previous search of a note to edit."},
-            "--title": {"help": "Set new title of the note."},
-            "--content": {"help": "Set new content of the note."},
-            "--tags": {"help": "Set new list o tags for the note."},
-            "--notebook": {"help": "Assign new notebook for the note."}
+            "--note":       {"altName": "-n", "help": "The name or ID from the previous search of a note to edit."},
+            "--title":      {"altName": "-t", "help": "Set new title of the note."},
+            "--content":    {"altName": "-c", "help": "Set new content of the note."},
+            "--tags":       {"altName": "-tg", "help": "Set new list o tags for the note."},
+            "--notebook":   {"altName": "-nb", "help": "Assign new notebook for the note."}
         }
     },
     "remove": {
         "help": "Remove note from Evernote.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "The name or ID from the previous search of a note to remove."},
+            "--note":  {"altName": "-n", "help": "The name or ID from the previous search of a note to remove."},
         },
         "flags": {
-            "--force": {"help": "Don't ask about removing.", "value": True, "default": False},
+            "--force": {"altName": "-f", "help": "Don't ask about removing.", "value": True, "default": False},
         }
     },
     "show": {
         "help": "Output note in the terminal.",
         "firstArg": "--note",
         "arguments": {
-            "--note": {"help": "The name or ID from the previous search of a note to show."},
+            "--note": {"altName": "-n", "help": "The name or ID from the previous search of a note to show."},
         }
     },
     "find": {
         "help": "Search notes in Evernote.",
         "firstArg": "--search",
         "arguments": {
-            "--search": {"help": "Text to search.", "emptyValue": "*"},
-            "--tags": {"help": "Notes with which tag/tags to search."},
-            "--notebooks": {"help": "In which notebook search the note."},
-            "--date": {"help": "Set date in format dd.mm.yyyy or date range dd.mm.yyyy-dd.mm.yyyy."},
-            "--count": {"help": "How many notes show in the result list.", "type": int},
+            "--search":     {"altName": "-s",  "help": "Text to search.", "emptyValue": "*"},
+            "--tags":       {"altName": "-tg", "help": "Notes with which tag/tags to search."},
+            "--notebooks":  {"altName": "-nb", "help": "In which notebook search the note."},
+            "--date":       {"altName": "-d",  "help": "Set date in format dd.mm.yyyy or date range dd.mm.yyyy-dd.mm.yyyy."},
+            "--count":      {"altName": "-cn", "help": "How many notes show in the result list.", "type": int},
         },
         "flags": {
-            "--with-url": {"help": "Add direct url of each note in results to Evernote web-version.", "value": True, "default": False},
-            "--exact-entry": {"help": "Search for exact entry of the request.", "value": True, "default": False},
-            "--content-search": {"help": "Search by content, not by title.", "value": True, "default": False},
+            "--with-url":       {"altName": "-wu", "help": "Add direct url of each note in results to Evernote web-version.", "value": True, "default": False},
+            "--exact-entry":    {"altName": "-ee", "help": "Search for exact entry of the request.", "value": True, "default": False},
+            "--content-search": {"altName": "-cs", "help": "Search by content, not by title.", "value": True, "default": False},
         }
     },
 
@@ -91,15 +91,15 @@ COMMANDS_DICT = {
     "notebook-create": {
         "help": "Create new notebook.",
         "arguments": {
-            "--title": {"help": "Set the title of new notebook."},
+            "--title": {"altName": "-t", "help": "Set the title of new notebook."},
         }
     },
     "notebook-edit": {
         "help": "Edit/rename notebook.",
         "firstArg": "--notebook",
         "arguments": {
-            "--notebook": {"help": "The name of a notebook to rename."},
-            "--title": {"help": "Set the new name of notebook."},
+            "--notebook":   {"altName": "-nb", "help": "The name of a notebook to rename."},
+            "--title":      {"altName": "-t", "help": "Set the new name of notebook."},
         }
     },
 
@@ -110,15 +110,15 @@ COMMANDS_DICT = {
     "tag-create": {
         "help": "Create new tag.",
         "arguments": {
-            "--title": {"help": "Set the title of new tag."},
+            "--title": {"altName": "-t", "help": "Set the title of new tag."},
         }
     },
     "tag-edit": {
         "help": "Edit/rename tag.",
         "firstArg": "--tagname",
         "arguments": {
-            "--tagname": {"help": "The name of a tag to rename."},
-            "--title": {"help": "Set the new name of tag."},
+            "--tagname":    {"altName": "-tgn", "help": "The name of a tag to rename."},
+            "--title":      {"altName": "-t", "help": "Set the new name of tag."},
         }
     },
 }
@@ -198,11 +198,15 @@ class argparser(object):
             self.printHelp()
             return False
 
-        # подготовка к парсингу
+        # Подготовка данных
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
             # установка значений по умолчаеию
             if params.has_key('default'):
                 self.INP_DATA[arg] = params['default']
+
+            # замена altName во входящих аргументах на полные
+            if params.has_key('altName') and params['altName'] in self.INP:
+                self.INP[self.INP.index(params['altName'])] = arg
 
         activeArg = None
         ACTIVE_CMD = None
@@ -353,7 +357,10 @@ class argparser(object):
             out.printLine("Options for: %s" % self.CMD)
             out.printLine("Available arguments:")
             for arg in self.CMD_ARGS:
-                out.printLine("%s : %s" % (arg.rjust(tab, " "), self.CMD_ARGS[arg]['help']))
+                out.printLine("%s : %s%s" % (
+                    arg.rjust(tab, " "), 
+                    '[default] ' if self.COMMANDS[self.CMD].has_key('firstArg') and self.COMMANDS[self.CMD]['firstArg'] == arg else '',
+                    self.CMD_ARGS[arg]['help']))
 
             if self.CMD_FLAGS:
                 out.printLine("Available flags:")

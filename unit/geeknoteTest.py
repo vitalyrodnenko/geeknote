@@ -35,7 +35,7 @@ class testNotes(unittest.TestCase):
         self.assertEqual(testData["tags"], ["tag1", ])
 
     def test_parceInput2(self):
-        testData = self.notes._parceInput("title", "WRITE_IN_EDITOR", "tag1, tag2", None, self.testNote)
+        testData = self.notes._parceInput("title", "WRITE", "tag1, tag2", None, self.testNote)
         self.assertIsInstance(testData, dict)
         if not isinstance(testData, dict): return
 
@@ -45,13 +45,13 @@ class testNotes(unittest.TestCase):
 
     def test_createSearchRequest1(self):
         testRequest = self.notes._createSearchRequest(search="test text", tags="tag1", 
-            notebooks="test notebook", date="31.12.1999", exact_entry=True, content_search=True)
-        self.assertEqual(testRequest, 'any:"test text" tag:"tag1" created:"19991231" -created:"20000101" notebook:"test notebook" ')
+            notebooks="test notebook", date="01.01.2000", exact_entry=True, content_search=True)
+        self.assertEqual(testRequest, 'notebook:"test notebook" tag:"tag1" created:19991231 -created:20000101 "test text"')
 
     def test_createSearchRequest2(self):
         testRequest = self.notes._createSearchRequest(search="test text", tags="tag1, tag2", 
             notebooks="notebook1, notebook2", date="31.12.1999-31.12.2000", exact_entry=False, content_search=False)
-        self.assertEqual(testRequest, 'intitle:test text tag:"tag1" tag:"tag2" created:"19991231" -created:"20001231" notebook:"notebook1" notebook:"notebook2" ')
+        self.assertEqual(testRequest, 'notebook:"notebook1" notebook:"notebook2" tag:"tag1" tag:"tag2" created:19991231 -created:20001231 intitle:test text')
 
     def testError_createSearchRequest1(self):
         testRequest = self.notes._createSearchRequest(search="test text", date="12.31.1999")
