@@ -91,7 +91,7 @@ COMMANDS_DICT = {
     "notebook-create": {
         "help": "Create new notebook.",
         "arguments": {
-            "--title": {"altName": "-t", "help": "Set the title of new notebook."},
+            "--title": {"altName": "-t", "help": "Set the title of new notebook.", "required": True},
         }
     },
     "notebook-edit": {
@@ -99,7 +99,7 @@ COMMANDS_DICT = {
         "firstArg": "--notebook",
         "arguments": {
             "--notebook":   {"altName": "-nb", "help": "The name of a notebook to rename."},
-            "--title":      {"altName": "-t", "help": "Set the new name of notebook."},
+            "--title":      {"altName": "-t", "help": "Set the new name of notebook.", "required": True},
         }
     },
 
@@ -110,7 +110,7 @@ COMMANDS_DICT = {
     "tag-create": {
         "help": "Create new tag.",
         "arguments": {
-            "--title": {"altName": "-t", "help": "Set the title of new tag."},
+            "--title": {"altName": "-t", "help": "Set the title of new tag.", "required": True},
         }
     },
     "tag-edit": {
@@ -118,7 +118,7 @@ COMMANDS_DICT = {
         "firstArg": "--tagname",
         "arguments": {
             "--tagname":    {"altName": "-tgn", "help": "The name of a tag to rename."},
-            "--title":      {"altName": "-t", "help": "Set the new name of tag."},
+            "--title":      {"altName": "-t", "help": "Set the new name of tag.", "required": True},
         }
     },
 }
@@ -198,7 +198,7 @@ class argparser(object):
             self.printHelp()
             return False
 
-        # Подготовка данных
+        # подготовка данных
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
             # установка значений по умолчаеию
             if params.has_key('default'):
@@ -266,7 +266,7 @@ class argparser(object):
                 self.INP_DATA[activeArg] = item
                 activeArg = activeArgTmp # тут или пусто, или новый "активный" аргумент
 
-        # если остались "активные" аршументы
+        # если остались "активные" аргументы
         if activeArg is not None:
             # если есть параметр emptyValue
             if ACTIVE_CMD.has_key("emptyValue"):
