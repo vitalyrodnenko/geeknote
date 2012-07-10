@@ -11,12 +11,12 @@ class testArgparser(unittest.TestCase):
             "help": "Create note",
             "firstArg": "--test_req_arg",
             "arguments": {
-                "--test_req_arg": {"help": "Set note title", "required": True},
-                "--test_arg": {"help": "Add tag to note", "emptyValue": None},
-                "--test_arg2": {"help": "Add tag to note",},
+                "--test_req_arg": {"altName": "-tra", "help": "Set note title", "required": True},
+                "--test_arg": {"altName": "-ta", "help": "Add tag to note", "emptyValue": None},
+                "--test_arg2": {"altName": "-ta2", "help": "Add tag to note",},
             },
             "flags": {
-                "--test_flag": {"help": "Add tag to note", "value": True, "default": False},
+                "--test_flag": {"altName": "-tf", "help": "Add tag to note", "value": True, "default": False},
             }
         }
 
@@ -67,6 +67,14 @@ class testArgparser(unittest.TestCase):
     def testSuccessCommand5(self):
         parser = argparser(["testing", "test_def_val", "--test_arg", "--test_arg2", "test_arg2_val"])
         self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_arg2": "test_arg2_val", "test_flag": False})
+
+    def testSuccessShortAttr(self):
+        parser = argparser(["testing", "test_def_val", "-ta", "-ta2", "test_arg2_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_arg2": "test_arg2_val", "test_flag": False})
+
+    def testSuccessShortAttr2(self):
+        parser = argparser(["testing", "-tra", "test_def_val", "-tf"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_flag": True})
 
 def suite():
     suite = unittest.TestSuite()
