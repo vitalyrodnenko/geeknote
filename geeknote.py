@@ -693,12 +693,10 @@ class Notes(GeekNoteConnector):
             date = tools.strip(date.split('-'))
             try:
                 dateStruct = time.strptime(date[0]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
+                request +='created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
                 if len(date) == 2:
-                    request +='created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
                     dateStruct = time.strptime(date[1]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
-                else:
-                    request +='created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)-60*60*24))
-                request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
+                request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)+60*60*24))
             except ValueError, e:
                 out.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
                 return tools.exit()
