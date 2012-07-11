@@ -23,8 +23,11 @@ You can install Geeknote as a deb package or as a python script.
     
     $ cd geeknote
 
+    # Installation
+    $ [sudo] python setup.py install
+
 	# Launch Geeknote and go through login procedure.
-	$ python geeknote.py login
+	$ geeknote login
 
 ### Debian/Ubuntu
     $ wget http://www.geeknote.me/dist/geeknote_latest.deb
@@ -366,3 +369,9 @@ The application *gnsync* is very usefull in system adminstration. Because of you
              --mask "*.logs"
              --logpath /home/user/logs/xmpp2evernote.log
              --notebook "XMPP logs"
+
+## Contributors
+* Vitaliy Rodnenko
+* Simon Moiseenko
+* Ivan Gureev
+* Roman Gladkov
