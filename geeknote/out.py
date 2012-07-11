@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-
-import os, sys
+import sys
 import getpass
 import time
 import thread
 import tools
 import editor
 import config
+
 
 def preloaderPause(fn, *args, **kwargs):
     def wrapped(*args, **kwargs):
@@ -21,6 +21,7 @@ def preloaderPause(fn, *args, **kwargs):
         return result
 
     return wrapped
+
 
 def preloaderStop(fn, *args, **kwargs):
     def wrapped(*args, **kwargs):
@@ -38,7 +39,7 @@ def preloaderStop(fn, *args, **kwargs):
 class preloader(object):
 
     progress = (">  ", ">> ", ">>>", " >>", "  >", "   ")
-    clearLine = "\r"+" "*40+"\r"
+    clearLine = "\r" + " " * 40 + "\r"
     message = None
     isLaunch = False
     counter = 0
@@ -85,6 +86,7 @@ class preloader(object):
         except:
             pass
 
+
 @preloaderPause
 def GetUserCredentials():
     """Prompts the user for a username and password."""
@@ -100,6 +102,7 @@ def GetUserCredentials():
         tools.exit()
 
     return (login, password)
+
 
 @preloaderStop
 def SearchResult(listItems, request, **kwargs):
@@ -124,21 +127,26 @@ def confirm(message):
                 return True
             if answer.lower() in ["no", "n"]:
                 return False
-            failureMessage('Incorrect answer "%s", please try again:\n' % answer)
+            failureMessage('Incorrect answer "%s", '
+                           'please try again:\n' % answer)
     except (KeyboardInterrupt, SystemExit):
         tools.exit()
+
 
 @preloaderStop
 def showNote(note):
     separator("#", "TITLE")
     printLine(note.title)
     separator("=", "META")
-    printLine("Created: "+printDate(note.created).ljust(15, " ")+"Updated: "+printDate(note.updated).ljust(15, " "))
+    printLine("Created: %s Updated:%s" %
+              (printDate(note.created).ljust(15, " "),
+               printDate(note.updated).ljust(15, " ")))
     separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
     printLine(editor.ENMLtoText(note.content))
+
 
 @preloaderStop
 def showUser(user, fullInfo):
@@ -153,7 +161,7 @@ def showUser(user, fullInfo):
 
     if fullInfo:
         line('Upload limit', "%.2f" % (int(user.accounting.uploadLimit) / 1024 / 1024))
-        line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000 )) )
+        line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000)))
 
 
 @preloaderStop
@@ -161,22 +169,28 @@ def successMessage(message):
     """ Вывод сообщения """
     printLine(message, "\n")
 
+
 @preloaderStop
 def failureMessage(message):
     """ Вывод сообщения """
     printLine(message, "\n")
 
+
 def separator(symbol="", title=""):
     size = 40
     if title:
         sw = (size - len(title) + 2) / 2
-        printLine("%s %s %s" % (symbol*sw, title, symbol*(sw-(len(title)+1)%2)))
+        printLine("%s %s %s" % (symbol * sw,
+                                title,
+                                symbol * (sw - (len(title) + 1) % 2)))
 
     else:
-        printLine(symbol*size+"\n")
+        printLine(symbol * size + "\n")
+
 
 @preloaderStop
-def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=False):
+def printList(listItems, title="", showSelector=False,
+              showByStep=20, showUrl=False):
 
     if title:
         separator("=", title)
@@ -193,12 +207,12 @@ def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=Fa
             #print title
             item.title if hasattr(item, 'title') else item.name,
             #print noteUrl
-            " "+(">>> "+config.NOTE_URL % item.guid) if showUrl else '',))
+            " " + (">>> " + config.NOTE_URL % item.guid) if showUrl else '',))
 
-        if key%showByStep == 0 and key < total:
+        if key % showByStep == 0 and key < total:
             printLine("-- More --", "\r")
             tools.getch()
-            printLine(" "*12, "\r")
+            printLine(" " * 12, "\r")
 
     if showSelector:
         printLine("  0 : -Cancel-")
@@ -206,12 +220,14 @@ def printList(listItems, title="", showSelector=False, showByStep=20, showUrl=Fa
             while True:
                 num = rawInput(": ")
                 if tools.checkIsInt(num) and  1 <= int(num) <= total:
-                    return listItems[int(num)-1]
+                    return listItems[int(num) - 1]
                 if num == '0':
                     exit(1)
-                failureMessage('Incorrect number "%s", please try again:\n' % num)
+                failureMessage('Incorrect number "%s", '
+                               'please try again:\n' % num)
         except (KeyboardInterrupt, SystemExit):
             tools.exit()
+
 
 def rawInput(message, isPass=False):
     if isPass:
@@ -219,18 +235,20 @@ def rawInput(message, isPass=False):
     else:
         data = raw_input(message)
     return tools.stdinEncode(data)
-    
+
 
 def printDate(timestamp):
-    return time.strftime("%d.%m.%Y", time.localtime(timestamp/1000))
+    return time.strftime("%d.%m.%Y", time.localtime(timestamp / 1000))
+
 
 def printLine(line, endLine="\n"):
-    message = line+endLine
+    message = line + endLine
     message = tools.stdoutEncode(message)
     try:
         sys.stdout.write(message)
-    except :
+    except:
         pass
+
 
 def printAbout():
     printLine('Version: %s' % str(config.VERSION))

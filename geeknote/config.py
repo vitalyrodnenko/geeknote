@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 
 # !!! DO NOT EDIT !!! >>>
 USER_BASE_URL = "www.evernote.com"
@@ -12,12 +14,11 @@ CONSUMER_KEY_SANDBOX = "skaizer-1250"
 CONSUMER_SECRET_SANDBOX = "ed0fcc0c97c032a5"
 # !!! DO NOT EDIT !!! <<<
 
-import os, sys
 # Evernote config
 
 VERSION = 0.1
 
-IS_IN_TERMINAL  = sys.stdin.isatty()
+IS_IN_TERMINAL = sys.stdin.isatty()
 IS_OUT_TERMINAL = sys.stdout.isatty()
 
 # Application path

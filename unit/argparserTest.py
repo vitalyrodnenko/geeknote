@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
 from geeknote.argparser import *
 import unittest
+
 
 class testArgparser(unittest.TestCase):
 
@@ -11,12 +11,19 @@ class testArgparser(unittest.TestCase):
             "help": "Create note",
             "firstArg": "--test_req_arg",
             "arguments": {
-                "--test_req_arg": {"altName": "-tra", "help": "Set note title", "required": True},
-                "--test_arg": {"altName": "-ta", "help": "Add tag to note", "emptyValue": None},
-                "--test_arg2": {"altName": "-ta2", "help": "Add tag to note",},
+                "--test_req_arg": {"altName": "-tra",
+                                   "help": "Set note title",
+                                   "required": True},
+                "--test_arg": {"altName": "-ta",
+                               "help": "Add tag to note",
+                               "emptyValue": None},
+                "--test_arg2": {"altName": "-ta2", "help": "Add tag to note"},
             },
             "flags": {
-                "--test_flag": {"altName": "-tf", "help": "Add tag to note", "value": True, "default": False},
+                "--test_flag": {"altName": "-tf",
+                                "help": "Add tag to note",
+                                "value": True,
+                                "default": False},
             }
         }
 
@@ -49,32 +56,51 @@ class testArgparser(unittest.TestCase):
         self.assertEqual(parser.parse(), False)
 
     def testSuccessCommand1(self):
-        parser = argparser(["testing", "--test_req_arg", "test_req_val", "--test_flag", "--test_arg", "test_val"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_req_val", "test_flag": True, "test_arg": "test_val"})
+        parser = argparser(["testing", "--test_req_arg", "test_req_val",
+                            "--test_flag", "--test_arg", "test_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_req_val",
+                                          "test_flag": True,
+                                          "test_arg": "test_val"})
 
     def testSuccessCommand2(self):
-        parser = argparser(["testing", "test_req_val", "--test_flag", "--test_arg", "test_val"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_req_val", "test_flag": True, "test_arg": "test_val"})
+        parser = argparser(["testing", "test_req_val", "--test_flag",
+                            "--test_arg", "test_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_req_val",
+                                          "test_flag": True,
+                                          "test_arg": "test_val"})
 
     def testSuccessCommand3(self):
         parser = argparser(["testing", "test_def_val"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_flag": False})
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
+                                          "test_flag": False})
 
     def testSuccessCommand4(self):
         parser = argparser(["testing", "test_def_val", "--test_arg"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_flag": False})
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
+                                          "test_arg": None,
+                                          "test_flag": False})
 
     def testSuccessCommand5(self):
-        parser = argparser(["testing", "test_def_val", "--test_arg", "--test_arg2", "test_arg2_val"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_arg2": "test_arg2_val", "test_flag": False})
+        parser = argparser(["testing", "test_def_val", "--test_arg",
+                            "--test_arg2", "test_arg2_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
+                                          "test_arg": None,
+                                          "test_arg2": "test_arg2_val",
+                                          "test_flag": False})
 
     def testSuccessShortAttr(self):
-        parser = argparser(["testing", "test_def_val", "-ta", "-ta2", "test_arg2_val"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_arg": None, "test_arg2": "test_arg2_val", "test_flag": False})
+        parser = argparser(["testing", "test_def_val", "-ta",
+                            "-ta2", "test_arg2_val"])
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
+                                          "test_arg": None,
+                                          "test_arg2": "test_arg2_val",
+                                          "test_flag": False})
 
     def testSuccessShortAttr2(self):
         parser = argparser(["testing", "-tra", "test_def_val", "-tf"])
-        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val", "test_flag": True})
+        self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
+                                          "test_flag": True})
+
 
 def suite():
     suite = unittest.TestSuite()

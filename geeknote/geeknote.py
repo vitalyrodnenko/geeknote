@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import os, sys
+import os
+import sys
 import traceback
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
+sys.path.append(os.path.join(PROJECT_ROOT, 'lib'))
 
 import config
 
-import hashlib
-import binascii
 import time
-from datetime import datetime
-from urlparse import urlparse
 import re
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
@@ -22,10 +18,6 @@ import evernote.edam.userstore.constants as UserStoreConstants
 import evernote.edam.notestore.NoteStore as NoteStore
 import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
-
-import locale
-import time
-import signal
 
 import out
 from argparser import argparser
@@ -44,6 +36,7 @@ def GeekNoneDBConnectOnly(func):
         GeekNote.skipInitConnection = True
         return func(*args, **kwargs)
     return wrapper
+
 
 class GeekNote(object):
 
@@ -91,7 +84,8 @@ class GeekNote(object):
                     return func(*args, **kwargs)
 
                 elif errorCode == 3:
-                    out.failureMessage("Sorry, you do not have permissions to do this operation.")
+                    out.failureMessage("Sorry, you do not have permissions "
+                                       "to do this operation.")
 
                 else:
                     return False
@@ -114,7 +108,7 @@ class GeekNote(object):
         userStoreHttpClient = THttpClient.THttpClient(self.userStoreUri)
         userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
         GeekNote.userStore = UserStore.Client(userStoreProtocol)
-    
+
         self.checkVersion()
 
         return GeekNote.userStore
@@ -161,28 +155,31 @@ class GeekNote(object):
 
     def removeUser(self):
         return self.getStorage().removeUser()
-    
+
     """
     WORK WITH NOTEST
     """
     @EdamException
     def findNotes(self, keywords, count, createOrder=False):
-        
+
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
         if createOrder:
             noteFilter.order = Types.NoteSortOrder.CREATED
 
         if keywords:
             noteFilter.words = keywords
-        return self.getNoteStore().findNotes(self.authToken, noteFilter, 0, count)
+        return self.getNoteStore().findNotes(self.authToken,
+                                             noteFilter, 0, count)
 
     @EdamException
     def loadNoteContent(self, note):
         """ modify Note object """
         if not isinstance(note, object):
-            raise Exception("Note content must be an instanse of Note, '%s' given." % type(note))
+            raise Exception("Note content must be an "
+                            "instanse of Note, '%s' given." % type(note))
 
-        note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
+        note.content = self.getNoteStore().getNoteContent(self.authToken,
+                                                          note.guid)
 
     @EdamException
     def createNote(self, title, content, tags=None, notebook=None):
@@ -202,7 +199,8 @@ class GeekNote(object):
         return True
 
     @EdamException
-    def updateNote(self, guid, title=None, content=None, tags=None, notebook=None):
+    def updateNote(self, guid, title=None, content=None,
+                   tags=None, notebook=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -299,6 +297,7 @@ class GeekNote(object):
         self.getNoteStore().expungeTag(self.authToken, guid)
         return True
 
+
 class GeekNoteConnector(object):
     evernote = None
     storage = None
@@ -377,6 +376,7 @@ class User(GeekNoteConnector):
                 self.getStorage().setUserprop('editor', editor)
                 out.successMessage("Changes have been saved.")
 
+
 class Tags(GeekNoteConnector):
     """ Work with auth Notebooks """
 
@@ -412,7 +412,8 @@ class Tags(GeekNoteConnector):
     def remove(self, tagname, force=None):
         tag = self._searchTag(tagname)
 
-        if not force and not out.confirm('Are you sure you want to delete this tag: "%s"?' % tag.name):
+        if not force and not out.confirm('Are you sure you want to '
+                                         'delete this tag: "%s"?' % tag.name):
             return tools.exit()
 
         out.preloader.setMessage("Deleting tag...")
@@ -435,6 +436,7 @@ class Tags(GeekNoteConnector):
         logging.debug("Selected tag: %s" % str(tag))
         return tag
 
+
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
 
@@ -450,7 +452,8 @@ class Notebooks(GeekNoteConnector):
         if result:
             out.successMessage("Notebook has been successfully created.")
         else:
-            out.failureMessage("Error while the process of creating the notebook.")
+            out.failureMessage("Error while the process "
+                               "of creating the notebook.")
             return tools.exit()
 
         return result
@@ -459,7 +462,8 @@ class Notebooks(GeekNoteConnector):
         notebook = self._searchNotebook(notebook)
 
         out.preloader.setMessage("Updating notebook...")
-        result = self.getEvernote().updateNotebook(guid=notebook.guid, name=title)
+        result = self.getEvernote().updateNotebook(guid=notebook.guid,
+                                                   name=title)
 
         if result:
             out.successMessage("Notebook has been successfully updated.")
@@ -470,7 +474,8 @@ class Notebooks(GeekNoteConnector):
     def remove(self, notebook, force=None):
         notebook = self._searchNotebook(notebook)
 
-        if not force and not out.confirm('Are you sure you want to delete this notebook: "%s"?' % notebook.name):
+        if not force and not out.confirm('Are you sure you want to delete'
+                                         ' this notebook: "%s"?' % notebook.name):
             return tools.exit()
 
         out.preloader.setMessage("Deleting notebook...")
@@ -505,11 +510,13 @@ class Notebooks(GeekNoteConnector):
         else:
             return None
 
+
 class Notes(GeekNoteConnector):
     """ Work with Notes """
-    
+
     findExactOnUpdate = False
     selectFirstOnUpdate = False
+
     def __init__(self, findExactOnUpdate=False, selectFirstOnUpdate=False):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
@@ -534,7 +541,7 @@ class Notes(GeekNoteConnector):
         note = self._searchNote(note)
 
         inputData = self._parceInput(title, content, tags, notebook, note)
-        
+
         out.preloader.setMessage("Saving note...")
         result = self.getEvernote().updateNote(guid=note.guid, **inputData)
 
@@ -548,7 +555,8 @@ class Notes(GeekNoteConnector):
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        if not force and not out.confirm('Are you sure you want to delete this note: "%s"?' % note.title):
+        if not force and not out.confirm('Are you sure you want to '
+                                         'delete this note: "%s"?' % note.title):
             return tools.exit()
 
         out.preloader.setMessage("Deleting note...")
@@ -564,7 +572,7 @@ class Notes(GeekNoteConnector):
         self.connectToEvertone()
 
         note = self._searchNote(note)
-        
+
         out.preloader.setMessage("Loading note...")
         self.getEvernote().loadNoteContent(note)
 
@@ -593,7 +601,7 @@ class Notes(GeekNoteConnector):
                     self.getEvernote().loadNoteContent(note)
                     content = editor.edit(note.content)
                 else:
-                   content = editor.edit()
+                    content = editor.edit()
 
             elif isinstance(content, str) and os.path.isfile(content):
                 logging.debug("Load content from the file")
@@ -612,7 +620,7 @@ class Notes(GeekNoteConnector):
             if notepadGuid is None:
                 newNotepad = Notebooks().create(notebook)
                 notepadGuid = newNotepad.guid
-            
+
             result['notebook'] = notepadGuid
             logging.debug("Search notebook")
 
@@ -624,7 +632,7 @@ class Notes(GeekNoteConnector):
         # load search result
         result = self.getStorage().getSearch()
         if result and tools.checkIsInt(note) and 1 <= int(note) <= len(result.notes):
-            note = result.notes[int(note)-1]
+            note = result.notes[int(note) - 1]
 
         else:
             request = self._createSearchRequest(search=note)
@@ -641,16 +649,19 @@ class Notes(GeekNoteConnector):
                 note = result.notes[0]
 
             else:
-                logging.debug("Choose notes: %s" % str(result.notes)) 
+                logging.debug("Choose notes: %s" % str(result.notes))
                 note = out.SelectSearchResult(result.notes)
 
         logging.debug("Selected note: %s" % str(note))
         return note
 
+    def find(self, search=None, tags=None, notebooks=None,
+             date=None, exact_entry=None, content_search=None,
+             with_url=None, count=None, ):
 
-    def find(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None, with_url=None, count=None, ):
-
-        request = self._createSearchRequest(search, tags, notebooks, date, exact_entry, content_search)
+        request = self._createSearchRequest(search, tags, notebooks,
+                                            date, exact_entry,
+                                            content_search)
 
         if not count:
             count = 20
@@ -671,7 +682,9 @@ class Notes(GeekNoteConnector):
 
         out.SearchResult(result.notes, request, showUrl=with_url)
 
-    def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
+    def _createSearchRequest(self, search=None, tags=None,
+                             notebooks=None, date=None,
+                             exact_entry=None, content_search=None):
 
         request = ""
         if notebooks:
@@ -685,20 +698,21 @@ class Notes(GeekNoteConnector):
             for tag in tools.strip(tags.split(',')):
 
                 if tag.startswith('-'):
-                    request +='-tag:"%s" ' % tag[1:]
+                    request += '-tag:"%s" ' % tag[1:]
                 else:
-                    request +='tag:"%s" ' % tag
+                    request += 'tag:"%s" ' % tag
 
         if date:
             date = tools.strip(date.split('-'))
             try:
-                dateStruct = time.strptime(date[0]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
-                request +='created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
+                dateStruct = time.strptime(date[0] + " 00:00:00", "%d.%m.%Y %H:%M:%S")
+                request += 'created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)))
                 if len(date) == 2:
-                    dateStruct = time.strptime(date[1]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
-                request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)+60*60*24))
+                    dateStruct = time.strptime(date[1] + " 00:00:00", "%d.%m.%Y %H:%M:%S")
+                request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct) + 60 * 60 * 24))
             except ValueError, e:
-                out.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
+                out.failureMessage('Incorrect date format in --date attribute. '
+                                   'Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
                 return tools.exit()
 
         if search:
@@ -707,12 +721,13 @@ class Notes(GeekNoteConnector):
                 search = '"%s"' % search
 
             if content_search:
-                request += "%s" % search 
+                request += "%s" % search
             else:
                 request += "intitle:%s" % search
 
         logging.debug("Search request: %s", request)
         return request
+
 
 # парсинг входного потока и подстановка аргументов
 def modifyArgsByStdinStream():
@@ -737,6 +752,7 @@ def modifyArgsByStdinStream():
     }
 
     return ('create', ARGS)
+
 
 def main(args=None):
     try:

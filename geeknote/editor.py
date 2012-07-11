@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import os, sys
+import os
+import sys
 import tempfile
 import html2text as html2text
 import markdown as markdown
 import tools
 import out
-import sys
-import os
 import re
 import config
 from storage import Storage
@@ -19,11 +18,13 @@ def ENMLtoText(contentENML):
     content = re.sub(r' *\n', os.linesep, content)
     return content.encode('utf-8')
 
+
 def wrapENML(contentHTML):
-    body =  '<?xml version="1.0" encoding="UTF-8"?>\n'
-    body += '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
-    body += '<en-note>%s</en-note>' % contentHTML
+    body = '<?xml version="1.0" encoding="UTF-8"?>\n'\
+       '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'\
+       '<en-note>%s</en-note>' % contentHTML
     return body
+
 
 def textToENML(content, raise_ex=False):
     """
@@ -32,7 +33,7 @@ def textToENML(content, raise_ex=False):
     if not isinstance(content, str):
         content = ""
     try:
-        content = unicode(content,"utf-8")
+        content = unicode(content, "utf-8")
         # add 2 space before new line in paragraph for cteating br tags
         content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
         contentHTML = markdown.markdown(content).encode("utf-8")
@@ -41,32 +42,38 @@ def textToENML(content, raise_ex=False):
         return wrapENML(contentHTML)
     except:
         if raise_ex:
-            raise Exception("Error while parsing text to html. Content must be an UTF-8 encode.")
-            
-        logging.error("Error while parsing text to html. Content must be an UTF-8 encode.")
-        out.failureMessage("Error while parsing text to html. Content must be an UTF-8 encode.")
+            raise Exception("Error while parsing text to html."
+                            " Content must be an UTF-8 encode.")
+
+        logging.error("Error while parsing text to html. "
+                      "Content must be an UTF-8 encode.")
+        out.failureMessage("Error while parsing text to html. "
+                           "Content must be an UTF-8 encode.")
         return tools.exit()
+
 
 def edit(content=None):
     """
     Call the system editor, that types as a default in the system.
-    Editing goes in markdown format, and then the markdown converts into HTML, before uploading to Evernote.
+    Editing goes in markdown format, and then the markdown
+    converts into HTML, before uploading to Evernote.
     """
     if content is None:
         content = ""
 
     if not isinstance(content, str):
-        raise Exception("Note content must be an instanse of string, '%s' given." % type(content))
+        raise Exception("Note content must be an instanse "
+                        "of string, '%s' given." % type(content))
 
     (tmpFileHandler, tmpFileName) = tempfile.mkstemp()
-    
+
     os.write(tmpFileHandler, ENMLtoText(content))
     os.close(tmpFileHandler)
-    
+
     # Try to find default editor in the system.
     storage = Storage()
     editor = storage.getUserprop('editor')
-    
+
     if not editor:
         # If default editor is not finded, then use nano as a default.
         if sys.platform == 'win32':
@@ -86,6 +93,6 @@ def edit(content=None):
     out.preloader.stop()
     os.system(editor + " " + tmpFileName)
     out.preloader.launch()
-    newContent =  open(tmpFileName, 'r').read()
+    newContent = open(tmpFileName, 'r').read()
 
     return newContent

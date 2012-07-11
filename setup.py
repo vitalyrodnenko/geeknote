@@ -8,10 +8,13 @@ setup(
     license='GPL',
     author='Vitaliy Rodnenko',
     author_email='vitaly@webpp.ru',
-    description='Geeknote - is a command line client for Evernote, that can be use on Linux, FreeBSD and OS X.',
+    description='Geeknote - is a command line client for Evernote, '
+                'that can be use on Linux, FreeBSD and OS X.',
     url='http://www.geeknote.me',
-    packages=['lib', 'lib.evernote', 'lib.evernote.edam', 'lib.evernote.edam.error', 'lib.evernote.edam.limits',
-              'lib.evernote.edam.notestore', 'lib.evernote.edam.type', 'lib.evernote.edam.userstore', 'geeknote'],
+    packages=['lib', 'lib.evernote', 'lib.evernote.edam',
+              'lib.evernote.edam.error', 'lib.evernote.edam.limits',
+              'lib.evernote.edam.notestore', 'lib.evernote.edam.type',
+              'lib.evernote.edam.userstore', 'geeknote'],
     install_requires=[
         'html2text',
         'sqlalchemy',
