@@ -7,10 +7,6 @@ import unittest
 from geeknote import out
 from geeknote import tools
 
-import argparserTest
-import geeknoteTest
-import editorTest
-
 # disable printing
 out.printLine = lambda x, y=None: ''
 
@@ -18,9 +14,7 @@ out.printLine = lambda x, y=None: ''
 tools.exit = lambda : 'exit'
 
 suite = unittest.TestSuite()
-suite.addTest(argparserTest.suite())
-suite.addTest(geeknoteTest.suite())
-suite.addTest(editorTest.suite())
+suite.addTests(unittest.TestLoader().loadTestsFromModule('unit'))
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite)
