@@ -4,8 +4,8 @@ setup(
     name='geeknote',
     version='0.1',
     license='GPL',
-    author='',
-    author_email='',
+    author='Vitaliy Rodnenko',
+    author_email='vitaly@webpp.ru',
     description='Geeknote - is a command line client for Evernote, that can be use on Linux, FreeBSD and OS X.',
     url='http://www.geeknote.me',
     packages=['lib', 'lib.evernote', 'lib.evernote.edam', 'lib.evernote.edam.error', 'lib.evernote.edam.limits',
@@ -23,5 +23,6 @@ setup(
         ]
     },
     platforms='Any',
-    test_suite='unit'
+    test_suite='unit',
+    keywords='Evernote, console'
 )
