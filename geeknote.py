@@ -15,8 +15,8 @@ import time
 from datetime import datetime
 from urlparse import urlparse
 import re
-import lib.thrift.protocol.TBinaryProtocol as TBinaryProtocol
-import lib.thrift.transport.THttpClient as THttpClient
+import thrift.protocol.TBinaryProtocol as TBinaryProtocol
+import thrift.transport.THttpClient as THttpClient
 import lib.evernote.edam.userstore.UserStore as UserStore
 import lib.evernote.edam.userstore.constants as UserStoreConstants
 import lib.evernote.edam.notestore.NoteStore as NoteStore

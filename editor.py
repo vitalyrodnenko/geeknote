@@ -2,8 +2,8 @@
 
 import os, sys
 import tempfile
-import lib.html2text as html2text
-import lib.markdown as markdown
+import html2text as html2text
+import markdown as markdown
 import tools
 import out
 import sys

@@ -12,6 +12,8 @@ var
 sdist
 develop-eggs
 .installed.cfg
+.idea
+.venv
 
 # Installer logs
 pip-log.txt
