@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from geeknote import *
 import unittest
-import tools
-import editor
+from geeknote.geeknote import *
+from geeknote import tools
+from geeknote import editor
 
 editor.edit = lambda x=None: x+" from text editor"
 

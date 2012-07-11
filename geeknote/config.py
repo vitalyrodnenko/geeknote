@@ -30,7 +30,7 @@ DEF_WIN_EDITOR = "notepad.exe"
 EDITOR_OPEN = "WRITE"
 
 DEV_MODE = False
-DEBUG = False
+DEBUG = True
 
 # Url view the note
 NOTE_URL = "https://%domain%/Home.action?#n=%s"

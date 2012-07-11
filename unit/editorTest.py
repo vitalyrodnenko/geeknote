@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from editor import *
+from geeknote.editor import *
 import unittest
 
 class testEditor(unittest.TestCase):

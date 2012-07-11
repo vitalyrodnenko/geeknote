@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from argparser import *
+from geeknote.argparser import *
 import unittest
 
 class testArgparser(unittest.TestCase):
