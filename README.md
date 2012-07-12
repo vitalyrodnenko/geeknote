@@ -58,6 +58,20 @@ If you want to change Evernote user you should launch *logout* command:
 
 And after you can repeat authorization step.
 
+###Look your settings
+
+    $ geeknote settings
+    Geeknote
+    ******************************
+    Version: 0.1
+    App dir: /Users/username/.geeknote
+    Error log: /Users/username/.geeknote/error.log
+    Current editor: vim
+    ******************************
+    Username: username
+    Id: 11111111
+    Email: example@gmail.com
+
 ### Set up the default editor
 Geeknote allows to edit notes right in console editors in markdown format. We will show it a later in documentation.
 
