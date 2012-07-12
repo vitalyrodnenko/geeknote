@@ -16,7 +16,7 @@ out.printLine = lambda x, y=None: ''
 tools.exit = lambda: 'exit'
 
 suite = unittest.TestSuite()
-suite.addTests(unittest.TestLoader().loadTestsFromModule('unit'))
+suite.addTests(unittest.TestLoader().loadTestsFromModule('tests'))
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite)

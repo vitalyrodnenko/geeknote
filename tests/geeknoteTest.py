@@ -76,9 +76,3 @@ class testNotes(unittest.TestCase):
         testRequest = self.notes._createSearchRequest(search="test text",
                                                       date="12.31.1999")
         self.assertEqual(testRequest, 'exit')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(testNotes))
-    return suite
