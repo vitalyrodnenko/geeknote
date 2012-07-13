@@ -27,8 +27,11 @@ class storageTest(unittest.TestCase):
         self.storage.createUser(self.otoken,
                                 self.userinfo)
 
-    def tearDown(self):
-        self.storage.removeUser()
+    def test_create_user_without_token_fail(self):
+        self.assertFalse(self.storage.createUser(None, self.userinfo))
+
+    def test_create_user_without_info_fail(self):
+        self.assertFalse(self.storage.createUser(self.otoken, None))
 
     def test_remove_user_success(self):
         self.assertTrue(self.storage.removeUser())
@@ -70,22 +73,39 @@ class storageTest(unittest.TestCase):
         self.assertDictEqual(self.storage.getSettings(),
                              {u'editor': u"S'vim'\np0\n."})
 
-    def test_update_settings_success(self):
+    def test_set_setting_error_type_fail(self):
+        self.assertFalse(self.storage.setSettings('editor'))
+
+    def test_set_setting_none_value_fail(self):
+        self.assertFalse(self.storage.setSettings({'key': None}))
+
+    def test_update_settings_fail(self):
         self.storage.setSettings({'editor': 'vim'})
         self.assertTrue(self.storage.setSettings({'editor': 'nano'}))
         self.assertDictEqual(self.storage.getSettings(),
                              {u'editor': u"S'nano'\np0\n."})
 
-    def test_get_setting_exist_true(self):
+    def test_get_setting_exist_success(self):
         self.storage.setSettings({'editor': 'vim'})
         editor = self.storage.getSetting('editor')
         self.assertEqual(pickle.loads(editor), 'vim')
+
+    def test_set_setting_true(self):
+        editor = 'nano'
+        self.assertTrue(self.storage.setSetting('editor', editor))
+        self.assertEqual(self.storage.getSetting('editor'), editor)
 
     def test_get_setting_not_exist_fail(self):
         self.assertFalse(self.storage.getSetting('editor'))
 
     def test_set_tags_success(self):
         self.assertTrue(self.storage.setTags(self.tags))
+
+    def test_set_tags_error_type_fail(self):
+        self.assertFalse(self.storage.setTags('tag'))
+
+    def test_set_tags_none_value_fail(self):
+        self.assertFalse(self.storage.setTags({'tag': None}))
 
     def test_get_tags_success(self):
         tags = {u'tag': u'1', u'tag2': u'2', u'tag3': u'lol'}
@@ -118,5 +138,41 @@ class storageTest(unittest.TestCase):
         self.assertTrue(self.storage.setSearch(query))
         self.assertEqual(self.storage.getSearch(), query)
 
+    def test_set_notebooks_error_type_fail(self):
+        self.assertFalse(self.storage.setNotebooks('book'))
+
+    def test_set_notebooks_none_value_fail(self):
+        self.assertFalse(self.storage.setNotebooks({'book': None}))
+
     def test_set_search_true(self):
         self.assertTrue(self.storage.setSearch('my query'))
+
+
+class modelsTest(unittest.TestCase):
+    def test_rept_userprop(self):
+        userprop = storage.Userprop(key='test',
+                                    value='value')
+        self.assertEqual(userprop.__repr__(),
+                         "<Userprop('test','value)>")
+
+    def test_repr_setting(self):
+        setting = storage.Setting(key='test',
+                                  value='value')
+        self.assertEqual(setting.__repr__(),
+                         "<Setting('test','value)>")
+
+    def test_repr_notebook(self):
+        notebook = storage.Notebook(name='notebook',
+                                    guid='testguid')
+        self.assertEqual(notebook.__repr__(),
+                         "<Notebook('notebook')>")
+
+    def test_repr_tag(self):
+        tag = storage.Tag(tag='testtag',
+                          guid='testguid')
+        self.assertEqual(tag.__repr__(), "<Tag('testtag')>")
+
+    def test_repr_search(self):
+        search = storage.Search(search_obj='query')
+        self.assertEqual(search.__repr__(),
+                         "<Search('%s')>" % search.timestamp)
