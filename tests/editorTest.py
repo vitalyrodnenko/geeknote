@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from geeknote.editor import textToENML, wrapENML, ENMLtoText
 import unittest
 

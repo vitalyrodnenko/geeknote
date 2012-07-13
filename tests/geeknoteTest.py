@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import unittest
 from geeknote.geeknote import *
 from geeknote import tools
