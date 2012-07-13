@@ -8,7 +8,7 @@ import pickle
 
 
 def hacked_init(self):
-    '''Hack for testiong'''
+    '''Hack for testing'''
     engine = create_engine('sqlite:///:memory:', echo=False)
     storage.Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
