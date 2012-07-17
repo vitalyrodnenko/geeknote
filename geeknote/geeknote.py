@@ -303,7 +303,7 @@ class GeekNoteConnector(object):
     storage = None
 
     def connectToEvertone(self):
-        out.preloader.setMessage("Connect to Evernote...")
+        out.preloader.setMessage("Connect to Evernote...\n")
         self.evernote = GeekNote()
 
     def getEvernote(self):
@@ -366,15 +366,34 @@ class User(GeekNoteConnector):
 
     @GeekNoneDBConnectOnly
     def settings(self, editor=None):
+        storage = self.getStorage()
         if editor:
             if editor == '#GET#':
-                editor = self.getStorage().getUserprop('editor')
+                editor = storage.getUserprop('editor')
                 if not editor:
                     editor = config.DEF_WIN_EDITOR if sys.platform == 'win32' else config.DEF_UNIX_EDITOR
                 out.successMessage("Current editor is: %s" % editor)
             else:
-                self.getStorage().setUserprop('editor', editor)
+                storage.setUserprop('editor', editor)
                 out.successMessage("Changes have been saved.")
+        else:
+            settings = ('Geeknote',
+                        '*' * 30,
+                        'Version: %s' % config.VERSION,
+                        'App dir: %s' % config.APP_DIR,
+                        'Error log: %s' % config.ERROR_LOG,
+                        'Current editor: %s' % storage.getUserprop('editor'))
+
+            user_settings = storage.getUserprops()
+
+            if user_settings:
+                user = user_settings[1]['info']
+                settings += ('*' * 30,
+                             'Username: %s' % user.username,
+                             'Id: %s' % user.id,
+                             'Email: %s' % user.email)
+
+            out.printLine('\n'.join(settings))
 
 
 class Tags(GeekNoteConnector):
