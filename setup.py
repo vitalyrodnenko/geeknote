@@ -28,6 +28,6 @@ setup(
         ]
     },
     platforms='Any',
-    test_suite='unit',
+    test_suite='tests',
     keywords='Evernote, console'
 )

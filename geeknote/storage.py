@@ -279,7 +279,7 @@ class Storage(object):
         """
         instance = self.session.query(Setting).filter_by(key=key).first()
         if instance:
-            return instance.value
+            return str(instance.value)
         else:
             return None
 
@@ -386,4 +386,7 @@ class Storage(object):
         return False if something wrong
         """
         search = self.session.query(Search).first()
-        return pickle.loads(search.search_obj)
+        if search:
+            return pickle.loads(search.search_obj)
+        else:
+            return None

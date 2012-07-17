@@ -40,6 +40,11 @@ Geeknote **doesn't work with Ubuntu 12.04**. Unfortunately this is the problem o
 
 This issue is suitable **only for Ubuntu 12.04**.
 
+### Development
+Run tests
+
+    $ python setup.py test
+
 ## Settings
 Geeknote has some settings that you should know.
 

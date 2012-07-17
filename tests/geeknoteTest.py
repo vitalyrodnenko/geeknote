@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import unittest
 from geeknote.geeknote import *
 from geeknote import tools
@@ -59,7 +60,9 @@ class testNotes(unittest.TestCase):
             exact_entry=True,
             content_search=True
         )
-        self.assertEqual(testRequest, 'notebook:"test notebook" tag:"tag1" created:20000101 -created:20000102 "test text"')
+        response = 'notebook:"test notebook" tag:"tag1" ' \
+                   'created:20000101 -created:20000102 "test text"'
+        self.assertEqual(testRequest, response)
 
     def test_createSearchRequest2(self):
         testRequest = self.notes._createSearchRequest(
@@ -70,15 +73,12 @@ class testNotes(unittest.TestCase):
             exact_entry=False,
             content_search=False
         )
-        self.assertEqual(testRequest, 'notebook:"notebook1" notebook:"notebook2" tag:"tag1" tag:"tag2" created:19991231 -created:20010101 intitle:test text')
+        response = 'notebook:"notebook1" notebook:"notebook2" tag:"tag1"' \
+                   ' tag:"tag2" created:19991231 -created:20010101 ' \
+                   'intitle:test text'
+        self.assertEqual(testRequest, response)
 
     def testError_createSearchRequest1(self):
         testRequest = self.notes._createSearchRequest(search="test text",
                                                       date="12.31.1999")
         self.assertEqual(testRequest, 'exit')
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(testNotes))
-    return suite
