@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from geeknote.argparser import *
 import unittest
 
@@ -100,9 +101,3 @@ class testArgparser(unittest.TestCase):
         parser = argparser(["testing", "-tra", "test_def_val", "-tf"])
         self.assertEqual(parser.parse(), {"test_req_arg": "test_def_val",
                                           "test_flag": True})
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(testArgparser))
-    return suite
