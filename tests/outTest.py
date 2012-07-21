@@ -33,11 +33,7 @@ class NoteStub(object):
 class outTestsWithHackedStdout(unittest.TestCase):
 
     def setUp(self):
-        self.old_stdout = sys.stdout
         sys.stdout = StringIO()  # set fake stdout
-
-    def tearDown(self):
-        sys.stdout = self.old_stdout  # restore original stdout
 
     def test_print_line(self):
         printLine('test')

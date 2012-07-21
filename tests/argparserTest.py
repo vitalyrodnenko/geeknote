@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from geeknote.argparser import *
+from cStringIO import StringIO
+import sys
 import unittest
 
 
 class testArgparser(unittest.TestCase):
 
     def setUp(self):
+        sys.stdout = StringIO()  # set fake stdout
+
         # добавляем тестовые данные
         COMMANDS_DICT['testing'] = {
             "help": "Create note",
