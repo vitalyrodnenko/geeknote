@@ -29,7 +29,7 @@ class testNotes(unittest.TestCase):
 
     def test_parceInput1(self):
         testData = self.notes._parceInput("title", "test body", "tag1")
-        self.assertIsInstance(testData, dict)
+        self.assertTrue(isinstance(testData, dict))
         if not isinstance(testData, dict):
             return
 
@@ -40,7 +40,7 @@ class testNotes(unittest.TestCase):
     def test_parceInput2(self):
         testData = self.notes._parceInput("title", "WRITE", "tag1, tag2",
                                           None, self.testNote)
-        self.assertIsInstance(testData, dict)
+        self.assertTrue(isinstance(testData, dict))
         if not isinstance(testData, dict):
             return
 

@@ -45,6 +45,9 @@ Run tests
 
     $ python setup.py test
 
+    # or for to run tests with `tox`
+    $ tox
+
 ## Settings
 Geeknote has some settings that you should know.
 
