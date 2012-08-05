@@ -5,7 +5,7 @@ from __future__ import with_statement
 import sys
 import os
 from setuptools import setup
-from distutils.command.install import install
+from setuptools.command.install import install
 
 
 BASH_COMPLETION = '''
@@ -31,7 +31,7 @@ class full_install(install):
 
     user_options = install.user_options + [
         ('userhome', None, "(Linux only) Set user home directory for"
-                           " bash completion (/home/%s)".format(os.getlogin()))
+                           " bash completion (/home/{0})".format(os.getlogin()))
     ]
 
     def initialize_options(self):
