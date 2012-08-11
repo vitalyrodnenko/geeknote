@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from log import logging
 import out
 
@@ -204,15 +205,15 @@ class argparser(object):
         self.LVL = len(sys_argv)
         self.INPUT = sys_argv
 
-        #список команд
+        # list of commands
         self.CMD_LIST = self.COMMANDS.keys()
-        # введенная команда
+        # command
         self.CMD = None if self.LVL == 0 else self.INPUT[0]
-        # список возможных аргументов введенной команды
+        # list of possible arguments of the command line
         self.CMD_ARGS = self.COMMANDS[self.CMD]['arguments'] if self.LVL > 0 and self.CMD in self.COMMANDS and 'arguments' in self.COMMANDS[self.CMD] else {}
-        # список возможных флагов введенной команды
+        # list of possible flags of the command line
         self.CMD_FLAGS = self.COMMANDS[self.CMD]['flags'] if self.LVL > 0 and self.CMD in self.COMMANDS and 'flags' in self.COMMANDS[self.CMD] else {}
-        # список введенных аргументов и их значений
+        # list of entered arguments and their values
         self.INP = [] if self.LVL <= 1 else self.INPUT[1:]
 
         logging.debug("CMD_LIST : %s", str(self.CMD_LIST))
@@ -247,19 +248,19 @@ class argparser(object):
             self.printHelp()
             return False
 
-        # Подготовка данных
+        # prepare data
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
-            # установка значений по умолчаеию
+            # set values by default
             if 'default' in params:
                 self.INP_DATA[arg] = params['default']
 
-            # замена altName во входящих аргументах на полные
+            # replace `altName` entered arguments on full
             if 'altName' in params and params['altName'] in self.INP:
                 self.INP[self.INP.index(params['altName'])] = arg
 
         activeArg = None
         ACTIVE_CMD = None
-        # проверяем и подставляем первый адгумент по умолчанию
+        # check and insert first argument by default
         if 'firstArg' in self.COMMANDS[self.CMD]:
             firstArg = self.COMMANDS[self.CMD]['firstArg']
             if len(self.INP) > 0:
@@ -272,25 +273,25 @@ class argparser(object):
                 self.INP = [firstArg, ]
 
         for item in self.INP:
-            # Проверяем что ожидаем аргумент
+            # check what are waiting the argument
             if activeArg is None:
                 # Действия для аргумента
                 if item in self.CMD_ARGS:
                     activeArg = item
                     ACTIVE_CMD = self.CMD_ARGS[activeArg]
 
-                # Действия для флага
+                # actions for the flag
                 elif item in self.CMD_FLAGS:
                     self.INP_DATA[item] = self.CMD_FLAGS[item]["value"]
 
-                # Ошибка параметр не найден
+                # error. parameter is not found
                 else:
                     self.printErrorArgument(item)
                     return False
 
             else:
                 activeArgTmp = None
-                # Значения является параметром
+                # values it is parameter
                 if item in self.CMD_ARGS or item in self.CMD_FLAGS:
                     # "Активный" аргумент имеет параметр emptyValue
                     if "emptyValue" in ACTIVE_CMD:
@@ -366,11 +367,11 @@ class argparser(object):
             if PREV_LAST_VAL in self.CMD_ARGS or LAST_VAL in self.CMD_FLAGS:
                 self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP])
 
-            # автозаполнение для неполной команды
+            # autocomplete for part of the command
             elif PREV_LAST_VAL not in self.CMD_ARGS:
                 self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP and item.startswith(LAST_VAL)])
 
-            # обработка аргумента
+            # processing of the arguments
             else:
                 print ""  # "Please_input_%s" % INP_ARG.replace('-', '')
 
