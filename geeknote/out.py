@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys
+
 import getpass
-import time
 import thread
+import time
+import sys
+
 import tools
 import editor
 import config
@@ -160,8 +162,10 @@ def showUser(user, fullInfo):
     line('Email', user.email)
 
     if fullInfo:
-        line('Upload limit', "%.2f" % (int(user.accounting.uploadLimit) / 1024 / 1024))
-        line('Upload limit end', time.strftime("%d.%m.%Y", time.gmtime(user.accounting.uploadLimitEnd / 1000)))
+        limit = (int(user.accounting.uploadLimit) / 1024 / 1024)
+        endlimit = time.gmtime(user.accounting.uploadLimitEnd / 1000)
+        line('Upload limit', "%.2f" % limit)
+        line('Upload limit end', time.strftime("%d.%m.%Y", endlimit))
 
 
 @preloaderStop
@@ -202,11 +206,8 @@ def printList(listItems, title="", showSelector=False,
 
         printLine("%s : %s%s%s" % (
             str(key).rjust(3, " "),
-            #print date
             printDate(item.created).ljust(12, " ") if hasattr(item, 'created') else '',
-            #print title
             item.title if hasattr(item, 'title') else item.name,
-            #print noteUrl
             " " + (">>> " + config.NOTE_URL % item.guid) if showUrl else '',))
 
         if key % showByStep == 0 and key < total:
@@ -219,7 +220,7 @@ def printList(listItems, title="", showSelector=False,
         try:
             while True:
                 num = rawInput(": ")
-                if tools.checkIsInt(num) and  1 <= int(num) <= total:
+                if tools.checkIsInt(num) and 1 <= int(num) <= total:
                     return listItems[int(num) - 1]
                 if num == '0':
                     exit(1)
@@ -248,6 +249,7 @@ def printLine(line, endLine="\n"):
         sys.stdout.write(message)
     except:
         pass
+    sys.stdout.flush()
 
 
 def printAbout():

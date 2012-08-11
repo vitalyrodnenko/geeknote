@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
+
 import httplib
 import time
 import Cookie
 import uuid
-from log import logging
 from urllib import urlencode, unquote
 from urlparse import urlparse
 
 import out
 import tools
 import config
+from log import logging
 
 
 class GeekNoteAuth(object):
@@ -133,10 +134,10 @@ class GeekNoteAuth(object):
     def getTmpOAuthToken(self):
         response = self.loadPage(self.url['base'],
                                  self.url['token'],
-                                "GET",
-                                self.getTokenRequestData(
-                                    oauth_callback="https://" + self.url['base']
-                                ))
+                                 "GET",
+                                 self.getTokenRequestData(
+                                     oauth_callback="https://" + self.url['base']
+                                 ))
 
         if response.status != 200:
             logging.error("Unexpected response status on get "
@@ -159,7 +160,8 @@ class GeekNoteAuth(object):
                                  {'oauth_token': self.tmpOAuthToken})
 
         if response.status != 200:
-            logging.error("Unexpected response status on login 200 != %s", response.status)
+            logging.error("Unexpected response status "
+                          "on login 200 != %s", response.status)
             tools.exit()
 
         if 'JSESSIONID' not in self.cookies:
@@ -196,13 +198,12 @@ class GeekNoteAuth(object):
         #self.allowAccess(response.location)
 
     def allowAccess(self):
-
-        self.postData['access']['oauth_token'] = self.tmpOAuthToken
-        self.postData['access']['oauth_callback'] = "https://" + self.url['base']
+        access = self.postData['access']
+        access['oauth_token'] = self.tmpOAuthToken
+        access['oauth_callback'] = "https://" + self.url['base']
         response = self.loadPage(self.url['base'],
                                  self.url['access'],
-                                 "POST",
-                                 self.postData['access'])
+                                 "POST", access)
 
         if response.status != 302:
             logging.error("Unexpected response status on allowing "

@@ -1,37 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
-import sys
+
 import traceback
-
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.join(PROJECT_ROOT, 'lib'))
-
-import config
-
 import time
+import sys
+import os
 import re
+
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
-import evernote.edam.userstore.UserStore as UserStore
+
 import evernote.edam.userstore.constants as UserStoreConstants
 import evernote.edam.notestore.NoteStore as NoteStore
-import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
+import evernote.edam.type.ttypes as Types
 
-import out
-from argparser import argparser
-
-from oauth import GeekNoteAuth
-
-from storage import Storage
+import config
 import editor
 import tools
+import out
+from gclient import GUserStore as UserStore
+from argparser import argparser
+from oauth import GeekNoteAuth
+from storage import Storage
 from log import logging
 
 
-# decorator to disable evernote connection on create instance of GeekNote
 def GeekNoneDBConnectOnly(func):
+    """ operator to disable evernote connection
+    or create instance of GeekNote """
     def wrapper(*args, **kwargs):
         GeekNote.skipInitConnection = True
         return func(*args, **kwargs)
@@ -156,12 +153,9 @@ class GeekNote(object):
     def removeUser(self):
         return self.getStorage().removeUser()
 
-    """
-    WORK WITH NOTEST
-    """
     @EdamException
     def findNotes(self, keywords, count, createOrder=False):
-
+        """ WORK WITH NOTEST """
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
         if createOrder:
             noteFilter.order = Types.NoteSortOrder.CREATED
@@ -227,11 +221,9 @@ class GeekNote(object):
         self.getNoteStore().deleteNote(self.authToken, guid)
         return True
 
-    """
-    WORK WITH NOTEBOOKS
-    """
     @EdamException
     def findNotebooks(self):
+        """ WORK WITH NOTEBOOKS """
         return self.getNoteStore().listNotebooks(self.authToken)
 
     @EdamException
@@ -262,11 +254,9 @@ class GeekNote(object):
         self.getNoteStore().expungeNotebook(self.authToken, guid)
         return True
 
-    """
-    WORK WITH TAGS
-    """
     @EdamException
     def findTags(self):
+        """ WORK WITH TAGS """
         return self.getNoteStore().listTags(self.authToken)
 
     @EdamException
@@ -303,7 +293,7 @@ class GeekNoteConnector(object):
     storage = None
 
     def connectToEvertone(self):
-        out.preloader.setMessage("Connect to Evernote...\n")
+        out.preloader.setMessage("Connect to Evernote...")
         self.evernote = GeekNote()
 
     def getEvernote(self):
@@ -748,8 +738,8 @@ class Notes(GeekNoteConnector):
         return request
 
 
-# парсинг входного потока и подстановка аргументов
 def modifyArgsByStdinStream():
+    """ парсинг входного потока и подстановка аргументов"""
     content = sys.stdin.read()
     content = tools.stdinEncode(content)
 
