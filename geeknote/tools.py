@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import out
 import sys
 import time
@@ -39,7 +40,8 @@ def strip(data):
         return data
 
     if isinstance(data, dict):
-        return dict([[key.strip(' \t\n\r\"\''), val] for key, val in data.iteritems()])
+        items = data.iteritems()
+        return dict([[key.strip(' \t\n\r\"\''), val] for key, val in items])
 
     if isinstance(data, list):
         return map(lambda val: val.strip(' \t\n\r\"\''), data)
