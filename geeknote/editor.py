@@ -75,17 +75,17 @@ def edit(content=None):
     editor = storage.getUserprop('editor')
 
     if not editor:
+        editor = os.environ.get("editor")
+
+    if not editor:
+        editor = os.environ.get("EDITOR")
+
+    if not editor:
         # If default editor is not finded, then use nano as a default.
         if sys.platform == 'win32':
             editor = config.DEF_WIN_EDITOR
         else:
             editor = config.DEF_UNIX_EDITOR
-
-    if not editor:
-        editor = os.environ.get("editor")
-
-    if not editor:
-        editor = os.environ.get("EDITOR")
 
     # Make a system call to open file for editing.
     logging.debug("launch system editor: %s %s" % (editor, tmpFileName))
