@@ -94,7 +94,12 @@ class GNSync:
             format = "plain"
             
         self.format = format
-        
+
+        if format == "markdown":
+            self.extension = ".md"
+        else:
+            self.extension = ".txt"
+
         logger.info('Sync Start')
          
         #set notebook
@@ -125,9 +130,21 @@ class GNSync:
                     
             if not has_note :
                 self._create_note(f)
-                
+
+        for n in notes:
+            has_file = False
+            for f in files:
+                if f['name'] == n.title:
+                    has_file = True
+                    if f['mtime'] < n.updated:
+                        self._update_file(f, n)
+                        break
+
+            if not has_file:
+                self._create_file(n)
+
         logger.info('Sync Complete')
-    
+
     @log
     def _update_note(self, file_note, note):
         """
@@ -147,9 +164,17 @@ class GNSync:
             raise Exception('Note "{0}" was not updated'.format(note.title))
             
         return result
-        
-    
-    @log  
+
+    @log
+    def _update_file(self, file_note, note):
+        """
+        Updates file from note
+        """
+        GeekNote().loadNoteContent(note)
+        content = editor.ENMLtoText(note.content)
+        open(file_note['path'], "w").write(content)
+
+    @log
     def _create_note(self, file_note):
         """
         Creates note from file
@@ -172,6 +197,17 @@ class GNSync:
             raise Exception('Note "{0}" was not created'.format(file_note['name']))
             
         return result
+
+    @log
+    def _create_file(self, note):
+        """
+        Creates file from note
+        """
+        GeekNote().loadNoteContent(note)
+        content = editor.ENMLtoText(note.content)
+        path = os.path.join(self.path, note.title + self.extension)
+        open(path, "w").write(content)
+        return True
 
     @log
     def _get_file_content(self, path):
