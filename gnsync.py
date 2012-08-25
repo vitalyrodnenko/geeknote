@@ -64,12 +64,13 @@ class GNSync:
     notebook_name = None
     path = None
     mask = None
-    
+    twoway = None
+
     notebook_guid = None
     all_set = False
     
     @log
-    def __init__(self, notebook_name, path, mask, format):
+    def __init__(self, notebook_name, path, mask, format, twoway=False):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -99,6 +100,8 @@ class GNSync:
             self.extension = ".md"
         else:
             self.extension = ".txt"
+
+        self.twoway = twoway
 
         logger.info('Sync Start')
          
@@ -131,17 +134,18 @@ class GNSync:
             if not has_note :
                 self._create_note(f)
 
-        for n in notes:
-            has_file = False
-            for f in files:
-                if f['name'] == n.title:
-                    has_file = True
-                    if f['mtime'] < n.updated:
-                        self._update_file(f, n)
-                        break
+        if self.twoway:
+            for n in notes:
+                has_file = False
+                for f in files:
+                    if f['name'] == n.title:
+                        has_file = True
+                        if f['mtime'] < n.updated:
+                            self._update_file(f, n)
+                            break
 
-            if not has_file:
-                self._create_file(n)
+                if not has_file:
+                    self._create_file(n)
 
         logger.info('Sync Complete')
 
@@ -290,7 +294,8 @@ def main():
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values ​​are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
-        
+        parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+
         args = parser.parse_args()
     
         path = args.path if args.path else None
@@ -298,10 +303,11 @@ def main():
         format = args.format if args.format else None
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
-        
+        twoway = True if args.twoway else False
+
         reset_logpath(logpath)
-        
-        GNS = GNSync(notebook, path, mask, format)
+
+        GNS = GNSync(notebook, path, mask, format, twoway)
         GNS.sync()
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
