@@ -303,7 +303,7 @@ def main():
         format = args.format if args.format else None
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
-        twoway = True if args.twoway else False
+        twoway = True if args.two_way else False
 
         reset_logpath(logpath)
 
