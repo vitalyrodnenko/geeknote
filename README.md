@@ -359,7 +359,7 @@ gnsync - is an additional application, that is install with Geeknote. gnsync all
 :   You can set the notebook which will be syncronized with local directory. But if you won't set this option, *gnsync* will create new notebook with the name of the directory that you want to sync.
 
 ### Description
-The application *gnsync* is very usefull in system adminstration. Because of you can syncronize you local logs, statuses and any other production information with Evernote. And have the 
+The application *gnsync* is very usefull in system adminstration. Because of you can syncronize you local logs, statuses and any other production information with Evernote.
 
 ### Examples
     $ gnsync --path /home/project/xmpp/logs/
