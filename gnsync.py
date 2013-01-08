@@ -162,7 +162,8 @@ class GNSync:
         result = GeekNote().createNote(
             title=file_note['name'],
             content=content,
-            notebook=self.notebook_guid)
+            notebook=self.notebook_guid,
+            created=file_note['mtime'])
         
         if result:
             logger.info('Note "{0}" was created'.format(file_note['name']))
