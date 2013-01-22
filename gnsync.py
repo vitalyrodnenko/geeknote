@@ -125,7 +125,7 @@ class GNSync:
             if not has_note :
                 self._create_note(f)
                 
-        logger.info('Sync Complite')
+        logger.info('Sync Complete')
     
     @log
     def _update_note(self, file_note, note):
