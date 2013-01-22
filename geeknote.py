@@ -185,10 +185,11 @@ class GeekNote(object):
         note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
 
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None):
         note = Types.Note()
         note.title = title
         note.content = content
+        note.created = created
 
         if tags:
             note.tagNames = tags
