@@ -105,7 +105,7 @@ def GetUserCredentials():
 def SearchResult(listItems, request, **kwargs):
     """Печать результатов поиска"""
     printLine("Search request: %s" % request)
-    printList(listItems, **kwargs)
+    printList(listItems, showByStep=config.DEF_MORELINESLIMIT, **kwargs)
 
 
 @preloaderStop

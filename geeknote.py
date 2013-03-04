@@ -166,7 +166,7 @@ class GeekNote(object):
     WORK WITH NOTEST
     """
     @EdamException
-    def findNotes(self, keywords, count, createOrder=False):
+    def findNotes(self, keywords, count, createOrder=False, fromindex = 0):
         
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
         if createOrder:
@@ -174,7 +174,7 @@ class GeekNote(object):
 
         if keywords:
             noteFilter.words = keywords
-        return self.getNoteStore().findNotes(self.authToken, noteFilter, 0, count)
+        return self.getNoteStore().findNotes(self.authToken, noteFilter, fromindex, count)
 
     @EdamException
     def loadNoteContent(self, note):
@@ -383,7 +383,7 @@ class Tags(GeekNoteConnector):
 
     def list(self):
         result = self.getEvernote().findTags()
-        out.printList(result)
+        out.printList(result, showByStep=config.DEF_MORELINESLIMIT)
 
     def create(self, title):
         self.connectToEvertone()
@@ -441,7 +441,7 @@ class Notebooks(GeekNoteConnector):
 
     def list(self):
         result = self.getEvernote().findNotebooks()
-        out.printList(result)
+        out.printList(result, showByStep=config.DEF_MORELINESLIMIT)
 
     def create(self, title):
         self.connectToEvertone()
@@ -631,7 +631,7 @@ class Notes(GeekNoteConnector):
             request = self._createSearchRequest(search=note)
 
             logging.debug("Search notes: %s" % request)
-            result = self.getEvernote().findNotes(request, 20)
+            result = self.getEvernote().findNotes(request, config.DEF_MORELINESLIMIT)
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
@@ -654,14 +654,20 @@ class Notes(GeekNoteConnector):
         request = self._createSearchRequest(search, tags, notebooks, date, exact_entry, content_search)
 
         if not count:
-            count = 20
+            count = config.DEF_FINDLIMIT
         else:
             count = int(count)
-
+        print "Search count: %s", count
         logging.debug("Search count: %s", count)
 
         createFilter = True if search == "*" else False
         result = self.getEvernote().findNotes(request, count, createFilter)
+        totalNotes = result.totalNotes
+        notes = result.notes
+
+        while len(notes)<totalNotes:
+            r = self.getEvernote().findNotes(request, count, createFilter, fromindex = len(notes))
+            notes = notes + r.notes
 
         if result.totalNotes == 0:
             out.successMessage("Notes have not been found.")
@@ -670,7 +676,7 @@ class Notes(GeekNoteConnector):
         # print result
         self.getStorage().setSearch(result)
 
-        out.SearchResult(result.notes, request, showUrl=with_url)
+        out.SearchResult(notes, request, showUrl=with_url)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 
@@ -729,8 +735,8 @@ def modifyArgsByStdinStream():
     if not title:
         out.failureMessage("Error while crating title of note from stream.")
         return tools.exit()
-    elif len(title) > 50:
-        title = title[0:50] + '...'
+    elif len(title) > config.DEF_MAXTITLELENGTH:
+        title = title[0:config.DEF_MAXTITLELENGTH] + '...'
 
     ARGS = {
         'title': title,
