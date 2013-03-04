@@ -166,7 +166,7 @@ class GeekNote(object):
     WORK WITH NOTEST
     """
     @EdamException
-    def findNotes(self, keywords, count, createOrder=False):
+    def findNotes(self, keywords, count, createOrder=False, fromindex = 0):
         
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
         if createOrder:
@@ -174,8 +174,7 @@ class GeekNote(object):
 
         if keywords:
             noteFilter.words = keywords
-        print "FindCount: ", count
-        return self.getNoteStore().findNotes(self.authToken, noteFilter, 0, count)
+        return self.getNoteStore().findNotes(self.authToken, noteFilter, fromindex, count)
 
     @EdamException
     def loadNoteContent(self, note):
@@ -663,6 +662,12 @@ class Notes(GeekNoteConnector):
 
         createFilter = True if search == "*" else False
         result = self.getEvernote().findNotes(request, count, createFilter)
+        totalNotes = result.totalNotes
+        notes = result.notes
+
+        while len(notes)<totalNotes:
+            r = self.getEvernote().findNotes(request, count, createFilter, fromindex = len(notes))
+            notes = notes + r.notes
 
         if result.totalNotes == 0:
             out.successMessage("Notes have not been found.")
@@ -671,7 +676,7 @@ class Notes(GeekNoteConnector):
         # print result
         self.getStorage().setSearch(result)
 
-        out.SearchResult(result.notes, request, showUrl=with_url)
+        out.SearchResult(notes, request, showUrl=with_url)
 
     def _createSearchRequest(self, search=None, tags=None, notebooks=None, date=None, exact_entry=None, content_search=None):
 
