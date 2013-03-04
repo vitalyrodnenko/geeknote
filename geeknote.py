@@ -174,6 +174,7 @@ class GeekNote(object):
 
         if keywords:
             noteFilter.words = keywords
+        print "FindCount: ", count
         return self.getNoteStore().findNotes(self.authToken, noteFilter, 0, count)
 
     @EdamException
@@ -383,7 +384,7 @@ class Tags(GeekNoteConnector):
 
     def list(self):
         result = self.getEvernote().findTags()
-        out.printList(result)
+        out.printList(result, showByStep=config.DEF_MORELINESLIMIT)
 
     def create(self, title):
         self.connectToEvertone()
@@ -441,7 +442,7 @@ class Notebooks(GeekNoteConnector):
 
     def list(self):
         result = self.getEvernote().findNotebooks()
-        out.printList(result)
+        out.printList(result, showByStep=config.DEF_MORELINESLIMIT)
 
     def create(self, title):
         self.connectToEvertone()
@@ -631,7 +632,7 @@ class Notes(GeekNoteConnector):
             request = self._createSearchRequest(search=note)
 
             logging.debug("Search notes: %s" % request)
-            result = self.getEvernote().findNotes(request, 20)
+            result = self.getEvernote().findNotes(request, config.DEF_MORELINESLIMIT)
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
@@ -654,10 +655,10 @@ class Notes(GeekNoteConnector):
         request = self._createSearchRequest(search, tags, notebooks, date, exact_entry, content_search)
 
         if not count:
-            count = 20
+            count = config.DEF_FINDLIMIT
         else:
             count = int(count)
-
+        print "Search count: %s", count
         logging.debug("Search count: %s", count)
 
         createFilter = True if search == "*" else False
@@ -729,8 +730,8 @@ def modifyArgsByStdinStream():
     if not title:
         out.failureMessage("Error while crating title of note from stream.")
         return tools.exit()
-    elif len(title) > 50:
-        title = title[0:50] + '...'
+    elif len(title) > config.DEF_MAXTITLELENGTH:
+        title = title[0:config.DEF_MAXTITLELENGTH] + '...'
 
     ARGS = {
         'title': title,
