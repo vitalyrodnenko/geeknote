@@ -36,6 +36,7 @@ COMMANDS_DICT = {
             "--title":      {"altName": "-t", "help": "The note title.", "required": True},
             "--content":    {"altName": "-c", "help": "The note content.", "required": True},
             "--tags":       {"altName": "-tg","help": "One tag or the list of tags which will be added to the note."},
+            "--resource":       {"altName": "-rs", "help": "Add a resource to the note.", "repetitive": True},
             "--notebook":   {"altName": "-nb", "help": "Set the notebook where to save note."}
         }
     },
@@ -46,6 +47,7 @@ COMMANDS_DICT = {
             "--note":       {"altName": "-n", "help": "The name or ID from the previous search of a note to edit."},
             "--title":      {"altName": "-t", "help": "Set new title of the note."},
             "--content":    {"altName": "-c", "help": "Set new content of the note."},
+            "--resource":       {"altName": "-rs", "help": "Add a resource to the note.", "repetitive": True},
             "--tags":       {"altName": "-tg", "help": "Set new list o tags for the note."},
             "--notebook":   {"altName": "-nb", "help": "Assign new notebook for the note."}
         }
@@ -263,7 +265,16 @@ class argparser(object):
                         self.printErrorArgument(activeArg, item)
                         return False
 
-                self.INP_DATA[activeArg] = item
+                if (activeArg in self.INP_DATA):
+                    """ append """
+                    self.INP_DATA[activeArg] += [item]
+                else:
+                    """ set """
+                    if ACTIVE_CMD.has_key("repetitive") and (ACTIVE_CMD["repetitive"]) :
+                        self.INP_DATA[activeArg] = [item]
+                    else:
+                        self.INP_DATA[activeArg] = item
+                            
                 activeArg = activeArgTmp # тут или пусто, или новый "активный" аргумент
 
         # если остались "активные" аршументы
