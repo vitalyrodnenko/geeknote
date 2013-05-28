@@ -10,7 +10,7 @@ os.system('rm -rf geeknote')
 packages = ['geeknote.' + x for x in find_packages()] + ['geeknote']
 
 # This is to properly encapsulate the library during egg generation
-os.system('mkdir geeknote && cp -pr * geeknote/ && rmdir geeknote/geeknote')
+os.system('mkdir .geeknote && cp -pr * .geeknote/ && mv .geeknote geeknote')
 
 setup(
 	name = "geeknote",
