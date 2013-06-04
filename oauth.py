@@ -24,6 +24,7 @@ class GeekNoteAuth(object):
         "access": "/OAuth.action",
         "token" : "/oauth",
         "login" : "/Login.action",
+        "tfa"   : "/OTCAuth.action",
     }
 
     cookies = {}
@@ -40,7 +41,11 @@ class GeekNoteAuth(object):
             'oauth_token': None,
             'oauth_callback': None,
             'embed': 'false',
-        }
+        },
+        'tfa': {
+            'code': '',
+            'login': 'Sign in',
+        },
     }
 
     username = None
@@ -49,6 +54,8 @@ class GeekNoteAuth(object):
     verifierToken = None
     OAuthToken = None
     incorrectLogin = 0
+    incorrectCode = 0
+    code = None
 
     def getTokenRequestData(self, **kwargs):
         params = {
@@ -145,6 +152,24 @@ class GeekNoteAuth(object):
 
         logging.debug("Temporary OAuth token : %s", self.tmpOAuthToken)
 
+    def handleTwoFactor(self):
+        self.code = out.GetUserAuthCode()
+        self.postData['tfa']['code'] = self.code
+        response = self.loadPage(self.url['base'], self.url['tfa']+";jsessionid="+self.cookies['JSESSIONID'], "POST", self.postData['tfa'])
+        if not response.location and response.status == 200:
+            if self.incorrectCode < 3:
+                out.preloader.stop()
+                out.printLine('Sorry, incorrect two factor code')
+                out.preloader.setMessage('Authorize...')
+                self.incorrectCode += 1
+                return self.handleTwoFactor()
+            else:
+                logging.error("Incorrect two factor code")
+
+        if not response.location:
+            logging.error("Target URL was not found in the response on login")
+            tools.exit()
+
     def login(self):
         response = self.loadPage(self.url['base'], self.url['login'], "GET", {'oauth_token': self.tmpOAuthToken})
 
@@ -178,6 +203,11 @@ class GeekNoteAuth(object):
         if not response.location:
             logging.error("Target URL was not found in the response on login")
             tools.exit()
+
+        if response.status == 302:
+            # the user has enabled two factor auth
+            return self.handleTwoFactor()
+
 
         logging.debug("Success authorize, redirect to access page")
 
