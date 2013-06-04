@@ -5,6 +5,7 @@ import os, sys
 import argparse
 import glob
 import logging
+import string
 
 import markdown
 
@@ -178,6 +179,8 @@ class GNSync:
         Get file content.
         """
         content = open(path, "r").read()
+        # strip unprintable characters
+        content = ''.join(s for s in content if s in string.printable)
         content = editor.textToENML(content=content, raise_ex=True)
         
         if content is None:
