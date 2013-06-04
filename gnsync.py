@@ -298,7 +298,7 @@ def main():
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown','raw'], help='The format of the file contents. Default is "plain". Valid values ​​are "plain", "markdown" and "raw"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
-        parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+        parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync')
 
         args = parser.parse_args()
     
@@ -307,7 +307,7 @@ def main():
         format = args.format if args.format else None
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
-        twoway = True if args.two_way else False
+        twoway = args.two_way if args.two_way else False
 
         reset_logpath(logpath)
 
