@@ -12,7 +12,21 @@ import re
 import config
 from storage import Storage
 from log import logging
+from xml.sax.saxutils import escape, unescape
 
+# escape() and unescape() takes care of &, < and >.
+html_escape_table = {
+    '"': "&quot;",
+    "'": "&apos;",
+    '\n': "<br />",
+}
+html_unescape_table = {v:k for k, v in html_escape_table.items()}
+
+def HTMLEscape(text):
+    return escape(text, html_escape_table)
+
+def HTMLUnescape(text):
+    return unescape(text, html_unescape_table)
 
 def ENMLtoText(contentENML):
     content = html2text.html2text(contentENML.decode('utf-8'))
@@ -25,7 +39,7 @@ def wrapENML(contentHTML):
     body += '<en-note>%s</en-note>' % contentHTML
     return body
 
-def textToENML(content, raise_ex=False):
+def textToENML(content, raise_ex=False, format='markdown'):
     """
     Create an ENML format of note.
     """
@@ -35,9 +49,12 @@ def textToENML(content, raise_ex=False):
         content = unicode(content,"utf-8")
         # add 2 space before new line in paragraph for cteating br tags
         content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
-        contentHTML = markdown.markdown(content).encode("utf-8")
-        # remove all new-lines characters in html
-        contentHTML = re.sub(r'\n', r'', contentHTML)
+        if format=='markdown':
+          contentHTML = markdown.markdown(content).encode("utf-8")
+          # remove all new-lines characters in html
+          contentHTML = re.sub(r'\n', r'', contentHTML)
+        else:
+          contentHTML = HTMLEscape(content)
         return wrapENML(contentHTML)
     except:
         if raise_ex:

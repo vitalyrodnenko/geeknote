@@ -181,7 +181,7 @@ class GNSync:
         content = open(path, "r").read()
         # strip unprintable characters
         content = ''.join(s for s in content if s in string.printable)
-        content = editor.textToENML(content=content, raise_ex=True)
+        content = editor.textToENML(content=content, raise_ex=True, format=self.format)
         
         if content is None:
             logger.warning("File {0}. Content must be an UTF-8 encode.".format(path))
