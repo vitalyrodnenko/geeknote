@@ -101,6 +101,18 @@ def GetUserCredentials():
 
     return (login, password)
 
+@preloaderPause
+def GetUserAuthCode():
+    """Prompts the user for a two factor auth code."""
+    try:
+        code = None
+        if code is None:
+          code = rawInput("Code: ")
+    except (KeyboardInterrupt, SystemExit):
+        tools.exit()
+
+    return code
+
 @preloaderStop
 def SearchResult(listItems, request, **kwargs):
     """Печать результатов поиска"""
