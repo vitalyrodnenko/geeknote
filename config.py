@@ -21,7 +21,7 @@ IS_IN_TERMINAL  = sys.stdin.isatty()
 IS_OUT_TERMINAL = sys.stdout.isatty()
 
 # Application path
-APP_DIR = os.path.join(os.getenv("USERPROFILE") or os.getenv("HOME"),  ".geeknote")
+APP_DIR = os.path.join(os.getenv("HOME") or os.getenv("USERPROFILE"),  ".geeknote")
 ERROR_LOG = os.path.join(APP_DIR, "error.log")
 
 # Set default system editor
