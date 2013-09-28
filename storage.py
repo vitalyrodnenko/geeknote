@@ -4,10 +4,10 @@ import os, sys
 import datetime
 import pickle
 
-from lib.sqlalchemy import *
-from lib.sqlalchemy.orm import *
-from lib.sqlalchemy.ext.declarative import declarative_base
-from lib.sqlalchemy.orm import sessionmaker
+from sqlalchemy import *
+from sqlalchemy.orm import *
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 import logging
 import config
