@@ -4,7 +4,7 @@
 import os, sys
 import traceback
 
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
 import config
