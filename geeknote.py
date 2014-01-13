@@ -3,12 +3,14 @@
 
 import os, sys
 import traceback
+from out import printLine
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append( os.path.join(PROJECT_ROOT, 'lib') )
 
 import config
 
+import mimetypes
 import hashlib
 import binascii
 import time
@@ -163,7 +165,7 @@ class GeekNote(object):
         return self.getStorage().removeUser()
     
     """
-    WORK WITH NOTEST
+    WORK WITH NOTES
     """
     @EdamException
     def findNotes(self, keywords, count, createOrder=False):
@@ -180,12 +182,43 @@ class GeekNote(object):
     def loadNoteContent(self, note):
         """ modify Note object """
         if not isinstance(note, object):
-            raise Exception("Note content must be an instanse of Note, '%s' given." % type(note))
+            raise Exception("Note content must be an instance of Note, '%s' given." % type(note))
 
         note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
-
+    
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None, created=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None, resources=None):  
+        def make_resource(filename):
+            try:
+                mtype = mimetypes.guess_type(filename)[0]
+                    
+                if mtype.split('/')[0] == "text":
+                    rmode = "r"
+                else:
+                    rmode = "rb"
+
+                with open(filename, rmode) as f:
+                    """ file exists """
+                    resource = Types.Resource()
+                    resource.data = Types.Data()
+
+                    data = f.read()
+                    md5 = hashlib.md5()
+                    md5.update(data)
+                    
+                    resource.data.bodyHash = md5.hexdigest() 
+                    resource.data.body = data
+                    resource.data.size = len(data) 
+                    resource.mime = mtype
+                    resource.attributes = Types.ResourceAttributes()
+                    resource.attributes.fileName = os.path.basename(filename)
+                    return resource
+            except IOError:
+                msg = "The file '%s' does not exist." % filename
+                out.failureMessage(msg)
+                raise IOError(msg)
+      
+
         note = Types.Note()
         note.title = title
         note.content = content
@@ -197,13 +230,25 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+        if resources:
+            """ make EverNote API resources """
+            note.resources = map(make_resource, resources)
+            
+            """ add to content """
+            resource_nodes = ""
+            
+            for resource in note.resources:
+                resource_nodes += '<en-media type="%s" hash="%s" />' % (resource.mime, resource.data.bodyHash)
+
+            note.content = note.content.replace("</en-note>", resource_nodes + "</en-note>")
+
         logging.debug("New note : %s", note)
 
         self.getNoteStore().createNote(self.authToken, note)
         return True
 
     @EdamException
-    def updateNote(self, guid, title=None, content=None, tags=None, notebook=None):
+    def updateNote(self, guid, title=None, content=None, tags=None, notebook=None, resources=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -217,6 +262,11 @@ class GeekNote(object):
 
         if notebook:
             note.notebookGuid = notebook
+            
+        if resources:
+            """ TODO """
+            print("Updating a note's resources is not yet supported.")
+            raise NotImplementedError()
 
         logging.debug("Update note : %s", note)
 
@@ -515,11 +565,11 @@ class Notes(GeekNoteConnector):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
 
-    def create(self, title, content, tags=None, notebook=None):
+    def create(self, title, content, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
 
-        inputData = self._parceInput(title, content, tags, notebook)
+        inputData = self._parseInput(title, content, tags, notebook, resource)
 
         out.preloader.setMessage("Creating note...")
         result = self.getEvernote().createNote(**inputData)
@@ -529,12 +579,12 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while creating the note.")
 
-    def edit(self, note, title=None, content=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note)
+        inputData = self._parseInput(title, content, tags, notebook, resource, note)
         
         out.preloader.setMessage("Saving note...")
         result = self.getEvernote().updateNote(guid=note.guid, **inputData)
@@ -571,12 +621,13 @@ class Notes(GeekNoteConnector):
 
         out.showNote(note)
 
-    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
+    def _parseInput(self, title=None, content=None, tags=None, notebook=None, resources=None, note=None):
         result = {
             "title": title,
             "content": content,
             "tags": tags,
             "notebook": notebook,
+            "resources": resources if resources else []
         }
         result = tools.strip(result)
 
@@ -594,7 +645,7 @@ class Notes(GeekNoteConnector):
                     self.getEvernote().loadNoteContent(note)
                     content = editor.edit(note.content)
                 else:
-                   content = editor.edit()
+                    content = editor.edit()
 
             elif isinstance(content, str) and os.path.isfile(content):
                 logging.debug("Load content from the file")
@@ -616,7 +667,7 @@ class Notes(GeekNoteConnector):
             
             result['notebook'] = notepadGuid
             logging.debug("Search notebook")
-
+            
         return result
 
     def _searchNote(self, note):
@@ -698,7 +749,7 @@ class Notes(GeekNoteConnector):
                 if len(date) == 2:
                     dateStruct = time.strptime(date[1]+" 00:00:00", "%d.%m.%Y %H:%M:%S")
                 request += '-created:%s ' % time.strftime("%Y%m%d", time.localtime(time.mktime(dateStruct)+60*60*24))
-            except ValueError, e:
+            except ValueError:
                 out.failureMessage('Incorrect date format in --date attribute. Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
                 return tools.exit()
 
