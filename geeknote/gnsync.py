@@ -64,12 +64,13 @@ class GNSync:
     notebook_name = None
     path = None
     mask = None
+    twoway = None
 
     notebook_guid = None
     all_set = False
 
     @log
-    def __init__(self, notebook_name, path, mask, format):
+    def __init__(self, notebook_name, path, mask, format, twoway=False):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -94,6 +95,13 @@ class GNSync:
             format = "plain"
 
         self.format = format
+
+        if format == "markdown":
+            self.extension = ".md"
+        else:
+            self.extension = ".txt"
+
+        self.twoway = twoway
 
         logger.info('Sync Start')
 
@@ -127,7 +135,20 @@ class GNSync:
             if not has_note:
                 self._create_note(f)
 
-        logger.info('Sync Complite')
+        if self.twoway:
+            for n in notes:
+                has_file = False
+                for f in files:
+                    if f['name'] == n.title:
+                        has_file = True
+                        if f['mtime'] < n.updated:
+                            self._update_file(f, n)
+                            break
+
+                if not has_file:
+                    self._create_file(n)
+
+        logger.info('Sync Complete')
 
     @log
     def _update_note(self, file_note, note):
@@ -148,6 +169,15 @@ class GNSync:
             raise Exception('Note "{0}" was not updated'.format(note.title))
 
         return result
+
+    @log
+    def _update_file(self, file_note, note):
+        """
+        Updates file from note
+        """
+        GeekNote().loadNoteContent(note)
+        content = editor.ENMLtoText(note.content)
+        open(file_note['path'], "w").write(content)
 
     @log
     def _create_note(self, file_note):
@@ -172,6 +202,17 @@ class GNSync:
                             ' created'.format(file_note['name']))
 
         return result
+
+    @log
+    def _create_file(self, note):
+        """
+        Creates file from note
+        """
+        GeekNote().loadNoteContent(note)
+        content = editor.ENMLtoText(note.content)
+        path = os.path.join(self.path, note.title + self.extension)
+        open(path, "w").write(content)
+        return True
 
     @log
     def _get_file_content(self, path):
@@ -255,6 +296,7 @@ def main():
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values ​​are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
+        parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
 
         args = parser.parse_args()
 
@@ -263,10 +305,11 @@ def main():
         format = args.format if args.format else None
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
+        twoway = True if args.two_way else False
 
         reset_logpath(logpath)
 
-        GNS = GNSync(notebook, path, mask, format)
+        GNS = GNSync(notebook, path, mask, format, twoway)
         GNS.sync()
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
