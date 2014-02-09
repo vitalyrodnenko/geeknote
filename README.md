@@ -29,13 +29,6 @@ You can install Geeknote as a python script.
     # Launch Geeknote and go through login procedure.
     $ geeknote login
 
-### Requirements
-Geeknote needs Python **2.4 or later**.
-
-Geeknote **doesn't work with Ubuntu 12.04**. Unfortunately this is the problem of Evernote SDK for Python. We wrote to authors of Evernote SDK, they know about it too and promise to solve the problem in a couple of months. This is a [registered issue](https://bugs.launchpad.net/ubuntu/+source/openssl/+bug/965371). We'll release an updated version of Geeknote as soon as Evernote SDK for Python will get update.
-
-This issue affects **only Ubuntu 12.04**.
-
 ### Development
 Run tests
 
