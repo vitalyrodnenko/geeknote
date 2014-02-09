@@ -75,7 +75,7 @@ def edit(content=None):
     if not isinstance(content, str):
         raise Exception("Note content must be an instanse of string, '%s' given." % type(content))
 
-    (tmpFileHandler, tmpFileName) = tempfile.mkstemp()
+    (tmpFileHandler, tmpFileName) = tempfile.mkstemp(suffix=".markdown")
     
     os.write(tmpFileHandler, ENMLtoText(content))
     os.close(tmpFileHandler)
