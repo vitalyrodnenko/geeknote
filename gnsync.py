@@ -5,6 +5,7 @@ import os, sys
 import argparse
 import glob
 import logging
+import string
 
 import markdown
 
@@ -178,7 +179,9 @@ class GNSync:
         Get file content.
         """
         content = open(path, "r").read()
-        content = editor.textToENML(content=content, raise_ex=True)
+        # strip unprintable characters
+        content = ''.join(s for s in content if s in string.printable)
+        content = editor.textToENML(content=content, raise_ex=True, format=self.format)
         
         if content is None:
             logger.warning("File {0}. Content must be an UTF-8 encode.".format(path))
