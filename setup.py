@@ -4,6 +4,8 @@
 from __future__ import with_statement
 import sys
 import os
+import codecs
+import geeknote
 from setuptools import setup
 from setuptools.command.install import install
 
@@ -26,6 +28,8 @@ _geeknote_command()
 complete -F _geeknote_command geeknote
 '''
 
+def read(fname):
+    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 class full_install(install):
 
@@ -57,16 +61,17 @@ class full_install(install):
 
 setup(
     name='geeknote',
-    version='0.1',
+    version=geeknote.__version__,
     license='GPL',
     author='Vitaliy Rodnenko',
-    author_email='vitaly@webpp.ru',
+    author_email='vitaliy@rodnenko.ru',
     description='Geeknote - is a command line client for Evernote, '
                 'that can be use on Linux, FreeBSD and OS X.',
+    long_description=read("README.md"),
     url='http://www.geeknote.me',
     packages=['geeknote'],
     install_requires=[
-        'evernote==1.19',
+        'evernote>=1.17',
         'html2text',
         'sqlalchemy',
         'markdown',
