@@ -70,6 +70,17 @@ setup(
     long_description=read("README.md"),
     url='http://www.geeknote.me',
     packages=['geeknote'],
+
+    classifiers=[
+        'Development Status :: 2 - Beta',
+        'Intended Audience :: Developers, geeks, NOC, linux users, terminal users',
+        'License :: GPL',
+        'Environment :: Command line',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+    ],
+
     install_requires=[
         'evernote>=1.17',
         'html2text',
@@ -77,17 +88,19 @@ setup(
         'markdown',
         'thrift'
     ],
+
     entry_points={
         'console_scripts': [
             'geeknote = geeknote.geeknote:main',
             'gnsync = geeknote.gnsync:main'
         ]
     },
-    cmdclass={
-        'install': full_install
-    },
+#    cmdclass={
+#        'install': full_install
+#    },
     platforms='Any',
     test_suite='tests',
+    zip_safe=False,
     keywords='Evernote, console'
 )
 
