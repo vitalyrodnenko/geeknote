@@ -72,13 +72,14 @@ setup(
     packages=['geeknote'],
 
     classifiers=[
-        'Development Status :: 2 - Beta',
-        'Intended Audience :: Developers, geeks, NOC, linux users, terminal users',
-        'License :: GPL',
-        'Environment :: Command line',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: End Users/Desktop',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Environment :: Console',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Topic :: Utilities',
     ],
 
     install_requires=[
