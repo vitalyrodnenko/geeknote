@@ -4,6 +4,7 @@
 from __future__ import with_statement
 import sys
 import os
+import getpass
 import codecs
 import geeknote
 from setuptools import setup
@@ -35,7 +36,8 @@ class full_install(install):
 
     user_options = install.user_options + [
         ('userhome', None, "(Linux only) Set user home directory for"
-                           " bash completion (/home/{0})".format(os.getlogin()))
+                           " bash completion (/home/{0})"
+                           .format(getpass.getuser()))
     ]
 
     def initialize_options(self):
