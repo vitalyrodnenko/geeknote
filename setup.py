@@ -88,7 +88,7 @@ setup(
         'evernote>=1.17',
         'html2text',
         'sqlalchemy',
-        'markdown',
+        'markdown2',
         'thrift'
     ],
 
