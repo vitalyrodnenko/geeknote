@@ -4,7 +4,7 @@ import os
 import sys
 import tempfile
 import html2text as html2text
-import markdown as markdown
+import markdown2 as markdown
 import tools
 import out
 import re
