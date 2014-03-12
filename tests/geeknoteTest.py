@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import time
 import unittest
 from geeknote.geeknote import *
 from geeknote import tools
-from geeknote import editor
-
-editor.edit = lambda x=None: "%s from text editor" % x
-
+from geeknote.editor import Editor
 
 class GeekNoteOver(GeekNote):
     def __init__(self):
@@ -34,7 +32,7 @@ class testNotes(unittest.TestCase):
             return
 
         self.assertEqual(testData['title'], "title")
-        self.assertEqual(testData['content'], editor.textToENML("test body"))
+        self.assertEqual(testData['content'], Editor.textToENML("test body"))
         self.assertEqual(testData["tags"], ["tag1", ])
 
     def test_parceInput2(self):
@@ -47,10 +45,21 @@ class testNotes(unittest.TestCase):
         self.assertEqual(testData['title'], "title")
         self.assertEqual(
             testData['content'],
-            editor.textToENML("note content from text editor")
+            "WRITE"
         )
         self.assertEqual(testData["tags"], ["tag1", "tag2"])
 
+    def test_editWithEditorInThread(self):
+        testData = self.notes._parceInput("title", "WRITE", "tag1, tag2",
+                                          None, self.testNote)
+        print ('')
+        print ('')
+        print (testData)
+        print ('')
+        print ('')
+
+        self.notes._editWithEditorInThread(testData)
+        
     def test_createSearchRequest1(self):
         testRequest = self.notes._createSearchRequest(
             search="test text",

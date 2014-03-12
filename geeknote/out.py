@@ -6,7 +6,7 @@ import time
 import sys
 
 import tools
-import editor
+from editor import Editor
 import config
 
 
@@ -158,7 +158,7 @@ def showNote(note):
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
-    printLine(editor.ENMLtoText(note.content))
+    printLine(Editor.ENMLtoText(note.content))
 
 
 @preloaderStop
