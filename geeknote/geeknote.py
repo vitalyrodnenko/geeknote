@@ -559,6 +559,9 @@ class Notes(GeekNoteConnector):
                     result = bool(self.getEvernote().updateNote(guid=note.guid, **inputData))
                     # TODO: log error if result is False
 
+                if result:
+                    prevChecksum = editor.getTempfileChecksum()
+
             if not thread.isAlive():
                 # check if thread is alive here before sleep to avoid losing data saved during this 5 secs
                 break
