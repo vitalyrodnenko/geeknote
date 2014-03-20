@@ -107,8 +107,8 @@ The main functionality that we need is creating notes in Evernote.
 --content &lt;content&gt;
 :   Specifying the content of new note. The content must not contains double quotes.
 
---notepad &lt;notebook where to save&gt;
-:   Specify the notepad where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
+--notebook &lt;notebook where to save&gt;
+:   Specify the notebook where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
 
 --tags &lt;list of tags, like: tag1, tag2&gt;
 :   Specify tags that our note will have. It can accept multiple tags, separated with comma.
