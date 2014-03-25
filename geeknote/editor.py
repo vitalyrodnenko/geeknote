@@ -3,6 +3,7 @@
 import os
 import sys
 import tempfile
+from bs4 import BeautifulSoup
 import html2text as html2text
 import markdown2 as markdown
 import tools
@@ -29,7 +30,13 @@ def HTMLUnescape(text):
 
 def ENMLtoText(contentENML):
     html2text.BODY_WIDTH = 0
-    content = html2text.html2text(contentENML.decode('utf-8'))
+    soup = BeautifulSoup(contentENML.decode('utf-8'))
+
+    for section in soup.select('li > p'):
+        section.replace_with( section.contents[0] )
+
+    content = html2text.html2text(soup.prettify())
+
     content = re.sub(r' *\n', os.linesep, content)
     return content.encode('utf-8')
 
