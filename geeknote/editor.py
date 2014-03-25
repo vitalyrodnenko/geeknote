@@ -28,6 +28,7 @@ def HTMLUnescape(text):
     return unescape(text, html_unescape_table)
 
 def ENMLtoText(contentENML):
+    html2text.BODY_WIDTH = 0
     content = html2text.html2text(contentENML.decode('utf-8'))
     content = re.sub(r' *\n', os.linesep, content)
     return content.encode('utf-8')
