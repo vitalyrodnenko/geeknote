@@ -96,7 +96,7 @@ The main functionality that we need is creating notes in Evernote.
 
 ### Synopsis
     $ geeknote create --title <title>
-                      --content <content>
+                      [--content <content>]
                       [--tags <list of tags>]
                       [--notebook <notebook where to save>]
 ### Options
