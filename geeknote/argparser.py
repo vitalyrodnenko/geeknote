@@ -42,8 +42,7 @@ COMMANDS_DICT = {
                              "help": "The note title.",
                              "required": True},
             "--content":    {"altName": "-c",
-                             "help": "The note content.",
-                             "required": True},
+                             "help": "The note content."},
             "--tags":       {"altName": "-tg",
                              "help": "One tag or the list of tags which"
                                      " will be added to the note."},
