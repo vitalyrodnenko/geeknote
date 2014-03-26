@@ -127,7 +127,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
 
 ### Synopsis
     $ geeknote edit --note <title of note which to edit>
-                    --content <a new content or "WRITE">
+                    [--content <a new content or "WRITE">]
                     [--title <the new title>]
                     [--tags <new list of data>]
                     [--notebook <new notebook>]
