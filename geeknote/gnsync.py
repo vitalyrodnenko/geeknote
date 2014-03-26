@@ -9,7 +9,7 @@ import string
 
 from geeknote import GeekNote
 from storage import Storage
-import editor
+from editor import Editor
 import tools
 
 # set default logger (write log to file)
@@ -177,7 +177,7 @@ class GNSync:
         Updates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content)
         open(file_note['path'], "w").write(content)
 
     @log
@@ -211,7 +211,7 @@ class GNSync:
         Creates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content)
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
         return True
@@ -225,7 +225,7 @@ class GNSync:
 
         # strip unprintable characters
         content = ''.join(s for s in content if s in string.printable)
-        content = editor.textToENML(content=content, raise_ex=True, format=self.format)
+        content = Editor.textToENML(content=content, raise_ex=True, format=self.format)
         
         if content is None:
             logger.warning("File {0}. Content must be " \

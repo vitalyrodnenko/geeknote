@@ -24,7 +24,7 @@ You can install Geeknote as a python script.
     $ cd geeknote
 
     # Installation
-    $ [sudo] python setup.py install
+    $ [sudo] python[2] setup.py install
 
     # Launch Geeknote and go through login procedure.
     $ geeknote login
@@ -32,7 +32,7 @@ You can install Geeknote as a python script.
 ### Development
 Run tests
 
-    $ python setup.py test
+    $ python[2] setup.py test
 
     # or for to run tests with `tox`
     $ tox
@@ -107,8 +107,8 @@ The main functionality that we need is creating notes in Evernote.
 --content &lt;content&gt;
 :   Specifying the content of new note. The content must not contains double quotes.
 
---notepad &lt;notebook where to save&gt;
-:   Specify the notepad where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
+--notebook &lt;notebook where to save&gt;
+:   Specify the notebook where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
 
 --tags &lt;list of tags, like: tag1, tag2&gt;
 :   Specify tags that our note will have. It can accept multiple tags, separated with comma.
@@ -388,3 +388,4 @@ The application *gnsync* is very useful in system adminstration, because you can
 * Ivan Gureev
 * Roman Gladkov
 * Greg V
+* Ilya Shmygol

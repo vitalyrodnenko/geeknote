@@ -16,9 +16,9 @@ import evernote.edam.error.ttypes as Errors
 import evernote.edam.type.ttypes as Types
 
 import config
-import editor
 import tools
 import out
+from editor import Editor, EditorThread
 from gclient import GUserStore as UserStore
 from argparser import argparser
 from oauth import GeekNoteAuth
@@ -194,8 +194,7 @@ class GeekNote(object):
 
         logging.debug("New note : %s", note)
 
-        self.getNoteStore().createNote(self.authToken, note)
-        return True
+        return self.getNoteStore().createNote(self.authToken, note)
 
     @EdamException
     def updateNote(self, guid, title=None, content=None,
@@ -314,7 +313,6 @@ class GeekNoteConnector(object):
 
         self.storage = self.getEvernote().getStorage()
         return self.storage
-
 
 class User(GeekNoteConnector):
     """ Work with auth User """
@@ -535,14 +533,52 @@ class Notes(GeekNoteConnector):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
 
+    def _editWithEditorInThread(self, inputData, note = None):
+        if note:
+            self.getEvernote().loadNoteContent(note)
+            editor = Editor(note.content)
+        else:
+            editor = Editor('')
+        thread = EditorThread(editor)
+        thread.start()
+
+        result = True
+        prevChecksum = editor.getTempfileChecksum()
+        while True:
+            if prevChecksum != editor.getTempfileChecksum() and result:
+                newContent = open(editor.tempfile, 'r').read()
+                inputData['content'] = Editor.textToENML(newContent)
+                if not note:
+                    result = self.getEvernote().createNote(**inputData)
+                    # TODO: log error if result is False or None
+                    if result:
+                        note = result
+                    else:
+                        result = False
+                else:
+                    result = bool(self.getEvernote().updateNote(guid=note.guid, **inputData))
+                    # TODO: log error if result is False
+
+                if result:
+                    prevChecksum = editor.getTempfileChecksum()
+
+            if not thread.isAlive():
+                # check if thread is alive here before sleep to avoid losing data saved during this 5 secs
+                break
+            time.sleep(5)
+        return result
+        
     def create(self, title, content, tags=None, notebook=None):
 
         self.connectToEvertone()
 
         inputData = self._parceInput(title, content, tags, notebook)
 
-        out.preloader.setMessage("Creating note...")
-        result = self.getEvernote().createNote(**inputData)
+        if inputData['content'] == config.EDITOR_OPEN:
+            result = self._editWithEditorInThread(inputData)
+        else:
+            out.preloader.setMessage("Creating note...")
+            result = bool(self.getEvernote().createNote(**inputData))
 
         if result:
             out.successMessage("Note has been successfully created.")
@@ -556,8 +592,11 @@ class Notes(GeekNoteConnector):
 
         inputData = self._parceInput(title, content, tags, notebook, note)
 
-        out.preloader.setMessage("Saving note...")
-        result = self.getEvernote().updateNote(guid=note.guid, **inputData)
+        if inputData['content'] == config.EDITOR_OPEN:
+            result = self._editWithEditorInThread(inputData, note)
+        else:
+            out.preloader.setMessage("Saving note...")
+            result = bool(self.getEvernote().updateNote(guid=note.guid, **inputData))
 
         if result:
             out.successMessage("Note has been successfully saved.")
@@ -609,21 +648,13 @@ class Notes(GeekNoteConnector):
             result['title'] = note.title
 
         if content:
-            if content == config.EDITOR_OPEN:
-                logging.debug("launch system editor")
-                if note:
-                    self.getEvernote().loadNoteContent(note)
-                    content = editor.edit(note.content)
-                else:
-                    content = editor.edit()
+            if content != config.EDITOR_OPEN:
+                if isinstance(content, str) and os.path.isfile(content):
+                    logging.debug("Load content from the file")
+                    content = open(content, "r").read()
 
-            elif isinstance(content, str) and os.path.isfile(content):
-                logging.debug("Load content from the file")
-                content = open(content, "r").read()
-
-            logging.debug("Convert content")
-            content = editor.textToENML(content)
-
+                logging.debug("Convert content")
+                content = Editor.textToENML(content)
             result['content'] = content
 
         if tags:
