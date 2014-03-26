@@ -24,7 +24,7 @@ You can install Geeknote as a python script.
     $ cd geeknote
 
     # Installation
-    $ [sudo] python setup.py install
+    $ [sudo] python[2] setup.py install
 
     # Launch Geeknote and go through login procedure.
     $ geeknote login
@@ -32,7 +32,7 @@ You can install Geeknote as a python script.
 ### Development
 Run tests
 
-    $ python setup.py test
+    $ python[2] setup.py test
 
     # or for to run tests with `tox`
     $ tox
