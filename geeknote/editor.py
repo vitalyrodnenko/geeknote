@@ -48,6 +48,7 @@ class Editor(object):
 
     @staticmethod
     def ENMLtoText(contentENML):
+        html2text.BODY_WIDTH = 0
         content = html2text.html2text(contentENML.decode('utf-8'))
         content = re.sub(r' *\n', os.linesep, content)
         return content.encode('utf-8')
