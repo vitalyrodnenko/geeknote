@@ -49,6 +49,7 @@ class Editor(object):
 
     @staticmethod
     def ENMLtoText(contentENML):
+        html2text.BODY_WIDTH = 0
         soup = BeautifulSoup(contentENML.decode('utf-8'))
 
         for section in soup.select('li > p'):
