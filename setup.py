@@ -89,6 +89,7 @@ setup(
         'html2text',
         'sqlalchemy',
         'markdown2',
+        'beautifulsoup4',
         'thrift'
     ],
 

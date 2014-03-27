@@ -3,6 +3,7 @@
 import os
 import sys
 import tempfile
+from bs4 import BeautifulSoup
 import threading
 import hashlib
 import html2text as html2text
@@ -48,7 +49,12 @@ class Editor(object):
 
     @staticmethod
     def ENMLtoText(contentENML):
-        content = html2text.html2text(contentENML.decode('utf-8'))
+        soup = BeautifulSoup(contentENML.decode('utf-8'))
+
+        for section in soup.select('li > p'):
+            section.replace_with( section.contents[0] )
+
+        content = html2text.html2text(soup.prettify())
         content = re.sub(r' *\n', os.linesep, content)
         return content.encode('utf-8')
 
