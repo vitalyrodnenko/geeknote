@@ -568,9 +568,12 @@ class Notes(GeekNoteConnector):
             time.sleep(5)
         return result
         
-    def create(self, title, content, tags=None, notebook=None):
+    def create(self, title, content=None, tags=None, notebook=None):
 
         self.connectToEvertone()
+
+        # Optional Content.
+        content = content or " "
 
         inputData = self._parceInput(title, content, tags, notebook)
 
