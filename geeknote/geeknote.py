@@ -802,7 +802,7 @@ def modifyArgsByStdinStream():
     title = ' '.join(content.split(' ', 5)[:-1])
     title = re.sub(r'(\r\n|\r|\n)', r' ', title)
     if not title:
-        out.failureMessage("Error while crating title of note from stream.")
+        out.failureMessage("Error while creating title of note from stream.")
         return tools.exit()
     elif len(title) > 50:
         title = title[0:50] + '...'
