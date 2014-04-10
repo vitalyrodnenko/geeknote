@@ -79,8 +79,8 @@ class Editor(object):
             content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
             if format=='markdown':
               contentHTML = markdown.markdown(content).encode("utf-8")
-              # remove all new-lines characters in html
-              contentHTML = re.sub(r'\n', r'', contentHTML)
+              # Non-Pretty HTML output
+              contentHTML = str(BeautifulSoup(contentHTML)) 
             else:
               contentHTML = self.HTMLEscape(content)
             return Editor.wrapENML(contentHTML)
