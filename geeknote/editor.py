@@ -55,6 +55,14 @@ class Editor(object):
         for section in soup.select('li > p'):
             section.replace_with( section.contents[0] )
 
+        for section in soup.select('li > br'):
+            next_sibling = section.next_sibling.next_sibling
+            if next_sibling:
+                if next_sibling.find('li'):
+                    section.extract()
+            else:
+                section.extract()
+
         content = html2text.html2text(soup.prettify())
         content = re.sub(r' *\n', os.linesep, content)
         return content.encode('utf-8')
