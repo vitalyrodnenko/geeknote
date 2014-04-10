@@ -83,14 +83,14 @@ class Editor(object):
             content = ""
         try:
             content = unicode(content, "utf-8")
-            # add 2 space before new line in paragraph for cteating br tags
+            # add 2 space before new line in paragraph for creating br tags
             content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
             if format=='markdown':
               contentHTML = markdown.markdown(content).encode("utf-8")
               # Non-Pretty HTML output
               contentHTML = str(BeautifulSoup(contentHTML)) 
             else:
-              contentHTML = self.HTMLEscape(content)
+              contentHTML = Editor.HTMLEscape(content)
             return Editor.wrapENML(contentHTML)
         except:
             if raise_ex:
@@ -105,7 +105,7 @@ class Editor(object):
 
     def __init__(self, content):
         if not isinstance(content, str):
-            raise Exception("Note content must be an instanse "
+            raise Exception("Note content must be an instance "
                             "of string, '%s' given." % type(content))
             
         (tempfileHandler, tempfileName) = tempfile.mkstemp(suffix=".markdown")
