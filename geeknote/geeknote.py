@@ -575,7 +575,7 @@ class Notes(GeekNoteConnector):
         # Optional Content.
         content = content or " "
 
-        inputData = self._parceInput(title, content, tags, notebook, reminder)
+        inputData = self._parceInput(title, content, tags, notebook, reminder=reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData)
@@ -593,7 +593,7 @@ class Notes(GeekNoteConnector):
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note, reminder)
+        inputData = self._parceInput(title, content, tags, notebook, note, reminder=reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData, note)
@@ -673,6 +673,19 @@ class Notes(GeekNoteConnector):
             result['notebook'] = notepadGuid
             logging.debug("Search notebook")
 
+	if reminder:
+			reminder = tools.strip(reminder.split('-'))
+          		try: 
+               				dateStruct = time.strptime(reminder[0] + " "  + reminder[1] + ":00", "%d.%m.%Y %H:%M:%S")
+               				reminderTime = int(round(time.mktime(dateStruct)))
+               				result['reminder'] = reminderTime
+          		except (ValueError,IndexError), e:
+                			out.failureMessage('Incorrect date format in --reminder attribute. '
+                                   	'Format: %s' % time.strftime("%d.%m.%Y-%H:%M", time.strptime('199912311422', "%Y%m%d%H%M")))
+                			return tools.exit()
+
+
+        print result
         return result
 
     def _searchNote(self, note):
