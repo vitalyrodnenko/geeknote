@@ -47,7 +47,9 @@ COMMANDS_DICT = {
                              "help": "One tag or the list of tags which"
                                      " will be added to the note."},
             "--notebook":   {"altName": "-nb",
-                             "help": "Set the notebook where to save note."}
+                             "help": "Set the notebook where to save note."},
+	    "--reminder":    {"altName": "-r",
+                             "help": "Set reminder time, NONE for a reminder without a time, DONE for a completed reminder."},
         }
     },
     "edit": {
@@ -64,7 +66,9 @@ COMMANDS_DICT = {
             "--tags":       {"altName": "-tg",
                              "help": "Set new list o tags for the note."},
             "--notebook":   {"altName": "-nb",
-                             "help": "Assign new notebook for the note."}
+                             "help": "Assign new notebook for the note."},
+	    "--reminder":    {"altName": "-r",
+                             "help": "Set reminder time, NONE for a reminder without a time, DONE for a completed reminder, DELETE to remove the reminder flag."},
         }
     },
     "remove": {

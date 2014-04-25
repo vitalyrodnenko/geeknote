@@ -180,7 +180,7 @@ class GeekNote(object):
             note.tagNames.append(tag.name)
 
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None, created=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None, reminder=None):
         note = Types.Note()
         note.title = title
         note.content = content
@@ -198,7 +198,7 @@ class GeekNote(object):
 
     @EdamException
     def updateNote(self, guid, title=None, content=None,
-                   tags=None, notebook=None):
+                   tags=None, notebook=None, reminder=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -568,14 +568,14 @@ class Notes(GeekNoteConnector):
             time.sleep(5)
         return result
         
-    def create(self, title, content=None, tags=None, notebook=None):
+    def create(self, title, content=None, tags=None, notebook=None,reminder=None):
 
         self.connectToEvertone()
 
         # Optional Content.
         content = content or " "
 
-        inputData = self._parceInput(title, content, tags, notebook)
+        inputData = self._parceInput(title, content, tags, notebook, reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData)
@@ -588,12 +588,12 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while creating the note.")
 
-    def edit(self, note, title=None, content=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None, reminder=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note)
+        inputData = self._parceInput(title, content, tags, notebook, note, reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData, note)
@@ -634,12 +634,13 @@ class Notes(GeekNoteConnector):
 
         out.showNote(note)
 
-    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
+    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None, reminder=None):
         result = {
             "title": title,
             "content": content,
             "tags": tags,
             "notebook": notebook,
+	    "reminder": reminder,
         }
         result = tools.strip(result)
 
@@ -829,7 +830,6 @@ def main(args=None):
 
             aparser = argparser(sys_argv)
             ARGS = aparser.parse()
-
         # if input stream
         else:
             COMMAND, ARGS = modifyArgsByStdinStream()
