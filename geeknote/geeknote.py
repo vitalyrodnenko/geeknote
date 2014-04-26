@@ -200,11 +200,13 @@ class GeekNote(object):
      		if reminder == config.REMINDER_NONE:
           		note.attributes.reminderOrder = now
      		elif reminder == config.REMINDER_DONE:
+          		note.attributes.reminderOrder = now
           		note.attributes.reminderDoneTime = now
      		else:  # we have an actual reminder timestamp
 			print now
 			print reminder
                 	if reminder > now: # future reminder only
+          			note.attributes.reminderOrder = now
                 		note.attributes.reminderTime = reminder
                 	else:
                 		out.failureMessage("Sorry, reminder must be in the future.")
@@ -231,6 +233,33 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+        if reminder:
+                now = int(round(time.time() * 1000))
+                if not note.attributes: #in case no attributes available
+			note.attributes = Types.NoteAttributes()
+                if reminder == config.REMINDER_NONE:
+                        	note.attributes.reminderDoneTime = None
+				note.attributes.reminderTime = None
+			if not note.attributes.reminderOrder: #new reminder 
+                        	note.attributes.reminderOrder = now
+                elif reminder == config.REMINDER_DONE:
+                        note.attributes.reminderDoneTime = now
+			if not note.attributes.reminderOrder: #catch adding DONE to non-reminder
+				note.attributes.reminderOrder = now
+				note.attributes.reminderTime = None
+		elif reminder == config.REMINDER_DELETE:
+                        note.attributes.reminderOrder = None
+			note.attributes.reminderTime = None
+                        note.attributes.reminderDoneTime = None
+                else:  # we have an actual reminder timestamp
+                        if reminder > now: # future reminder only
+                                note.attributes.reminderTime = reminder
+                        	note.attributes.reminderDoneTime = None
+				if not note.attributes.reminderOrder: #catch adding time to non-reminder
+                                	note.attributes.reminderOrder = now
+                        else:
+                                out.failureMessage("Sorry, reminder must be in the future.")
+                                tools.exit()
         logging.debug("Update note : %s", note)
 
         self.getNoteStore().updateNote(self.authToken, note)
