@@ -720,7 +720,6 @@ class Notes(GeekNoteConnector):
 
 	if reminder:
 		then = config.REMINDER_SHORTCUTS.get(reminder)
-		print then
 		if then:
 			now = int(round(time.time() * 1000)) 
 			result['reminder'] = now + then		
@@ -729,8 +728,6 @@ class Notes(GeekNoteConnector):
           		try: 
                				dateStruct = time.strptime(reminder[0] + " "  + reminder[1] + ":00", "%d.%m.%Y %H:%M:%S")
                				reminderTime = int(round(time.mktime(dateStruct) * 1000))
-					print time.mktime(dateStruct)
-					print reminderTime
                				result['reminder'] = reminderTime
           		except (ValueError,IndexError), e:
                 			out.failureMessage('Incorrect date format in --reminder attribute. '
@@ -738,7 +735,6 @@ class Notes(GeekNoteConnector):
                 			return tools.exit()
 
 
-        print result
         return result
 
     def _searchNote(self, note):
