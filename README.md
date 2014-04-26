@@ -182,8 +182,8 @@ You can easily search notes in Evernote with Geeknote and get results in console
                     [--exact-entry]
                     [--content-search]
                     [--url-only]
-		    [--reminders-only]
-		    [--ignore-completed]
+                    [--reminders-only]
+                    [--ignore-completed]
 ### Description
 With **find** you can make a search through your Evernote. It has an usefull options that allow you to make search more detail. Important notice, that Geeknote remembers the result of the last search. So, you can use the number of the note's position to make some actions that Geeknote can.
 For example:
