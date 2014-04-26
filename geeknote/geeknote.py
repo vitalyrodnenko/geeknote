@@ -180,7 +180,7 @@ class GeekNote(object):
             note.tagNames.append(tag.name)
 
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None, created=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None, reminder=None):
         note = Types.Note()
         note.title = title
         note.content = content
@@ -192,13 +192,31 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+
+	# allowing to create a completed reminder, i.e for task tracking purposes, skip reminder creation steps if we have a DELETE
+	if reminder and reminder != config.REMINDER_DELETE:
+     		now = int(round(time.time() * 1000))
+     		note.attributes = Types.NoteAttributes()
+     		if reminder == config.REMINDER_NONE:
+          		note.attributes.reminderOrder = now
+     		elif reminder == config.REMINDER_DONE:
+          		note.attributes.reminderOrder = now
+          		note.attributes.reminderDoneTime = now
+     		else:  # we have an actual reminder timestamp
+                	if reminder > now: # future reminder only
+          			note.attributes.reminderOrder = now
+                		note.attributes.reminderTime = reminder
+                	else:
+                		out.failureMessage("Sorry, reminder must be in the future.")
+             			tools.exit()
+
         logging.debug("New note : %s", note)
 
         return self.getNoteStore().createNote(self.authToken, note)
 
     @EdamException
     def updateNote(self, guid, title=None, content=None,
-                   tags=None, notebook=None):
+                   tags=None, notebook=None, reminder=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -213,6 +231,33 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+        if reminder:
+                now = int(round(time.time() * 1000))
+                if not note.attributes: #in case no attributes available
+			note.attributes = Types.NoteAttributes()
+                if reminder == config.REMINDER_NONE:
+                	note.attributes.reminderDoneTime = None
+			note.attributes.reminderTime = None
+			if not note.attributes.reminderOrder: #new reminder 
+                       		note.attributes.reminderOrder = now
+                elif reminder == config.REMINDER_DONE:
+                        note.attributes.reminderDoneTime = now
+			if not note.attributes.reminderOrder: #catch adding DONE to non-reminder
+				note.attributes.reminderOrder = now
+				note.attributes.reminderTime = None
+		elif reminder == config.REMINDER_DELETE:
+                        note.attributes.reminderOrder = None
+			note.attributes.reminderTime = None
+                        note.attributes.reminderDoneTime = None
+                else:  # we have an actual reminder timestamp
+                        if reminder > now: # future reminder only
+                                note.attributes.reminderTime = reminder
+                        	note.attributes.reminderDoneTime = None
+				if not note.attributes.reminderOrder: #catch adding time to non-reminder
+                                	note.attributes.reminderOrder = now
+                        else:
+                                out.failureMessage("Sorry, reminder must be in the future.")
+                                tools.exit()
         logging.debug("Update note : %s", note)
 
         self.getNoteStore().updateNote(self.authToken, note)
@@ -568,14 +613,14 @@ class Notes(GeekNoteConnector):
             time.sleep(5)
         return result
         
-    def create(self, title, content=None, tags=None, notebook=None):
+    def create(self, title, content=None, tags=None, notebook=None,reminder=None):
 
         self.connectToEvertone()
 
         # Optional Content.
         content = content or " "
 
-        inputData = self._parceInput(title, content, tags, notebook)
+        inputData = self._parceInput(title, content, tags, notebook, reminder=reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData)
@@ -588,12 +633,12 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while creating the note.")
 
-    def edit(self, note, title=None, content=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None, reminder=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note)
+        inputData = self._parceInput(title, content, tags, notebook, note, reminder=reminder)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData, note)
@@ -634,12 +679,13 @@ class Notes(GeekNoteConnector):
 
         out.showNote(note)
 
-    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
+    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None, reminder=None):
         result = {
             "title": title,
             "content": content,
             "tags": tags,
             "notebook": notebook,
+	    "reminder": reminder,
         }
         result = tools.strip(result)
 
@@ -671,6 +717,23 @@ class Notes(GeekNoteConnector):
 
             result['notebook'] = notepadGuid
             logging.debug("Search notebook")
+
+	if reminder:
+		then = config.REMINDER_SHORTCUTS.get(reminder)
+		if then:
+			now = int(round(time.time() * 1000)) 
+			result['reminder'] = now + then		
+		elif  reminder not in [config.REMINDER_NONE,config.REMINDER_DONE,config.REMINDER_DELETE]:
+			reminder = tools.strip(reminder.split('-'))
+          		try: 
+               				dateStruct = time.strptime(reminder[0] + " "  + reminder[1] + ":00", "%d.%m.%Y %H:%M:%S")
+               				reminderTime = int(round(time.mktime(dateStruct) * 1000))
+               				result['reminder'] = reminderTime
+          		except (ValueError,IndexError), e:
+                			out.failureMessage('Incorrect date format in --reminder attribute. '
+                                   	'Format: %s' % time.strftime("%d.%m.%Y-%H:%M", time.strptime('199912311422', "%Y%m%d%H%M")))
+                			return tools.exit()
+
 
         return result
 
@@ -705,11 +768,11 @@ class Notes(GeekNoteConnector):
 
     def find(self, search=None, tags=None, notebooks=None,
              date=None, exact_entry=None, content_search=None,
-             with_url=None, count=None, ):
+             with_url=None, count=None, ignore_completed=None, reminders_only=None,):
 
         request = self._createSearchRequest(search, tags, notebooks,
                                             date, exact_entry,
-                                            content_search)
+                                            content_search,ignore_completed,reminders_only)
 
         if not count:
             count = 20
@@ -745,7 +808,7 @@ class Notes(GeekNoteConnector):
 
     def _createSearchRequest(self, search=None, tags=None,
                              notebooks=None, date=None,
-                             exact_entry=None, content_search=None):
+                             exact_entry=None, content_search=None,ignore_completed=None, reminders_only=None):
 
         request = ""
         if notebooks:
@@ -785,6 +848,11 @@ class Notes(GeekNoteConnector):
                 request += "%s" % search
             else:
                 request += "intitle:%s" % search
+	
+	if reminders_only:
+		request += ' reminderOrder:* ' 
+	if ignore_completed:
+		request += ' -reminderDoneTime:* '
 
         logging.debug("Search request: %s", request)
         return request
@@ -829,7 +897,6 @@ def main(args=None):
 
             aparser = argparser(sys_argv)
             ARGS = aparser.parse()
-
         # if input stream
         else:
             COMMAND, ARGS = modifyArgsByStdinStream()

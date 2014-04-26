@@ -99,6 +99,7 @@ The main functionality that we need is creating notes in Evernote.
                       [--content <content>]
                       [--tags <list of tags>]
                       [--notebook <notebook where to save>]
+       	              [--reminder <date and time>]
 ### Options
 
 --title &lt;title&gt;
@@ -112,6 +113,10 @@ The main functionality that we need is creating notes in Evernote.
 
 --tags &lt;list of tags, like: tag1, tag2&gt;
 :   Specify tags that our note will have. It can accept multiple tags, separated with comma.
+
+--reminder &lt;dd.mm.yy-HH:MM&gt;
+: Set reminder date and time(dd.mm.yyy-HH:MM). Alternatively use TOMORROW and WEEK for 24 hours and a week ahead respectivley, NONE for a reminder without a time. Use DONE to mark a reminder as completed.
+
 
 ### Description
 This command allows us to create a new note in Evernote. Geeknote has designed for using in console, so we have some restrictions like inability to use double quotes in **--content** option. But there is a method to avoid it - use stdin stream or file synchronization, we show it later in documentation.
@@ -131,6 +136,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
                     [--title <the new title>]
                     [--tags <new list of data>]
                     [--notebook <new notebook>]
+       	            [--reminder <date and time>]
 
 ### Options
 
@@ -148,6 +154,9 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
 
 --tags &lt;list of tags, like: tag1, tag2&gt;
 :   The same for tags - you can set a new list of tags for your note.
+
+--reminder &lt;dd.mm.yy-HH:MM&gt;
+: Set reminder date and time(dd.mm.yyy-HH:MM). Alternatively use TOMORROW and WEEK for 24 hours and a week ahead respectivley, NONE for a reminder without a time. Use DONE to mark a reminder as completed. Use DELETE to remove reminder from a note.
 
 ### Examples
 Simple editing:
@@ -173,6 +182,8 @@ You can easily search notes in Evernote with Geeknote and get results in console
                     [--exact-entry]
                     [--content-search]
                     [--url-only]
+                    [--reminders-only]
+                    [--ignore-completed]
 ### Description
 With **find** you can make a search through your Evernote. It has an usefull options that allow you to make search more detail. Important notice, that Geeknote remembers the result of the last search. So, you can use the number of the note's position to make some actions that Geeknote can.
 For example:
@@ -211,6 +222,14 @@ That will show you the note "Shopping list 25.04.2012".
 
 --url-only
 :   Show results as a list of URLs to the every note in Evernote's web-client.
+
+--reminders-only 
+: Include only notes with a reminder.
+
+--ignore-completed 
+: Include only unfinished reminders.
+
+
 
 ### Examples
     $ geeknote find --search "How to patch KDE2" --notebooks "jokes" --date 25.03.2012-25.06.2012
