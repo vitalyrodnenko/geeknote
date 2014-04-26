@@ -34,6 +34,8 @@ EDITOR_OPEN = "WRITE"
 REMINDER_NONE = "NONE"
 REMINDER_DONE = "DONE"
 REMINDER_DELETE = "DELETE"
+# Shortcuts have a word and a number of seconds to add to the current time
+REMINDER_SHORTCUTS = {'TOMORROW': 86400000 }
 
 DEV_MODE = False
 DEBUG = False

@@ -203,8 +203,6 @@ class GeekNote(object):
           		note.attributes.reminderOrder = now
           		note.attributes.reminderDoneTime = now
      		else:  # we have an actual reminder timestamp
-			print now
-			print reminder
                 	if reminder > now: # future reminder only
           			note.attributes.reminderOrder = now
                 		note.attributes.reminderTime = reminder
@@ -721,7 +719,12 @@ class Notes(GeekNoteConnector):
             logging.debug("Search notebook")
 
 	if reminder:
-		if  reminder not in [config.REMINDER_NONE,config.REMINDER_DONE,config.REMINDER_DELETE]:
+		then = config.REMINDER_SHORTCUTS.get(reminder)
+		print then
+		if then:
+			now = int(round(time.time() * 1000)) 
+			result['reminder'] = now + then		
+		elif  reminder not in [config.REMINDER_NONE,config.REMINDER_DONE,config.REMINDER_DELETE]:
 			reminder = tools.strip(reminder.split('-'))
           		try: 
                				dateStruct = time.strptime(reminder[0] + " "  + reminder[1] + ":00", "%d.%m.%Y %H:%M:%S")
@@ -769,11 +772,11 @@ class Notes(GeekNoteConnector):
 
     def find(self, search=None, tags=None, notebooks=None,
              date=None, exact_entry=None, content_search=None,
-             with_url=None, count=None, ):
+             with_url=None, count=None, ignore_completed=None, reminders_only=None,):
 
         request = self._createSearchRequest(search, tags, notebooks,
                                             date, exact_entry,
-                                            content_search)
+                                            content_search,ignore_completed,reminders_only)
 
         if not count:
             count = 20
@@ -809,7 +812,7 @@ class Notes(GeekNoteConnector):
 
     def _createSearchRequest(self, search=None, tags=None,
                              notebooks=None, date=None,
-                             exact_entry=None, content_search=None):
+                             exact_entry=None, content_search=None,ignore_completed=None, reminders_only=None):
 
         request = ""
         if notebooks:
@@ -849,6 +852,11 @@ class Notes(GeekNoteConnector):
                 request += "%s" % search
             else:
                 request += "intitle:%s" % search
+	
+	if reminders_only:
+		request += ' reminderOrder:* ' 
+	if ignore_completed:
+		request += ' -reminderDoneTime:* '
 
         logging.debug("Search request: %s", request)
         return request
