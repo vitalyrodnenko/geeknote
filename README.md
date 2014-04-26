@@ -99,7 +99,7 @@ The main functionality that we need is creating notes in Evernote.
                       [--content <content>]
                       [--tags <list of tags>]
                       [--notebook <notebook where to save>]
-		      [--reminder <dd.mm.yy-HH:MM>]
+       		      [--reminder <date and time>]
 ### Options
 
 --title &lt;title&gt;
@@ -115,7 +115,7 @@ The main functionality that we need is creating notes in Evernote.
 :   Specify tags that our note will have. It can accept multiple tags, separated with comma.
 
 --reminder &lt;dd.mm.yy-HH:MM&gt;
-: Set reminder time(dd.mm.yyy-HH:MM), NONE for a reminder without a time, DONE for a completed reminder.
+: Set reminder date and time(dd.mm.yyy-HH:MM). Alternatively use TOMORROW and WEEK for 24 hours and a week ahead respectivley, NONE for a reminder without a time. Use DONE to mark a reminder as completed.
 
 
 ### Description
@@ -136,7 +136,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
                     [--title <the new title>]
                     [--tags <new list of data>]
                     [--notebook <new notebook>]
-		    [--reminder <dd.mm.yy-HH:MM>]
+       		    [--reminder <date and time>]
 
 ### Options
 
@@ -156,7 +156,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
 :   The same for tags - you can set a new list of tags for your note.
 
 --reminder &lt;dd.mm.yy-HH:MM&gt;
-:   Set reminder time(dd.mm.yyyy-HH:MM), NONE for a reminder without a time, DONE for a completed reminder, DELETE to remove the reminder flag.
+: Set reminder date and time(dd.mm.yyy-HH:MM). Alternatively use TOMORROW and WEEK for 24 hours and a week ahead respectivley, NONE for a reminder without a time. Use DONE to mark a reminder as completed. Use DELETE to remove reminder from a note.
 
 ### Examples
 Simple editing:
