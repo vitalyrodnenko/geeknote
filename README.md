@@ -99,7 +99,7 @@ The main functionality that we need is creating notes in Evernote.
                       [--content <content>]
                       [--tags <list of tags>]
                       [--notebook <notebook where to save>]
-       		      [--reminder <date and time>]
+       	              [--reminder <date and time>]
 ### Options
 
 --title &lt;title&gt;
@@ -136,7 +136,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
                     [--title <the new title>]
                     [--tags <new list of data>]
                     [--notebook <new notebook>]
-       		    [--reminder <date and time>]
+       	            [--reminder <date and time>]
 
 ### Options
 
