@@ -128,6 +128,14 @@ COMMANDS_DICT = {
                                  "help": "Search by content, not by title.",
                                  "value": True,
                                  "default": False},
+ 	    "--reminders-only": {"altName": "-R",
+                                 "help": "Include only notes with a reminder.",
+                                 "value": True,
+                                 "default": False},
+            "--ignore-completed": {"altName": "-C",
+                                 "help": "Include only unfinished reminders",
+                                 "value": True,
+                                 "default": False},
         }
     },
 
