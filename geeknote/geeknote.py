@@ -238,10 +238,10 @@ class GeekNote(object):
                 if not note.attributes: #in case no attributes available
 			note.attributes = Types.NoteAttributes()
                 if reminder == config.REMINDER_NONE:
-                        	note.attributes.reminderDoneTime = None
-				note.attributes.reminderTime = None
+                	note.attributes.reminderDoneTime = None
+			note.attributes.reminderTime = None
 			if not note.attributes.reminderOrder: #new reminder 
-                        	note.attributes.reminderOrder = now
+                       		note.attributes.reminderOrder = now
                 elif reminder == config.REMINDER_DONE:
                         note.attributes.reminderDoneTime = now
 			if not note.attributes.reminderOrder: #catch adding DONE to non-reminder
