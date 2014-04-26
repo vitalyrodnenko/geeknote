@@ -49,7 +49,7 @@ COMMANDS_DICT = {
             "--notebook":   {"altName": "-nb",
                              "help": "Set the notebook where to save note."},
 	    "--reminder":    {"altName": "-r",
-                             "help": "Set reminder time, NONE for a reminder without a time, DONE for a completed reminder."},
+                             "help": "Set reminder time(dd.mm.yyyy-HH:MM), NONE for a reminder without a time, DONE for a completed reminder."},
         }
     },
     "edit": {
@@ -68,7 +68,7 @@ COMMANDS_DICT = {
             "--notebook":   {"altName": "-nb",
                              "help": "Assign new notebook for the note."},
 	    "--reminder":    {"altName": "-r",
-                             "help": "Set reminder time, NONE for a reminder without a time, DONE for a completed reminder, DELETE to remove the reminder flag."},
+                             "help": "Set reminder time(dd.mm.yyyy-HH:MM), NONE for a reminder without a time, DONE for a completed reminder, DELETE to remove the reminder flag."},
         }
     },
     "remove": {
