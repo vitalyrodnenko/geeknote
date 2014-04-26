@@ -192,6 +192,24 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+
+	# allowing to create a completed reminder, i.e for task tracking purposes, skip reminder creation steps if we have a DELETE
+	if reminder and reminder != config.REMINDER_DELETE:
+     		now = int(round(time.time() * 1000))
+     		note.attributes = Types.NoteAttributes()
+     		if reminder == config.REMINDER_NONE:
+          		note.attributes.reminderOrder = now
+     		elif reminder == config.REMINDER_DONE:
+          		note.attributes.reminderDoneTime = now
+     		else:  # we have an actual reminder timestamp
+			print now
+			print reminder
+                	if reminder > now: # future reminder only
+                		note.attributes.reminderTime = reminder
+                	else:
+                		out.failureMessage("Sorry, reminder must be in the future.")
+             			tools.exit()
+
         logging.debug("New note : %s", note)
 
         return self.getNoteStore().createNote(self.authToken, note)
@@ -674,10 +692,13 @@ class Notes(GeekNoteConnector):
             logging.debug("Search notebook")
 
 	if reminder:
+		if  reminder not in [config.REMINDER_NONE,config.REMINDER_DONE,config.REMINDER_DELETE]:
 			reminder = tools.strip(reminder.split('-'))
           		try: 
                				dateStruct = time.strptime(reminder[0] + " "  + reminder[1] + ":00", "%d.%m.%Y %H:%M:%S")
-               				reminderTime = int(round(time.mktime(dateStruct)))
+               				reminderTime = int(round(time.mktime(dateStruct) * 1000))
+					print time.mktime(dateStruct)
+					print reminderTime
                				result['reminder'] = reminderTime
           		except (ValueError,IndexError), e:
                 			out.failureMessage('Incorrect date format in --reminder attribute. '
