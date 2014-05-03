@@ -119,14 +119,14 @@ def GetUserAuthCode():
 
 @preloaderStop
 def SearchResult(listItems, request, **kwargs):
-    """Печать результатов поиска"""
+    """Print search results."""
     printLine("Search request: %s" % request)
     printList(listItems, **kwargs)
 
 
 @preloaderStop
 def SelectSearchResult(listItems, **kwargs):
-    """Выбор результата поиска"""
+    """Select a search result."""
     return printList(listItems, showSelector=True, **kwargs)
 
 
@@ -181,13 +181,13 @@ def showUser(user, fullInfo):
 
 @preloaderStop
 def successMessage(message):
-    """ Вывод сообщения """
+    """ Displaying a message. """
     printLine(message, "\n")
 
 
 @preloaderStop
 def failureMessage(message):
-    """ Вывод сообщения """
+    """ Displaying a message."""
     printLine(message, "\n")
 
 

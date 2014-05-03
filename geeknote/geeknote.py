@@ -902,7 +902,7 @@ def main(args=None):
         traceback.print_exc()
         logging.error("App error: %s", str(e))
 
-    # перывание для preloader'а
+    # exit preloader
     tools.exit()
 
 if __name__ == "__main__":

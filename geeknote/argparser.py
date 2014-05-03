@@ -229,8 +229,8 @@ class argparser(object):
             return False
 
         if self.CMD == "autocomplete":
-            # подставляем аргументы для автозаполнения
-            # делаем смещение на 1 аргумент, т.к. 1 это autocomplete
+            # substitute arguments for AutoComplete
+            # 1 offset to make the argument as 1 is autocomplete
             self.__init__(self.sys_argv[1:])
             self.printAutocomplete()
             return False
@@ -263,8 +263,8 @@ class argparser(object):
         if 'firstArg' in self.COMMANDS[self.CMD]:
             firstArg = self.COMMANDS[self.CMD]['firstArg']
             if len(self.INP) > 0:
-                # смотрим что первое знаение не аргумент по умолчанию,
-                # а другой аргумент
+                # Check that first argument is a default argument
+                # and another argument.
                 if self.INP[0] not in (self.CMD_ARGS.keys() +
                                        self.CMD_FLAGS.keys()):
                     self.INP = [firstArg, ] + self.INP
@@ -274,7 +274,7 @@ class argparser(object):
         for item in self.INP:
             # check what are waiting the argument
             if activeArg is None:
-                # Действия для аргумента
+                # actions for the argument
                 if item in self.CMD_ARGS:
                     activeArg = item
                     ACTIVE_CMD = self.CMD_ARGS[activeArg]
@@ -292,11 +292,11 @@ class argparser(object):
                 activeArgTmp = None
                 # values it is parameter
                 if item in self.CMD_ARGS or item in self.CMD_FLAGS:
-                    # "Активный" аргумент имеет параметр emptyValue
+                    # active argument is "emptyValue"
                     if "emptyValue" in ACTIVE_CMD:
-                        activeArgTmp = item  # запоминаем новый "активный" аргумент
-                        item = ACTIVE_CMD['emptyValue']  # подменяем значение на emptyValue
-                    # Ошибка, "активный" аргумент не имеет значений
+                        activeArgTmp = item # remember the new "active" argument
+                        item = ACTIVE_CMD['emptyValue']  # set the active atgument to emptyValue
+                    # Error, "active" argument has no values
                     else:
                         self.printErrorArgument(activeArg, item)
                         return False
@@ -314,20 +314,20 @@ class argparser(object):
                         return False
 
                 self.INP_DATA[activeArg] = item
-                activeArg = activeArgTmp  # тут или пусто, или новый "активный" аргумент
+                activeArg = activeArgTmp  # this is either a new "active" argument or emptyValue.
 
-        # если остались "активные" аршументы
+        # if there are still active arguments
         if activeArg is not None:
-            # если есть параметр emptyValue
+            # if the active argument is emptyValue
             if 'emptyValue' in ACTIVE_CMD:
                 self.INP_DATA[activeArg] = ACTIVE_CMD['emptyValue']
 
-            # инече ошибка
+            # An error argument
             else:
                 self.printErrorArgument(activeArg, "")
                 return False
 
-        # проверка, присутствует ли необходимый аргумент запросе
+        # check whether there is a necessary argument request
         for arg, params in (self.CMD_ARGS.items() + self.CMD_FLAGS.items()):
             if 'required' in params and arg not in self.INP:
                 self.printErrorReqArgument(arg)
@@ -338,31 +338,31 @@ class argparser(object):
         return self.INP_DATA
 
     def printAutocomplete(self):
-        # последнее веденное значение
+        # checking later values
         LAST_VAL = self.INP[-1] if self.LVL > 1 else None
         PREV_LAST_VAL = self.INP[-2] if self.LVL > 2 else None
         ARGS_FLAGS_LIST = self.CMD_ARGS.keys() + self.CMD_FLAGS.keys()
 
-        # печатаем корневые команды
+        # print root grid
         if self.CMD is None:
             self.printGrid(self.CMD_LIST)
 
-        # работа с корневыми командами
+        # work with root commands
         elif not self.INP:
 
-            # печатаем аргументы если команда найдена
+            # print arguments if a root command is found
             if self.CMD in self.CMD_LIST:
                 self.printGrid(ARGS_FLAGS_LIST)
 
-            # автозаполнение для неполной команды
+            # autocomplete for sub-commands
             else:
-                # фильтруем команды подходящие под введенный шаблон
+                # filter out irrelevant commands
                 self.printGrid([item for item in self.CMD_LIST if item.startswith(self.CMD)])
 
-        # обработка аргументов
+        # processing arguments
         else:
 
-            # фильтруем аргументы которые еще не ввели
+            # filter out arguments that have not been input
             if PREV_LAST_VAL in self.CMD_ARGS or LAST_VAL in self.CMD_FLAGS:
                 self.printGrid([item for item in ARGS_FLAGS_LIST if item not in self.INP])
 
