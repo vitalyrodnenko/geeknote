@@ -791,7 +791,7 @@ class Notes(GeekNoteConnector):
 
 
 def modifyArgsByStdinStream():
-    """ парсинг входного потока и подстановка аргументов"""
+    """Parse the stdin stream for arguments"""
     content = sys.stdin.read()
     content = tools.stdinEncode(content)
 
