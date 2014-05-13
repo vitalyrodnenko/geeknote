@@ -250,8 +250,7 @@ def rawInput(message, isPass=False):
 
 
 def printDate(timestamp):
-    return time.strftime("%d.%m.%Y", time.localtime(timestamp / 1000))
-
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(timestamp/1000))
 
 def printLine(line, endLine="\n"):
     message = line + endLine
