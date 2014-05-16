@@ -18,6 +18,9 @@ Here we have documentation for Geeknote. We'll show basic commands how to work w
 You can install Geeknote as a python script.
 
 ### Downloading and installing from source
+    # Install dependencies. (This example for Debian-based systems):
+    $ [sudo] apt-get update; [sudo] apt-get -y install python-setuptools
+    
     # Download the repository.
     $ git clone git://github.com/VitaliyRodnenko/geeknote.git
     
