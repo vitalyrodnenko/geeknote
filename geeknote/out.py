@@ -151,9 +151,10 @@ def showNote(note):
     separator("#", "TITLE")
     printLine(note.title)
     separator("=", "META")
-    printLine("Created: %s Updated:%s" %
-              (printDate(note.created).ljust(15, " "),
-               printDate(note.updated).ljust(15, " ")))
+    printLine("Created: %s" %
+              (printDate(note.created).ljust(15, " ")))
+    printLine("Updated: %s" %
+              (printDate(note.updated).ljust(15, " ")))
     separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
@@ -217,7 +218,7 @@ def printList(listItems, title="", showSelector=False,
 
         printLine("%s : %s%s%s" % (
             str(key).rjust(3, " "),
-            printDate(item.created).ljust(12, " ") if hasattr(item, 'created') else '',
+            printDate(item.created).ljust(18, " ") if hasattr(item, 'created') else '',
             item.title if hasattr(item, 'title') else item.name,
             " " + (">>> " + config.NOTE_URL % item.guid) if showUrl else '',))
 
@@ -250,8 +251,7 @@ def rawInput(message, isPass=False):
 
 
 def printDate(timestamp):
-    return time.strftime("%d.%m.%Y", time.localtime(timestamp / 1000))
-
+    return time.strftime("%d/%m/%Y %H:%M", time.localtime(timestamp/1000))
 
 def printLine(line, endLine="\n"):
     message = line + endLine
