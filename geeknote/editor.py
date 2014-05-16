@@ -89,7 +89,7 @@ class Editor(object):
             if format=='markdown':
               contentHTML = markdown.markdown(content).encode("utf-8")
               # Non-Pretty HTML output
-              contentHTML = str(BeautifulSoup(contentHTML)) 
+              contentHTML = str(BeautifulSoup(contentHTML, 'html.parser'))
             else:
               contentHTML = Editor.HTMLEscape(content)
             return Editor.wrapENML(contentHTML)
