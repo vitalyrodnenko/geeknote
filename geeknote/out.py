@@ -111,7 +111,7 @@ def GetUserAuthCode():
     try:
         code = None
         if code is None:
-          code = rawInput("Code: ")
+          code = rawInput("Two-Factor Authentication Code: ")
     except (KeyboardInterrupt, SystemExit):
         tools.exit()
 
