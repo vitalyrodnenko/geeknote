@@ -155,6 +155,9 @@ def showNote(note):
               (printDate(note.created).ljust(15, " ")))
     printLine("Updated: %s" %
               (printDate(note.updated).ljust(15, " ")))
+    for key, value in note.attributes.__dict__.items():
+        if value:
+          printLine("%s: %s" % (key, value))
     separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
