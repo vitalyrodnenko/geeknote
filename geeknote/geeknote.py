@@ -818,7 +818,7 @@ def modifyArgsByStdinStream():
 
 def main(args=None):
     try:
-        exitStatusCode = 0
+        exit_status_code = 0
 
         # if terminal
         if config.IS_IN_TERMINAL:
@@ -900,14 +900,14 @@ def main(args=None):
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException), e:
         if e.message:
-            exitStatusCode = e.message
+            exit_status_code = e.message
 
     except Exception, e:
         traceback.print_exc()
         logging.error("App error: %s", str(e))
 
     # exit preloader
-    tools.exit('exit', exitStatusCode)
+    tools.exit('exit', exit_status_code)
 
 if __name__ == "__main__":
     main()
