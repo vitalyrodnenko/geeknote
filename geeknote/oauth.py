@@ -74,7 +74,7 @@ class GeekNoteAuth(object):
     def loadPage(self, url, uri=None, method="GET", params=""):
         if not url:
             logging.error("Request URL undefined")
-            tools.exit()
+            tools.exitErr()
 
         if not uri:
             urlData = urlparse(url)
@@ -149,12 +149,12 @@ class GeekNoteAuth(object):
         if response.status != 200:
             logging.error("Unexpected response status on get "
                           "temporary oauth_token 200 != %s", response.status)
-            tools.exit()
+            tools.exitErr()
 
         responseData = self.parseResponse(response.data)
         if 'oauth_token' not in responseData:
             logging.error("OAuth temporary not found")
-            tools.exit()
+            tools.exitErr()
 
         self.tmpOAuthToken = responseData['oauth_token']
 
@@ -176,7 +176,7 @@ class GeekNoteAuth(object):
 
         if not response.location:
             logging.error("Target URL was not found in the response on login")
-            tools.exit()
+            tools.exitErr()
 
     def login(self):
         response = self.loadPage(self.url['base'],
@@ -187,11 +187,11 @@ class GeekNoteAuth(object):
         if response.status != 200:
             logging.error("Unexpected response status "
                           "on login 200 != %s", response.status)
-            tools.exit()
+            tools.exitErr()
 
         if 'JSESSIONID' not in self.cookies:
             logging.error("Not found value JSESSIONID in the response cookies")
-            tools.exit()
+            tools.exitErr()
 
         # get login/password
         self.username, self.password = out.GetUserCredentials()
@@ -216,7 +216,7 @@ class GeekNoteAuth(object):
 
         if not response.location:
             logging.error("Target URL was not found in the response on login")
-            tools.exit()
+            tools.exitErr()
 
         if response.status == 302:
             # the user has enabled two factor auth
@@ -238,12 +238,12 @@ class GeekNoteAuth(object):
         if response.status != 302:
             logging.error("Unexpected response status on allowing "
                           "access 302 != %s", response.status)
-            tools.exit()
+            tools.exitErr()
 
         responseData = self.parseResponse(response.location)
         if 'oauth_verifier' not in responseData:
             logging.error("OAuth verifier not found")
-            tools.exit()
+            tools.exitErr()
 
         self.verifierToken = responseData['oauth_verifier']
 
@@ -262,12 +262,12 @@ class GeekNoteAuth(object):
         if response.status != 200:
             logging.error("Unexpected response status on "
                           "getting oauth token 200 != %s", response.status)
-            tools.exit()
+            tools.exitErr()
 
         responseData = self.parseResponse(response.data)
         if 'oauth_token' not in responseData:
             logging.error("OAuth token not found")
-            tools.exit()
+            tools.exitErr()
 
         logging.debug("OAuth token take : %s", responseData['oauth_token'])
         self.OAuthToken = responseData['oauth_token']

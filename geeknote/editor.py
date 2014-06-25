@@ -102,7 +102,7 @@ class Editor(object):
                           "Content must be an UTF-8 encode.")
             out.failureMessage("Error while parsing text to html. "
                                "Content must be an UTF-8 encode.")
-            return tools.exit()
+            return tools.exitErr()
 
     def __init__(self, content):
         if not isinstance(content, str):

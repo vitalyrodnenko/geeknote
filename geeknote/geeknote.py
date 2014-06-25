@@ -69,7 +69,7 @@ class GeekNote(object):
 
                 if not hasattr(e, 'errorCode'):
                     out.failureMessage("Sorry, operation has failed!!!.")
-                    tools.exit()
+                    tools.exitErr()
 
                 errorCode = int(e.errorCode)
 
@@ -87,7 +87,7 @@ class GeekNote(object):
                 else:
                     return False
 
-                tools.exit()
+                tools.exitErr()
 
         return wrapper
 
@@ -127,7 +127,7 @@ class GeekNote(object):
                                        UserStoreConstants.EDAM_VERSION_MINOR)
         if not versionOK:
             logging.error("Old EDAM version")
-            return tools.exit()
+            return tools.exitErr()
 
     def checkAuth(self):
         self.authToken = self.getStorage().getUserToken()
@@ -321,7 +321,7 @@ class User(GeekNoteConnector):
     def user(self, full=None):
         if not self.getEvernote().checkAuth():
             out.failureMessage("You not logged in.")
-            return tools.exit()
+            return tools.exitErr()
 
         if full:
             info = self.getEvernote().getUserInfo()
@@ -332,20 +332,20 @@ class User(GeekNoteConnector):
     @GeekNoneDBConnectOnly
     def login(self):
         if self.getEvernote().checkAuth():
-            out.successMessage("You have already logged in.")
-            return tools.exit()
+            out.failureMessage("You have already logged in.")
+            return tools.exitErr()
 
         if self.getEvernote().auth():
             out.successMessage("You have successfully logged in.")
         else:
             out.failureMessage("Login error.")
-            return tools.exit()
+            return tools.exitErr()
 
     @GeekNoneDBConnectOnly
     def logout(self, force=None):
         if not self.getEvernote().checkAuth():
-            out.successMessage("You have already logged out.")
-            return tools.exit()
+            out.failureMessage("You have already logged out.")
+            return tools.exitErr()
 
         if not force and not out.confirm('Are you sure you want to logout?'):
             return tools.exit()
@@ -355,7 +355,7 @@ class User(GeekNoteConnector):
             out.successMessage("You have successfully logged out.")
         else:
             out.failureMessage("Logout error.")
-            return tools.exit()
+            return tools.exitErr()
 
     @GeekNoneDBConnectOnly
     def settings(self, editor=None):
@@ -405,7 +405,7 @@ class Tags(GeekNoteConnector):
             out.successMessage("Tag has been successfully created.")
         else:
             out.failureMessage("Error while the process of creating the tag.")
-            return tools.exit()
+            return tools.exitErr()
 
         return result
 
@@ -419,7 +419,7 @@ class Tags(GeekNoteConnector):
             out.successMessage("Tag has been successfully updated.")
         else:
             out.failureMessage("Error while the updating the tag.")
-            return tools.exit()
+            return tools.exitErr()
 
     def remove(self, tagname, force=None):
         tag = self._searchTag(tagname)
@@ -466,7 +466,7 @@ class Notebooks(GeekNoteConnector):
         else:
             out.failureMessage("Error while the process "
                                "of creating the notebook.")
-            return tools.exit()
+            return tools.exitErr()
 
         return result
 
@@ -481,7 +481,7 @@ class Notebooks(GeekNoteConnector):
             out.successMessage("Notebook has been successfully updated.")
         else:
             out.failureMessage("Error while the updating the notebook.")
-            return tools.exit()
+            return tools.exitErr()
 
     def remove(self, notebook, force=None):
         notebook = self._searchNotebook(notebook)
@@ -690,8 +690,8 @@ class Notes(GeekNoteConnector):
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
-                out.successMessage("Notes have not been found.")
-                return tools.exit()
+                out.failureMessage("Notes have not been found.")
+                return tools.exitErr()
 
             elif result.totalNotes == 1 or self.selectFirstOnUpdate:
                 note = result.notes[0]
@@ -735,7 +735,8 @@ class Notes(GeekNoteConnector):
             count = update_count(count)
 
         if result.totalNotes == 0:
-            out.successMessage("Notes have not been found.")
+            out.failureMessage("Notes have not been found.")
+            return tools.exitErr()
 
         # save search result
         # print result
@@ -774,7 +775,7 @@ class Notes(GeekNoteConnector):
             except ValueError, e:
                 out.failureMessage('Incorrect date format in --date attribute. '
                                    'Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
-                return tools.exit()
+                return tools.exitErr()
 
         if search:
             search = tools.strip(search)
@@ -797,13 +798,13 @@ def modifyArgsByStdinStream():
 
     if not content:
         out.failureMessage("Input stream is empty.")
-        return tools.exit()
+        return tools.exitErr()
 
     title = ' '.join(content.split(' ', 5)[:-1])
     title = re.sub(r'(\r\n|\r|\n)', r' ', title)
     if not title:
         out.failureMessage("Error while creating title of note from stream.")
-        return tools.exit()
+        return tools.exitErr()
     elif len(title) > 50:
         title = title[0:50] + '...'
 
@@ -817,6 +818,8 @@ def modifyArgsByStdinStream():
 
 def main(args=None):
     try:
+        exitStatusCode = 0
+
         # if terminal
         if config.IS_IN_TERMINAL:
             sys_argv = sys.argv[1:]
@@ -895,15 +898,16 @@ def main(args=None):
         if COMMAND == 'tag-remove':
             Tags().remove(**ARGS)
 
-    except (KeyboardInterrupt, SystemExit, tools.ExitException):
-        pass
+    except (KeyboardInterrupt, SystemExit, tools.ExitException), e:
+        if e.message:
+            exitStatusCode = e.message
 
     except Exception, e:
         traceback.print_exc()
         logging.error("App error: %s", str(e))
 
     # exit preloader
-    tools.exit()
+    tools.exit('exit', exitStatusCode)
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import getpass
+import threading
 import thread
 import time
 import sys
@@ -69,9 +70,13 @@ class preloader(object):
         preloader.isLaunch = False
 
     @staticmethod
-    def exit():
+    def exit(code=0):
         preloader.stop()
-        thread.exit()
+
+        if threading.current_thread().__class__.__name__ == '_MainThread':
+            sys.exit(code)
+        else:
+            thread.exit()
 
     @staticmethod
     def draw():
@@ -100,8 +105,11 @@ def GetUserCredentials():
 
         if password is None:
             password = rawInput("Password: ", True)
-    except (KeyboardInterrupt, SystemExit):
-        tools.exit()
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
 
     return (login, password)
 
@@ -112,8 +120,11 @@ def GetUserAuthCode():
         code = None
         if code is None:
           code = rawInput("Two-Factor Authentication Code: ")
-    except (KeyboardInterrupt, SystemExit):
-        tools.exit()
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
 
     return code
 
@@ -142,8 +153,11 @@ def confirm(message):
                 return False
             failureMessage('Incorrect answer "%s", '
                            'please try again:\n' % answer)
-    except (KeyboardInterrupt, SystemExit):
-        tools.exit()
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
 
 
 @preloaderStop
@@ -189,8 +203,7 @@ def successMessage(message):
 @preloaderStop
 def failureMessage(message):
     """ Displaying a message."""
-    printLine(message, "\n")
-
+    printLine(message, "\n", sys.stderr)
 
 def separator(symbol="", title=""):
     size = 40
@@ -238,8 +251,11 @@ def printList(listItems, title="", showSelector=False,
                     exit(1)
                 failureMessage('Incorrect number "%s", '
                                'please try again:\n' % num)
-        except (KeyboardInterrupt, SystemExit):
-            tools.exit()
+        except (KeyboardInterrupt, SystemExit), e:
+            if e.message:
+                tools.exit(e.message)
+            else:
+                tools.exit
 
 
 def rawInput(message, isPass=False):
@@ -253,14 +269,14 @@ def rawInput(message, isPass=False):
 def printDate(timestamp):
     return time.strftime("%d/%m/%Y %H:%M", time.localtime(timestamp/1000))
 
-def printLine(line, endLine="\n"):
+def printLine(line, endLine="\n", out=sys.stdout):
     message = line + endLine
     message = tools.stdoutEncode(message)
     try:
-        sys.stdout.write(message)
+        out.write(message)
     except:
         pass
-    sys.stdout.flush()
+    out.flush()
 
 
 def printAbout():
