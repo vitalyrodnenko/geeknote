@@ -19,8 +19,12 @@ CONSUMER_SECRET_SANDBOX = "ed0fcc0c97c032a5"
 
 VERSION = 0.1
 
-IS_IN_TERMINAL = sys.stdin.isatty()
-IS_OUT_TERMINAL = sys.stdout.isatty()
+try:
+    IS_IN_TERMINAL = sys.stdin.isatty()
+    IS_OUT_TERMINAL = sys.stdout.isatty()
+except:
+    IS_IN_TERMINAL = False
+    IS_OUT_TERMINAL = False
 
 # Application path
 APP_DIR = os.path.join(os.getenv("HOME") or os.getenv("USERPROFILE"),  ".geeknote")
