@@ -47,7 +47,7 @@ try:
         os.mkdir(APP_DIR)
 except Exception, e:
     sys.stdout.write("Can not create application dirictory : %s" % APP_DIR)
-    exit()
+    exit(1)
 
 if DEV_MODE:
     USER_STORE_URI = USER_STORE_URI_SANDBOX
