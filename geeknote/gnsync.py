@@ -6,6 +6,7 @@ import argparse
 import glob
 import logging
 import string
+import unicodedata, re
 
 from geeknote import GeekNote
 from storage import Storage
@@ -22,6 +23,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
+# http://stackoverflow.com/a/93029
+CONTROL_CHARS = ''.join(c for c in (unichr(i) for i in xrange(0x110000)) \
+                if c not in string.printable and unicodedata.category(c) == 'Cc')
+CONTROL_CHARS_RE = re.compile('[%s]' % re.escape(CONTROL_CHARS))
+def remove_control_characters(s):
+    return CONTROL_CHARS_RE.sub('', s)
 
 def log(func):
     def wrapper(*args, **kwargs):
@@ -224,7 +231,7 @@ class GNSync:
         content = open(path, "r").read()
 
         # strip unprintable characters
-        content = ''.join(s for s in content if s in string.printable)
+        content = remove_control_characters(content.decode('utf-8')).encode('utf-8')
         content = Editor.textToENML(content=content, raise_ex=True, format=self.format)
         
         if content is None:
