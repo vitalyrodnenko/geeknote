@@ -63,7 +63,7 @@ class Editor(object):
             if len(sections) >= 1:
                 content = ''
                 for c in sections[0].contents:
-                    content += str(c)
+                    content = u''.join((content, c))
                 pass
             else:
                 format = 'default'
@@ -111,7 +111,7 @@ class Editor(object):
             # perform any parsing/mutation.
             #
             elif format=='pre':
-              contentHTML = '<pre>' + content + '</pre>'
+              contentHTML = u''.join(('<pre>', content, '</pre>')).encode("utf-8")
             else:
               contentHTML = Editor.HTMLEscape(content)
             return Editor.wrapENML(contentHTML)
