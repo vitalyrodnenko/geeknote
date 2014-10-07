@@ -358,7 +358,7 @@ class User(GeekNoteConnector):
             return tools.exitErr()
 
     @GeekNoneDBConnectOnly
-    def settings(self, editor=None):
+    def settings(self, editor=None, extras=None):
         storage = self.getStorage()
         if editor:
             if editor == '#GET#':
@@ -369,13 +369,24 @@ class User(GeekNoteConnector):
             else:
                 storage.setUserprop('editor', editor)
                 out.successMessage("Changes have been saved.")
+        elif extras:
+            if extras == '#GET#':
+                extras = storage.getUserprop('markdown2_extras')
+                if not extras:
+                    extras = None
+                out.successMessage("Current markdown2 extras is : %s" % extras)
+            else:
+                storage.setUserprop('markdown2_extras', extras.split(','))
+                out.successMessage("Changes have been saved.")
         else:
             settings = ('Geeknote',
                         '*' * 30,
                         'Version: %s' % config.VERSION,
                         'App dir: %s' % config.APP_DIR,
                         'Error log: %s' % config.ERROR_LOG,
-                        'Current editor: %s' % storage.getUserprop('editor'))
+                        'Current editor: %s' % storage.getUserprop('editor'),
+                        'Markdown2 Extras: %s' % ','.join(storage.getUserprop(
+                            'markdown2_extras')))
 
             user_settings = storage.getUserprops()
 
