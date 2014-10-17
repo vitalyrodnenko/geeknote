@@ -14,7 +14,7 @@ from editor import Editor
 import tools
 
 # set default logger (write log to file)
-def_logpath = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  'GeekNoteSync.log')
+def_logpath = os.path.join(os.getenv('HOME') or os.getenv('USERPROFILE'),  'GeekNoteSync.log')
 formatter = logging.Formatter('%(asctime)-15s : %(message)s')
 handler = logging.FileHandler(def_logpath)
 handler.setFormatter(formatter)
