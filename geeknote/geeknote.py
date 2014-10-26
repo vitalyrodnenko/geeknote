@@ -12,6 +12,7 @@ import thrift.transport.THttpClient as THttpClient
 
 import evernote.edam.userstore.constants as UserStoreConstants
 import evernote.edam.notestore.NoteStore as NoteStore
+from evernote.edam.notestore.ttypes import NotesMetadataResultSpec
 import evernote.edam.error.ttypes as Errors
 import evernote.edam.type.ttypes as Types
 
@@ -162,7 +163,16 @@ class GeekNote(object):
 
         if keywords:
             noteFilter.words = keywords
-        return self.getNoteStore().findNotes(self.authToken, noteFilter, offset, count)
+
+        meta = NotesMetadataResultSpec()
+        meta.includeTitle = True
+        meta.includeContentLength = True
+        meta.includeCreated = True
+        meta.includeUpdated = True
+        meta.includeNotebookGuid = True
+        meta.includeAttributes = True
+
+        return self.getNoteStore().findNotesMetadata(self.authToken, noteFilter, offset, count, meta)
 
     @EdamException
     def loadNoteContent(self, note):

@@ -3,3 +3,4 @@ html2text
 sqlalchemy
 markdown2
 thrift
+beautifulsoup4
