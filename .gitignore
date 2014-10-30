@@ -13,6 +13,7 @@ sdist
 develop-eggs
 .installed.cfg
 .idea
+.DS_Store
 .venv
 
 # Installer logs
