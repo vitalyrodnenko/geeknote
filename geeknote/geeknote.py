@@ -40,6 +40,7 @@ class GeekNote(object):
     userStoreUri = config.USER_STORE_URI
     consumerKey = config.CONSUMER_KEY
     consumerSecret = config.CONSUMER_SECRET
+    noteSortOrder = config.NOTE_SORT_ORDER
     authToken = None
     userStore = None
     noteStore = None
@@ -157,6 +158,7 @@ class GeekNote(object):
     def findNotes(self, keywords, count, createOrder=False, offset=0):
         """ WORK WITH NOTEST """
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
+        noteFilter.order = getattr(Types.NoteSortOrder, self.noteSortOrder)
         if createOrder:
             noteFilter.order = Types.NoteSortOrder.CREATED
 
