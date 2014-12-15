@@ -116,6 +116,10 @@ class GeekNoteAuth(object):
         sk = Cookie.SimpleCookie(response.getheader("Set-Cookie", ""))
         for key in sk:
             self.cookies[key] = sk[key].value
+        # delete cookies whose content is "deleteme"
+        for key in self.cookies.keys():
+            if self.cookies[key] == "deleteme":
+                del self.cookies[key]
 
         return result
 
