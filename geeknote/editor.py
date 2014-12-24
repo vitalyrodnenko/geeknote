@@ -64,7 +64,7 @@ class Editor(object):
                 else:
                     section.extract()
 
-        content = html2text.html2text(soup.prettify())
+        content = html2text.html2text(str(soup))
         content = re.sub(r' *\n', os.linesep, content)
         return content.encode('utf-8')
 
