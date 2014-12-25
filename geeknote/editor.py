@@ -48,23 +48,39 @@ class Editor(object):
         return unescape(text, Editor.getHtmlUnescapeTable())
 
     @staticmethod
-    def ENMLtoText(contentENML):
+    def ENMLtoText(contentENML, format='default'):
         html2text.BODY_WIDTH = 0
         soup = BeautifulSoup(contentENML.decode('utf-8'))
 
-        for section in soup.select('li > p'):
-            section.replace_with( section.contents[0] )
+        if format == 'pre':
+            #
+            # Expect to find at least one 'pre' section. Otherwise, the note
+            # was not created using the format='pre' option. In that case,
+            # revert back the defaults. When found, form the note from the
+            # first 'pre' section only. The others were added by the user.
+            #
+            sections = soup.select('pre')
+            if len(sections) >= 1:
+                content = ''
+                for c in sections[0].contents:
+                    content = u''.join((content, c))
+                pass
+            else:
+                format = 'default'
+        
+        if format == 'default':
+            for section in soup.select('li > p'):
+                section.replace_with( section.contents[0] )
 
-        for section in soup.select('li > br'):
-            if section.next_sibling:
-                next_sibling = section.next_sibling.next_sibling
-                if next_sibling:
-                    if next_sibling.find('li'):
+            for section in soup.select('li > br'):
+                if section.next_sibling:
+                    next_sibling = section.next_sibling.next_sibling
+                    if next_sibling:
+                        if next_sibling.find('li'):
+                            section.extract()
+                    else:
                         section.extract()
-                else:
-                    section.extract()
-
-        content = html2text.html2text(soup.prettify())
+            content = html2text.html2text(soup.prettify())
         content = re.sub(r' *\n', os.linesep, content)
         return content.encode('utf-8')
 
@@ -90,6 +106,12 @@ class Editor(object):
               contentHTML = markdown.markdown(content).encode("utf-8")
               # Non-Pretty HTML output
               contentHTML = str(BeautifulSoup(contentHTML, 'html.parser'))
+            #
+            # For the 'pre' format, simply wrap the content with a 'pre' tag. Do
+            # perform any parsing/mutation.
+            #
+            elif format=='pre':
+              contentHTML = u''.join(('<pre>', content, '</pre>')).encode("utf-8")
             else:
               contentHTML = Editor.HTMLEscape(content)
             return Editor.wrapENML(contentHTML)
