@@ -85,6 +85,14 @@ class GeekNote(object):
                     out.failureMessage("Sorry, you do not have permissions "
                                        "to do this operation.")
 
+                # Rate limited
+                # Patched because otherwise if you get rate limited you still keep
+                # hammering the server on scripts
+                elif errorCode == 19:
+                    print("\nRate Limit Hit: Please wait %s seconds before continuing" %
+                          str(e.rateLimitDuration))
+                    tools.exitErr()
+
                 else:
                     return False
 
@@ -156,7 +164,7 @@ class GeekNote(object):
 
     @EdamException
     def findNotes(self, keywords, count, createOrder=False, offset=0):
-        """ WORK WITH NOTEST """
+        """ WORK WITH NOTES """
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
         noteFilter.order = getattr(Types.NoteSortOrder, self.noteSortOrder)
         if createOrder:
@@ -171,7 +179,7 @@ class GeekNote(object):
         """ modify Note object """
         if not isinstance(note, object):
             raise Exception("Note content must be an "
-                            "instanse of Note, '%s' given." % type(note))
+                            "instance of Note, '%s' given." % type(note))
 
         note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
         # fill the tags in
@@ -322,7 +330,7 @@ class User(GeekNoteConnector):
     @GeekNoneDBConnectOnly
     def user(self, full=None):
         if not self.getEvernote().checkAuth():
-            out.failureMessage("You not logged in.")
+            out.failureMessage("You are not logged in.")
             return tools.exitErr()
 
         if full:
@@ -569,7 +577,7 @@ class Notes(GeekNoteConnector):
                 break
             time.sleep(5)
         return result
-        
+
     def create(self, title, content=None, tags=None, notebook=None):
 
         self.connectToEvertone()
@@ -725,10 +733,10 @@ class Notes(GeekNoteConnector):
 
         # Reduces the count by the amount of notes already retrieved
         update_count = lambda c: max(c - len(result.notes), 0)
-        
+
         count = update_count(count)
-        
-        # Evernote api will only return so many notes in one go. Checks for more 
+
+        # Evernote api will only return so many notes in one go. Checks for more
         # notes to come whilst obeying count rules
         while ((result.totalNotes != len(result.notes)) and count != 0):
             offset = len(result.notes)
