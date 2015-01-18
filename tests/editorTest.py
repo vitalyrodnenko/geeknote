@@ -22,8 +22,8 @@ _Line 2_
                          "<em>Line 2</em></p><p><strong>Line 3</strong></p>"
 
     def test_TextToENML(self):
-        self.assertEqual(Editor.textToENML(self.MD_TEXT),
-                         Editor.wrapENML(self.HTML_TEXT))
+        self.assertEqual(Editor.textToENML(self.MD_TEXT).replace('\n', ''),
+                         Editor.wrapENML(self.HTML_TEXT).replace('\n', ''))
 
     def test_ENMLToText(self):
         wrapped = Editor.wrapENML(self.HTML_TEXT)
