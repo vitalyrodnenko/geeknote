@@ -633,7 +633,7 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while deleting the note.")
 
-    def show(self, note):
+    def show(self, note, raw=None):
 
         self.connectToEvertone()
 
@@ -642,7 +642,10 @@ class Notes(GeekNoteConnector):
         out.preloader.setMessage("Loading note...")
         self.getEvernote().loadNoteContent(note)
 
-        out.showNote(note)
+        if raw:
+          out.showNoteRaw(note)
+        else:
+          out.showNote(note)
 
     def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
         result = {

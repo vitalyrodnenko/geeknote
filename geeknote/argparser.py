@@ -89,6 +89,12 @@ COMMANDS_DICT = {
             "--note": {"altName": "-n",
                        "help": "The name or ID from the previous "
                                "search of a note to show."},
+        },
+        "flags": {
+            "--raw": {"altName": "-w",
+                       "help": "Show the raw note body",
+                       "value": True,
+                       "default": False},
         }
     },
     "find": {
