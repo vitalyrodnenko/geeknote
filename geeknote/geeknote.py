@@ -6,6 +6,7 @@ import time
 import sys
 import os
 import re
+import mimetypes
 
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
@@ -190,7 +191,38 @@ class GeekNote(object):
             note.tagNames.append(tag.name)
 
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None, created=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None, resources=None):
+        
+        def make_resource(filename):
+            try:
+                mtype = mimetypes.guess_type(filename)[0]
+                    
+                if mtype.split('/')[0] == "text":
+                    rmode = "r"
+                else:
+                    rmode = "rb"
+
+                with open(filename, rmode) as f:
+                    """ file exists """
+                    resource = Types.Resource()
+                    resource.data = Types.Data()
+
+                    data = f.read()
+                    md5 = hashlib.md5()
+                    md5.update(data)
+                    
+                    resource.data.bodyHash = md5.hexdigest() 
+                    resource.data.body = data
+                    resource.data.size = len(data) 
+                    resource.mime = mtype
+                    resource.attributes = Types.ResourceAttributes()
+                    resource.attributes.fileName = os.path.basename(filename)
+                    return resource
+            except IOError:
+                msg = "The file '%s' does not exist." % filename
+                out.failureMessage(msg)
+                raise IOError(msg)
+
         note = Types.Note()
         note.title = title
         note.content = content
@@ -202,13 +234,25 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+        if resources:
+            """ make EverNote API resources """
+            note.resources = map(make_resource, resources)
+            
+            """ add to content """
+            resource_nodes = ""
+            
+            for resource in note.resources:
+                resource_nodes += '<en-media type="%s" hash="%s" />' % (resource.mime, resource.data.bodyHash)
+
+            note.content = note.content.replace("</en-note>", resource_nodes + "</en-note>")
+
         logging.debug("New note : %s", note)
 
         return self.getNoteStore().createNote(self.authToken, note)
 
     @EdamException
     def updateNote(self, guid, title=None, content=None,
-                   tags=None, notebook=None):
+                   tags=None, notebook=None, resources=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -222,6 +266,11 @@ class GeekNote(object):
 
         if notebook:
             note.notebookGuid = notebook
+
+        if resources:
+            """ TODO """
+            print("Updating a note's resources is not yet supported.")
+            raise NotImplementedError()
 
         logging.debug("Update note : %s", note)
 
@@ -578,14 +627,14 @@ class Notes(GeekNoteConnector):
             time.sleep(5)
         return result
 
-    def create(self, title, content=None, tags=None, notebook=None):
+    def create(self, title, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
 
         # Optional Content.
         content = content or " "
 
-        inputData = self._parceInput(title, content, tags, notebook)
+        inputData = self._parseInput(title, content, tags, notebook, resource)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData)
@@ -598,12 +647,12 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while creating the note.")
 
-    def edit(self, note, title=None, content=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note)
+        inputData = self._parseInput(title, content, tags, notebook, resource, note)
 
         if inputData['content'] == config.EDITOR_OPEN:
             result = self._editWithEditorInThread(inputData, note)
@@ -647,12 +696,13 @@ class Notes(GeekNoteConnector):
         else:
           out.showNote(note)
 
-    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
+    def _parseInput(self, title=None, content=None, tags=None, notebook=None, note=None):
         result = {
             "title": title,
             "content": content,
             "tags": tags,
             "notebook": notebook,
+            "resources": resources if resources else [],
         }
         result = tools.strip(result)
 
