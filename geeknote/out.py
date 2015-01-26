@@ -239,6 +239,10 @@ def rawInput(message, isPass=False):
 
 
 def printDate(timestamp):
+    
+    if len(str(timestamp)) == 13:
+	    timestamp = int(str(timestamp)[0:-3])
+
     return time.strftime("%d.%m.%Y", time.localtime(timestamp / 1000))
 
 
