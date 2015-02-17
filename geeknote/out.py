@@ -4,6 +4,7 @@ import getpass
 import threading
 import thread
 import time
+import datetime
 import sys
 
 import tools
@@ -178,6 +179,9 @@ def showNote(note):
 
     printLine(Editor.ENMLtoText(note.content))
 
+@preloaderStop
+def showNoteRaw(note):
+    printLine(Editor.ENMLtoText(note.content, 'pre'))
 
 @preloaderStop
 def showUser(user, fullInfo):
@@ -270,7 +274,7 @@ def rawInput(message, isPass=False):
 
 
 def printDate(timestamp):
-    return time.strftime("%d/%m/%Y %H:%M", time.localtime(timestamp/1000))
+    return datetime.date.strftime(datetime.date.fromtimestamp(timestamp), "%d.%m.%Y")
 
 def printLine(line, endLine="\n", out=sys.stdout):
     message = line + endLine

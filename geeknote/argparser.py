@@ -46,6 +46,9 @@ COMMANDS_DICT = {
             "--tags":       {"altName": "-tg",
                              "help": "One tag or the list of tags which"
                                      " will be added to the note."},
+            "--resource":   {"altName": "-rs",
+                             "help": "Add a resource to the note.",
+                             "repetitive": True},
             "--notebook":   {"altName": "-nb",
                              "help": "Set the notebook where to save note."}
         }
@@ -61,6 +64,7 @@ COMMANDS_DICT = {
                              "help": "Set new title of the note."},
             "--content":    {"altName": "-c",
                              "help": "Set new content of the note."},
+            "--resource":   {"altName": "-rs", "help": "Add a resource to the note.", "repetitive": True},
             "--tags":       {"altName": "-tg",
                              "help": "Set new list o tags for the note."},
             "--notebook":   {"altName": "-nb",
@@ -89,6 +93,12 @@ COMMANDS_DICT = {
             "--note": {"altName": "-n",
                        "help": "The name or ID from the previous "
                                "search of a note to show."},
+        },
+        "flags": {
+            "--raw": {"altName": "-w",
+                       "help": "Show the raw note body",
+                       "value": True,
+                       "default": False},
         }
     },
     "find": {
@@ -313,7 +323,15 @@ class argparser(object):
                         self.printErrorArgument(activeArg, item)
                         return False
 
-                self.INP_DATA[activeArg] = item
+                if (activeArg in self.INP_DATA):
+                    """ append """
+                    self.INP_DATA[activeArg] += [item]
+                else:
+                    """ set """
+                    if ACTIVE_CMD.has_key("repetitive") and (ACTIVE_CMD["repetitive"]) :
+                        self.INP_DATA[activeArg] = [item]
+                    else:
+                        self.INP_DATA[activeArg] = item
                 activeArg = activeArgTmp  # this is either a new "active" argument or emptyValue.
 
         # if there are still active arguments
