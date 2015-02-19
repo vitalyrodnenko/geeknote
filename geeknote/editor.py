@@ -98,7 +98,6 @@ class Editor(object):
         for section in soup.findAll('en-todo'):
             section.replace_with('[ ]')
 
-        content = html2text.html2text(str(soup))
         content = html2text.html2text(str(soup).decode('utf-8'), '', 0)
         content = re.sub(r' *\n', os.linesep, content)
 
