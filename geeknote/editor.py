@@ -100,7 +100,7 @@ class Editor(object):
             section.replace_with('[ ]')
 
 #       content = html2text.html2text(soup.prettify())
-        content = html2text.html2text(str(soup))
+        content = html2text.html2text(str(soup).decode('utf-8'))
 
         content = re.sub(r' *\n', os.linesep, content)
 
