@@ -696,7 +696,7 @@ class Notes(GeekNoteConnector):
         else:
           out.showNote(note)
 
-    def _parseInput(self, title=None, content=None, tags=None, notebook=None, resources=[], note=None):
+    def _parseInput(self, title=None, content=None, tags=None, notebook=None, resources=None, note=None):
         result = {
             "title": title,
             "content": content,
