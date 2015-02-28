@@ -1,0 +1,24 @@
+#compdef geeknote
+# --------------- ------------------------------------------------------------
+#           Name : _geeknote
+#       Synopsis : zsh completion for geeknote
+#         Author : Zhao Cai <caizhaoff@gmail.com>
+#       HomePage : http://www.geeknote.me
+#        Version : 0.1
+#   Date Created : Thu 11 Oct 2012 01:57:23 PM EDT
+#  Last Modified : Thu 11 Oct 2012 02:25:47 PM EDT
+#            Tag : [ shell, zsh, completion, evernote ]
+#      Copyright : © 2012 by Zhao Cai,
+#                  Released under current GPL license.
+# --------------- ------------------------------------------------------------
+local ret
+
+ret=1
+
+geeknote_comp=( ${(z)"$(_call_program geeknote geeknote autocomplete $words[2,-1])"} )
+_describe 'geeknote' geeknote_comp && ret=0
+
+return ret
+
+
+

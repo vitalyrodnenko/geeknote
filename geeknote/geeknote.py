@@ -6,6 +6,7 @@ import time
 import sys
 import os
 import re
+import mimetypes
 
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
@@ -16,9 +17,9 @@ import evernote.edam.error.ttypes as Errors
 import evernote.edam.type.ttypes as Types
 
 import config
-import editor
 import tools
 import out
+from editor import Editor, EditorThread
 from gclient import GUserStore as UserStore
 from argparser import argparser
 from oauth import GeekNoteAuth
@@ -40,6 +41,7 @@ class GeekNote(object):
     userStoreUri = config.USER_STORE_URI
     consumerKey = config.CONSUMER_KEY
     consumerSecret = config.CONSUMER_SECRET
+    noteSortOrder = config.NOTE_SORT_ORDER
     authToken = None
     userStore = None
     noteStore = None
@@ -69,7 +71,7 @@ class GeekNote(object):
 
                 if not hasattr(e, 'errorCode'):
                     out.failureMessage("Sorry, operation has failed!!!.")
-                    tools.exit()
+                    tools.exitErr()
 
                 errorCode = int(e.errorCode)
 
@@ -84,10 +86,18 @@ class GeekNote(object):
                     out.failureMessage("Sorry, you do not have permissions "
                                        "to do this operation.")
 
+                # Rate limited
+                # Patched because otherwise if you get rate limited you still keep
+                # hammering the server on scripts
+                elif errorCode == 19:
+                    print("\nRate Limit Hit: Please wait %s seconds before continuing" %
+                          str(e.rateLimitDuration))
+                    tools.exitErr()
+
                 else:
                     return False
 
-                tools.exit()
+                tools.exitErr()
 
         return wrapper
 
@@ -127,7 +137,7 @@ class GeekNote(object):
                                        UserStoreConstants.EDAM_VERSION_MINOR)
         if not versionOK:
             logging.error("Old EDAM version")
-            return tools.exit()
+            return tools.exitErr()
 
     def checkAuth(self):
         self.authToken = self.getStorage().getUserToken()
@@ -154,32 +164,69 @@ class GeekNote(object):
         return self.getStorage().removeUser()
 
     @EdamException
-    def findNotes(self, keywords, count, createOrder=False):
-        """ WORK WITH NOTEST """
+    def findNotes(self, keywords, count, createOrder=False, offset=0):
+        """ WORK WITH NOTES """
         noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
+        noteFilter.order = getattr(Types.NoteSortOrder, self.noteSortOrder)
         if createOrder:
             noteFilter.order = Types.NoteSortOrder.CREATED
 
         if keywords:
             noteFilter.words = keywords
-        return self.getNoteStore().findNotes(self.authToken,
-                                             noteFilter, 0, count)
+        return self.getNoteStore().findNotes(self.authToken, noteFilter, offset, count)
 
     @EdamException
     def loadNoteContent(self, note):
         """ modify Note object """
         if not isinstance(note, object):
             raise Exception("Note content must be an "
-                            "instanse of Note, '%s' given." % type(note))
+                            "instance of Note, '%s' given." % type(note))
 
-        note.content = self.getNoteStore().getNoteContent(self.authToken,
-                                                          note.guid)
+        note.content = self.getNoteStore().getNoteContent(self.authToken, note.guid)
+        # fill the tags in
+        if note.tagGuids and not note.tagNames:
+          note.tagNames = [];
+          for guid in note.tagGuids:
+            tag = self.getNoteStore().getTag(self.authToken,guid)
+            note.tagNames.append(tag.name)
 
     @EdamException
-    def createNote(self, title, content, tags=None, notebook=None):
+    def createNote(self, title, content, tags=None, notebook=None, created=None, resources=None):
+        
+        def make_resource(filename):
+            try:
+                mtype = mimetypes.guess_type(filename)[0]
+                    
+                if mtype.split('/')[0] == "text":
+                    rmode = "r"
+                else:
+                    rmode = "rb"
+
+                with open(filename, rmode) as f:
+                    """ file exists """
+                    resource = Types.Resource()
+                    resource.data = Types.Data()
+
+                    data = f.read()
+                    md5 = hashlib.md5()
+                    md5.update(data)
+                    
+                    resource.data.bodyHash = md5.hexdigest() 
+                    resource.data.body = data
+                    resource.data.size = len(data) 
+                    resource.mime = mtype
+                    resource.attributes = Types.ResourceAttributes()
+                    resource.attributes.fileName = os.path.basename(filename)
+                    return resource
+            except IOError:
+                msg = "The file '%s' does not exist." % filename
+                out.failureMessage(msg)
+                raise IOError(msg)
+
         note = Types.Note()
         note.title = title
         note.content = content
+        note.created = created
 
         if tags:
             note.tagNames = tags
@@ -187,14 +234,25 @@ class GeekNote(object):
         if notebook:
             note.notebookGuid = notebook
 
+        if resources:
+            """ make EverNote API resources """
+            note.resources = map(make_resource, resources)
+            
+            """ add to content """
+            resource_nodes = ""
+            
+            for resource in note.resources:
+                resource_nodes += '<en-media type="%s" hash="%s" />' % (resource.mime, resource.data.bodyHash)
+
+            note.content = note.content.replace("</en-note>", resource_nodes + "</en-note>")
+
         logging.debug("New note : %s", note)
 
-        self.getNoteStore().createNote(self.authToken, note)
-        return True
+        return self.getNoteStore().createNote(self.authToken, note)
 
     @EdamException
     def updateNote(self, guid, title=None, content=None,
-                   tags=None, notebook=None):
+                   tags=None, notebook=None, resources=None):
         note = Types.Note()
         note.guid = guid
         if title:
@@ -208,6 +266,11 @@ class GeekNote(object):
 
         if notebook:
             note.notebookGuid = notebook
+
+        if resources:
+            """ TODO """
+            print("Updating a note's resources is not yet supported.")
+            raise NotImplementedError()
 
         logging.debug("Update note : %s", note)
 
@@ -310,15 +373,14 @@ class GeekNoteConnector(object):
         self.storage = self.getEvernote().getStorage()
         return self.storage
 
-
 class User(GeekNoteConnector):
     """ Work with auth User """
 
     @GeekNoneDBConnectOnly
     def user(self, full=None):
         if not self.getEvernote().checkAuth():
-            out.failureMessage("You not logged in.")
-            return tools.exit()
+            out.failureMessage("You are not logged in.")
+            return tools.exitErr()
 
         if full:
             info = self.getEvernote().getUserInfo()
@@ -329,20 +391,20 @@ class User(GeekNoteConnector):
     @GeekNoneDBConnectOnly
     def login(self):
         if self.getEvernote().checkAuth():
-            out.successMessage("You have already logged in.")
-            return tools.exit()
+            out.failureMessage("You have already logged in.")
+            return tools.exitErr()
 
         if self.getEvernote().auth():
             out.successMessage("You have successfully logged in.")
         else:
             out.failureMessage("Login error.")
-            return tools.exit()
+            return tools.exitErr()
 
     @GeekNoneDBConnectOnly
     def logout(self, force=None):
         if not self.getEvernote().checkAuth():
-            out.successMessage("You have already logged out.")
-            return tools.exit()
+            out.failureMessage("You have already logged out.")
+            return tools.exitErr()
 
         if not force and not out.confirm('Are you sure you want to logout?'):
             return tools.exit()
@@ -352,7 +414,7 @@ class User(GeekNoteConnector):
             out.successMessage("You have successfully logged out.")
         else:
             out.failureMessage("Logout error.")
-            return tools.exit()
+            return tools.exitErr()
 
     @GeekNoneDBConnectOnly
     def settings(self, editor=None):
@@ -402,7 +464,7 @@ class Tags(GeekNoteConnector):
             out.successMessage("Tag has been successfully created.")
         else:
             out.failureMessage("Error while the process of creating the tag.")
-            return tools.exit()
+            return tools.exitErr()
 
         return result
 
@@ -416,7 +478,7 @@ class Tags(GeekNoteConnector):
             out.successMessage("Tag has been successfully updated.")
         else:
             out.failureMessage("Error while the updating the tag.")
-            return tools.exit()
+            return tools.exitErr()
 
     def remove(self, tagname, force=None):
         tag = self._searchTag(tagname)
@@ -463,7 +525,7 @@ class Notebooks(GeekNoteConnector):
         else:
             out.failureMessage("Error while the process "
                                "of creating the notebook.")
-            return tools.exit()
+            return tools.exitErr()
 
         return result
 
@@ -478,7 +540,7 @@ class Notebooks(GeekNoteConnector):
             out.successMessage("Notebook has been successfully updated.")
         else:
             out.failureMessage("Error while the updating the notebook.")
-            return tools.exit()
+            return tools.exitErr()
 
     def remove(self, notebook, force=None):
         notebook = self._searchNotebook(notebook)
@@ -530,29 +592,73 @@ class Notes(GeekNoteConnector):
         self.findExactOnUpdate = bool(findExactOnUpdate)
         self.selectFirstOnUpdate = bool(selectFirstOnUpdate)
 
-    def create(self, title, content, tags=None, notebook=None):
+    def _editWithEditorInThread(self, inputData, note = None):
+        if note:
+            self.getEvernote().loadNoteContent(note)
+            editor = Editor(note.content)
+        else:
+            editor = Editor('')
+        thread = EditorThread(editor)
+        thread.start()
+
+        result = True
+        prevChecksum = editor.getTempfileChecksum()
+        while True:
+            if prevChecksum != editor.getTempfileChecksum() and result:
+                newContent = open(editor.tempfile, 'r').read()
+                inputData['content'] = Editor.textToENML(newContent)
+                if not note:
+                    result = self.getEvernote().createNote(**inputData)
+                    # TODO: log error if result is False or None
+                    if result:
+                        note = result
+                    else:
+                        result = False
+                else:
+                    result = bool(self.getEvernote().updateNote(guid=note.guid, **inputData))
+                    # TODO: log error if result is False
+
+                if result:
+                    prevChecksum = editor.getTempfileChecksum()
+
+            if not thread.isAlive():
+                # check if thread is alive here before sleep to avoid losing data saved during this 5 secs
+                break
+            time.sleep(5)
+        return result
+
+    def create(self, title, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
 
-        inputData = self._parceInput(title, content, tags, notebook)
+        # Optional Content.
+        content = content or " "
 
-        out.preloader.setMessage("Creating note...")
-        result = self.getEvernote().createNote(**inputData)
+        inputData = self._parseInput(title, content, tags, notebook, resource)
+
+        if inputData['content'] == config.EDITOR_OPEN:
+            result = self._editWithEditorInThread(inputData)
+        else:
+            out.preloader.setMessage("Creating note...")
+            result = bool(self.getEvernote().createNote(**inputData))
 
         if result:
             out.successMessage("Note has been successfully created.")
         else:
             out.failureMessage("Error while creating the note.")
 
-    def edit(self, note, title=None, content=None, tags=None, notebook=None):
+    def edit(self, note, title=None, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
         note = self._searchNote(note)
 
-        inputData = self._parceInput(title, content, tags, notebook, note)
+        inputData = self._parseInput(title, content, tags, notebook, resource, note)
 
-        out.preloader.setMessage("Saving note...")
-        result = self.getEvernote().updateNote(guid=note.guid, **inputData)
+        if inputData['content'] == config.EDITOR_OPEN:
+            result = self._editWithEditorInThread(inputData, note)
+        else:
+            out.preloader.setMessage("Saving note...")
+            result = bool(self.getEvernote().updateNote(guid=note.guid, **inputData))
 
         if result:
             out.successMessage("Note has been successfully saved.")
@@ -576,7 +682,7 @@ class Notes(GeekNoteConnector):
         else:
             out.failureMessage("Error while deleting the note.")
 
-    def show(self, note):
+    def show(self, note, raw=None):
 
         self.connectToEvertone()
 
@@ -585,14 +691,18 @@ class Notes(GeekNoteConnector):
         out.preloader.setMessage("Loading note...")
         self.getEvernote().loadNoteContent(note)
 
-        out.showNote(note)
+        if raw:
+          out.showNoteRaw(note)
+        else:
+          out.showNote(note)
 
-    def _parceInput(self, title=None, content=None, tags=None, notebook=None, note=None):
+    def _parseInput(self, title=None, content=None, tags=None, notebook=None, resources=None, note=None):
         result = {
             "title": title,
             "content": content,
             "tags": tags,
             "notebook": notebook,
+            "resources": resources,
         }
         result = tools.strip(result)
 
@@ -604,21 +714,13 @@ class Notes(GeekNoteConnector):
             result['title'] = note.title
 
         if content:
-            if content == config.EDITOR_OPEN:
-                logging.debug("launch system editor")
-                if note:
-                    self.getEvernote().loadNoteContent(note)
-                    content = editor.edit(note.content)
-                else:
-                    content = editor.edit()
+            if content != config.EDITOR_OPEN:
+                if isinstance(content, str) and os.path.isfile(content):
+                    logging.debug("Load content from the file")
+                    content = open(content, "r").read()
 
-            elif isinstance(content, str) and os.path.isfile(content):
-                logging.debug("Load content from the file")
-                content = open(content, "r").read()
-
-            logging.debug("Convert content")
-            content = editor.textToENML(content)
-
+                logging.debug("Convert content")
+                content = Editor.textToENML(content)
             result['content'] = content
 
         if tags:
@@ -651,8 +753,8 @@ class Notes(GeekNoteConnector):
 
             logging.debug("Search notes result: %s" % str(result))
             if result.totalNotes == 0:
-                out.successMessage("Notes have not been found.")
-                return tools.exit()
+                out.failureMessage("Notes have not been found.")
+                return tools.exitErr()
 
             elif result.totalNotes == 1 or self.selectFirstOnUpdate:
                 note = result.notes[0]
@@ -682,8 +784,22 @@ class Notes(GeekNoteConnector):
         createFilter = True if search == "*" else False
         result = self.getEvernote().findNotes(request, count, createFilter)
 
+        # Reduces the count by the amount of notes already retrieved
+        update_count = lambda c: max(c - len(result.notes), 0)
+
+        count = update_count(count)
+
+        # Evernote api will only return so many notes in one go. Checks for more
+        # notes to come whilst obeying count rules
+        while ((result.totalNotes != len(result.notes)) and count != 0):
+            offset = len(result.notes)
+            result.notes += self.getEvernote().findNotes(request, count,
+                    createFilter, offset).notes
+            count = update_count(count)
+
         if result.totalNotes == 0:
-            out.successMessage("Notes have not been found.")
+            out.failureMessage("Notes have not been found.")
+            return tools.exitErr()
 
         # save search result
         # print result
@@ -722,7 +838,7 @@ class Notes(GeekNoteConnector):
             except ValueError, e:
                 out.failureMessage('Incorrect date format in --date attribute. '
                                    'Format: %s' % time.strftime("%d.%m.%Y", time.strptime('19991231', "%Y%m%d")))
-                return tools.exit()
+                return tools.exitErr()
 
         if search:
             search = tools.strip(search)
@@ -738,49 +854,20 @@ class Notes(GeekNoteConnector):
         return request
 
 
-def modifyArgsByStdinStream():
-    """ парсинг входного потока и подстановка аргументов"""
-    content = sys.stdin.read()
-    content = tools.stdinEncode(content)
-
-    if not content:
-        out.failureMessage("Input stream is empty.")
-        return tools.exit()
-
-    title = ' '.join(content.split(' ', 5)[:-1])
-    title = re.sub(r'(\r\n|\r|\n)', r' ', title)
-    if not title:
-        out.failureMessage("Error while crating title of note from stream.")
-        return tools.exit()
-    elif len(title) > 50:
-        title = title[0:50] + '...'
-
-    ARGS = {
-        'title': title,
-        'content': content
-    }
-
-    return ('create', ARGS)
-
-
 def main(args=None):
     try:
-        # if terminal
-        if config.IS_IN_TERMINAL:
-            sys_argv = sys.argv[1:]
-            if isinstance(args, list):
-                sys_argv = args
+        exit_status_code = 0
 
-            sys_argv = tools.decodeArgs(sys_argv)
+        sys_argv = sys.argv[1:]
+        if isinstance(args, list):
+            sys_argv = args
 
-            COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
+        sys_argv = tools.decodeArgs(sys_argv)
 
-            aparser = argparser(sys_argv)
-            ARGS = aparser.parse()
+        COMMAND = sys_argv[0] if len(sys_argv) >= 1 else None
 
-        # if input stream
-        else:
-            COMMAND, ARGS = modifyArgsByStdinStream()
+        aparser = argparser(sys_argv)
+        ARGS = aparser.parse()
 
         # error or help
         if COMMAND is None or ARGS is False:
@@ -843,15 +930,16 @@ def main(args=None):
         if COMMAND == 'tag-remove':
             Tags().remove(**ARGS)
 
-    except (KeyboardInterrupt, SystemExit, tools.ExitException):
-        pass
+    except (KeyboardInterrupt, SystemExit, tools.ExitException), e:
+        if e.message:
+            exit_status_code = e.message
 
     except Exception, e:
         traceback.print_exc()
         logging.error("App error: %s", str(e))
 
-    # перывание для preloader'а
-    tools.exit()
+    # exit preloader
+    tools.exit('exit', exit_status_code)
 
 if __name__ == "__main__":
     main()

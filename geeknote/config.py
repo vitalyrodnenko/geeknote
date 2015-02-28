@@ -15,15 +15,22 @@ CONSUMER_KEY_SANDBOX = "skaizer-1250"
 CONSUMER_SECRET_SANDBOX = "ed0fcc0c97c032a5"
 # !!! DO NOT EDIT !!! <<<
 
+# can be one of: UPDATED, CREATED, RELEVANCE, TITLE, UPDATE_SEQUENCE_NUMBER
+NOTE_SORT_ORDER = "UPDATED"
+
 # Evernote config
 
 VERSION = 0.1
 
-IS_IN_TERMINAL = sys.stdin.isatty()
-IS_OUT_TERMINAL = sys.stdout.isatty()
+try:
+    IS_IN_TERMINAL = sys.stdin.isatty()
+    IS_OUT_TERMINAL = sys.stdout.isatty()
+except:
+    IS_IN_TERMINAL = False
+    IS_OUT_TERMINAL = False
 
 # Application path
-APP_DIR = os.path.join(os.getenv("USERPROFILE") or os.getenv("HOME"),  ".geeknote")
+APP_DIR = os.path.join(os.getenv("HOME") or os.getenv("USERPROFILE"),  ".geeknote")
 ERROR_LOG = os.path.join(APP_DIR, "error.log")
 
 # Set default system editor
@@ -43,7 +50,7 @@ try:
         os.mkdir(APP_DIR)
 except Exception, e:
     sys.stdout.write("Can not create application dirictory : %s" % APP_DIR)
-    exit()
+    exit(1)
 
 if DEV_MODE:
     USER_STORE_URI = USER_STORE_URI_SANDBOX

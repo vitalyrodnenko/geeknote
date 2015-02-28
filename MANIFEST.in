@@ -1,0 +1,2 @@
+include README.MD requirements.txt
+exclude *.orig *.pyc

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import getpass
+import threading
 import thread
 import time
+import datetime
 import sys
 
 import tools
-import editor
+from editor import Editor
 import config
 
 
@@ -69,9 +71,13 @@ class preloader(object):
         preloader.isLaunch = False
 
     @staticmethod
-    def exit():
+    def exit(code=0):
         preloader.stop()
-        thread.exit()
+
+        if threading.current_thread().__class__.__name__ == '_MainThread':
+            sys.exit(code)
+        else:
+            thread.exit()
 
     @staticmethod
     def draw():
@@ -100,22 +106,39 @@ def GetUserCredentials():
 
         if password is None:
             password = rawInput("Password: ", True)
-    except (KeyboardInterrupt, SystemExit):
-        tools.exit()
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
 
     return (login, password)
 
+@preloaderPause
+def GetUserAuthCode():
+    """Prompts the user for a two factor auth code."""
+    try:
+        code = None
+        if code is None:
+          code = rawInput("Two-Factor Authentication Code: ")
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
+
+    return code
 
 @preloaderStop
 def SearchResult(listItems, request, **kwargs):
-    """Печать результатов поиска"""
+    """Print search results."""
     printLine("Search request: %s" % request)
     printList(listItems, **kwargs)
 
 
 @preloaderStop
 def SelectSearchResult(listItems, **kwargs):
-    """Выбор результата поиска"""
+    """Select a search result."""
     return printList(listItems, showSelector=True, **kwargs)
 
 
@@ -131,8 +154,11 @@ def confirm(message):
                 return False
             failureMessage('Incorrect answer "%s", '
                            'please try again:\n' % answer)
-    except (KeyboardInterrupt, SystemExit):
-        tools.exit()
+    except (KeyboardInterrupt, SystemExit), e:
+        if e.message:
+            tools.exit(e.message)
+        else:
+            tools.exit
 
 
 @preloaderStop
@@ -140,15 +166,22 @@ def showNote(note):
     separator("#", "TITLE")
     printLine(note.title)
     separator("=", "META")
-    printLine("Created: %s Updated:%s" %
-              (printDate(note.created).ljust(15, " "),
-               printDate(note.updated).ljust(15, " ")))
+    printLine("Created: %s" %
+              (printDate(note.created).ljust(15, " ")))
+    printLine("Updated: %s" %
+              (printDate(note.updated).ljust(15, " ")))
+    for key, value in note.attributes.__dict__.items():
+        if value:
+          printLine("%s: %s" % (key, value))
     separator("-", "CONTENT")
     if note.tagNames:
         printLine("Tags: %s" % ', '.join(note.tagNames))
 
-    printLine(editor.ENMLtoText(note.content))
+    printLine(Editor.ENMLtoText(note.content))
 
+@preloaderStop
+def showNoteRaw(note):
+    printLine(Editor.ENMLtoText(note.content, 'pre'))
 
 @preloaderStop
 def showUser(user, fullInfo):
@@ -170,15 +203,14 @@ def showUser(user, fullInfo):
 
 @preloaderStop
 def successMessage(message):
-    """ Вывод сообщения """
+    """ Displaying a message. """
     printLine(message, "\n")
 
 
 @preloaderStop
 def failureMessage(message):
-    """ Вывод сообщения """
-    printLine(message, "\n")
-
+    """ Displaying a message."""
+    printLine(message, "\n", sys.stderr)
 
 def separator(symbol="", title=""):
     size = 40
@@ -206,7 +238,7 @@ def printList(listItems, title="", showSelector=False,
 
         printLine("%s : %s%s%s" % (
             str(key).rjust(3, " "),
-            printDate(item.created).ljust(12, " ") if hasattr(item, 'created') else '',
+            printDate(item.created).ljust(18, " ") if hasattr(item, 'created') else '',
             item.title if hasattr(item, 'title') else item.name,
             " " + (">>> " + config.NOTE_URL % item.guid) if showUrl else '',))
 
@@ -226,8 +258,11 @@ def printList(listItems, title="", showSelector=False,
                     exit(1)
                 failureMessage('Incorrect number "%s", '
                                'please try again:\n' % num)
-        except (KeyboardInterrupt, SystemExit):
-            tools.exit()
+        except (KeyboardInterrupt, SystemExit), e:
+            if e.message:
+                tools.exit(e.message)
+            else:
+                tools.exit
 
 
 def rawInput(message, isPass=False):
@@ -239,17 +274,26 @@ def rawInput(message, isPass=False):
 
 
 def printDate(timestamp):
-    return time.strftime("%d.%m.%Y", time.localtime(timestamp / 1000))
 
+    # Author @ash-2000 https://github.com/ash-2000
+    # Check for crashing when timestamp is 13 digits on python2.7
+    # pull request #260
+    
+    if len(str(timestamp)) == 13:
+        timestamp = int(str(timestamp)[0:-3])
 
-def printLine(line, endLine="\n"):
+    # ---
+    
+    return datetime.date.strftime(datetime.date.fromtimestamp(timestamp / 1000), "%d.%m.%Y")
+
+def printLine(line, endLine="\n", out=sys.stdout):
     message = line + endLine
     message = tools.stdoutEncode(message)
     try:
-        sys.stdout.write(message)
+        out.write(message)
     except:
         pass
-    sys.stdout.flush()
+    out.flush()
 
 
 def printAbout():

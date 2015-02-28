@@ -4,6 +4,9 @@
 from __future__ import with_statement
 import sys
 import os
+import getpass
+import codecs
+import geeknote
 from setuptools import setup
 from setuptools.command.install import install
 
@@ -26,12 +29,15 @@ _geeknote_command()
 complete -F _geeknote_command geeknote
 '''
 
+def read(fname):
+    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 class full_install(install):
 
     user_options = install.user_options + [
         ('userhome', None, "(Linux only) Set user home directory for"
-                           " bash completion (/home/{0})".format(os.getlogin()))
+                           " bash completion (/home/{0})"
+                           .format(getpass.getuser()))
     ]
 
     def initialize_options(self):
@@ -57,31 +63,78 @@ class full_install(install):
 
 setup(
     name='geeknote',
-    version='0.1',
+    version=geeknote.__version__,
     license='GPL',
     author='Vitaliy Rodnenko',
-    author_email='vitaly@webpp.ru',
+    author_email='vitaliy@rodnenko.ru',
     description='Geeknote - is a command line client for Evernote, '
                 'that can be use on Linux, FreeBSD and OS X.',
+    long_description=read("README.md"),
     url='http://www.geeknote.me',
     packages=['geeknote'],
+
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: End Users/Desktop',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Environment :: Console',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: Utilities',
+    ],
+
     install_requires=[
-        'evernote==1.19',
+        'evernote>=1.17',
         'html2text',
         'sqlalchemy',
-        'markdown',
+        'markdown2',
+        'beautifulsoup4',
         'thrift'
     ],
+
     entry_points={
         'console_scripts': [
             'geeknote = geeknote.geeknote:main',
             'gnsync = geeknote.gnsync:main'
         ]
     },
-    cmdclass={
-        'install': full_install
-    },
+#    cmdclass={
+#        'install': full_install
+#    },
     platforms='Any',
     test_suite='tests',
+    zip_safe=False,
     keywords='Evernote, console'
 )
+
+"""
+import time
+import os
+from setuptools import setup, find_packages
+
+# local
+import config
+
+os.system('rm -rf geeknote')
+
+packages = ['geeknote.' + x for x in find_packages()] + ['geeknote']
+
+# This is to properly encapsulate the library during egg generation
+os.system('mkdir .geeknote && cp -pr * .geeknote/ && mv .geeknote geeknote')
+
+setup(
+    name = "geeknote",
+    version = time.strftime(str(config.VERSION) + '.%Y%m%d.%H%M'),
+    packages = packages,
+    author = 'Vitaliy Rodnenko',
+    author_email = 'vitaly@webpp.ru',
+    description = 'terminal-mode geeknote client and synchronizer',
+    entry_points = {
+        'console_scripts': [
+            'geeknote = geeknote.geeknote:main',
+            'gnsync = geeknote.gnsync:main',
+        ]
+    }
+)
+"""

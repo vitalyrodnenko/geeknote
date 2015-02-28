@@ -5,10 +5,12 @@ import os
 import argparse
 import glob
 import logging
+import string
+import unicodedata, re
 
 from geeknote import GeekNote
 from storage import Storage
-import editor
+from editor import Editor
 import tools
 
 # set default logger (write log to file)
@@ -21,6 +23,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
+# determine if this is a narrow build or wide build (or py3k)
+try:
+    unichr(0x10000)
+    MAX_CHAR = 0x110000
+except ValueError:
+    MAX_CHAR = 0x9999
+
+# http://stackoverflow.com/a/93029
+CONTROL_CHARS = ''.join(c for c in (unichr(i) for i in xrange(MAX_CHAR)) \
+                if c not in string.printable and unicodedata.category(c) == 'Cc')
+CONTROL_CHARS_RE = re.compile('[%s]' % re.escape(CONTROL_CHARS))
+def remove_control_characters(s):
+    return CONTROL_CHARS_RE.sub('', s)
 
 def log(func):
     def wrapper(*args, **kwargs):
@@ -176,7 +191,7 @@ class GNSync:
         Updates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content)
         open(file_note['path'], "w").write(content)
 
     @log
@@ -193,7 +208,8 @@ class GNSync:
         result = GeekNote().createNote(
             title=file_note['name'],
             content=content,
-            notebook=self.notebook_guid)
+            notebook=self.notebook_guid,
+            created=file_note['mtime'])
 
         if result:
             logger.info('Note "{0}" was created'.format(file_note['name']))
@@ -209,7 +225,7 @@ class GNSync:
         Creates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content)
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
         return True
@@ -220,8 +236,11 @@ class GNSync:
         Get file content.
         """
         content = open(path, "r").read()
-        content = editor.textToENML(content=content, raise_ex=True)
 
+        # strip unprintable characters
+        content = remove_control_characters(content.decode('utf-8')).encode('utf-8')
+        content = Editor.textToENML(content=content, raise_ex=True, format=self.format)
+        
         if content is None:
             logger.warning("File {0}. Content must be " \
                            "an UTF-8 encode.".format(path))
@@ -293,7 +312,7 @@ def main():
         parser = argparse.ArgumentParser()
         parser.add_argument('--path', '-p', action='store', help='Path to synchronize directory')
         parser.add_argument('--mask', '-m', action='store', help='Mask of files to synchronize. Default is "*.*"')
-        parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values ​​are "plain" and "markdown"')
+        parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')

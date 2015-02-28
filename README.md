@@ -18,28 +18,24 @@ Here we have documentation for Geeknote. We'll show basic commands how to work w
 You can install Geeknote as a python script.
 
 ### Downloading and installing from source
+    # Install dependencies. (This example for Debian-based systems):
+    $ [sudo] apt-get update; [sudo] apt-get -y install python-setuptools
+    
     # Download the repository.
     $ git clone git://github.com/VitaliyRodnenko/geeknote.git
     
     $ cd geeknote
 
     # Installation
-    $ [sudo] python setup.py install
+    $ [sudo] python[2] setup.py install
 
     # Launch Geeknote and go through login procedure.
     $ geeknote login
 
-### Requirements
-Geeknote needs Python **2.4 or later**.
-
-Geeknote **doesn't work with Ubuntu 12.04**. Unfortunately this is the problem of Evernote SDK for Python. We wrote to authors of Evernote SDK, they know about it too and promise to solve the problem in a couple of months. This is a [registered issue](https://bugs.launchpad.net/ubuntu/+source/openssl/+bug/965371). We'll release an updated version of Geeknote as soon as Evernote SDK for Python will get update.
-
-This issue affects **only Ubuntu 12.04**.
-
 ### Development
 Run tests
 
-    $ python setup.py test
+    $ python[2] setup.py test
 
     # or for to run tests with `tox`
     $ tox
@@ -103,7 +99,7 @@ The main functionality that we need is creating notes in Evernote.
 
 ### Synopsis
     $ geeknote create --title <title>
-                      --content <content>
+                      [--content <content>]
                       [--tags <list of tags>]
                       [--notebook <notebook where to save>]
 ### Options
@@ -114,8 +110,8 @@ The main functionality that we need is creating notes in Evernote.
 --content &lt;content&gt;
 :   Specifying the content of new note. The content must not contains double quotes.
 
---notepad &lt;notebook where to save&gt;
-:   Specify the notepad where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
+--notebook &lt;notebook where to save&gt;
+:   Specify the notebook where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
 
 --tags &lt;list of tags, like: tag1, tag2&gt;
 :   Specify tags that our note will have. It can accept multiple tags, separated with comma.
@@ -134,7 +130,7 @@ With Geeknote you can edit your notes in Evernote using any editor you like. It 
 
 ### Synopsis
     $ geeknote edit --note <title of note which to edit>
-                    --content <a new content or "WRITE">
+                    [--content <a new content or "WRITE">]
                     [--title <the new title>]
                     [--tags <new list of data>]
                     [--notebook <new notebook>]
@@ -395,3 +391,4 @@ The application *gnsync* is very useful in system adminstration, because you can
 * Ivan Gureev
 * Roman Gladkov
 * Greg V
+* Ilya Shmygol
