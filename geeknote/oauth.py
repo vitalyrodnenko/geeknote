@@ -4,6 +4,7 @@ import httplib
 import time
 import Cookie
 import uuid
+import re
 from urllib import urlencode, unquote
 from urlparse import urlparse
 
@@ -188,6 +189,10 @@ class GeekNoteAuth(object):
                                  "GET",
                                  {'oauth_token': self.tmpOAuthToken})
 
+        # parse hpts and hptsh from page content
+        hpts = re.search('.*"hpts":"(.*?)"', response.data)
+        hptsh = re.search('.*"hptsh":"(.*?)"', response.data)
+
         if response.status != 200:
             logging.error("Unexpected response status "
                           "on login 200 != %s", response.status)
@@ -203,6 +208,8 @@ class GeekNoteAuth(object):
         self.postData['login']['username'] = self.username
         self.postData['login']['password'] = self.password
         self.postData['login']['targetUrl'] = self.url['oauth'] % self.tmpOAuthToken
+        self.postData['login']['hpts'] = hpts and hpts.group(1) or ""
+        self.postData['login']['hptsh'] = hptsh and hptsh.group(1) or ""
         response = self.loadPage(self.url['base'],
                                  self.url['login'] + ";jsessionid=" + self.cookies['JSESSIONID'],
                                  "POST",
