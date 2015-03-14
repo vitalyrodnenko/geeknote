@@ -625,7 +625,14 @@ class Notes(GeekNoteConnector):
                 # check if thread is alive here before sleep to avoid losing data saved during this 5 secs
                 break
             time.sleep(5)
+        self._finalizeEditor(editor, result)
         return result
+
+    def _finalizeEditor(self, editor, result):
+        if result:
+            editor.deleteTempfile()
+        else:
+            out.failureMessage("As I couldn't save the note, I've left it in %s" % editor.tempfile)
 
     def create(self, title, content=None, tags=None, notebook=None, resource=None):
 
