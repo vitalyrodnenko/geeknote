@@ -83,12 +83,13 @@ class GNSync:
     path = None
     mask = None
     twoway = None
+    download_only = None
 
     notebook_guid = None
     all_set = False
 
     @log
-    def __init__(self, notebook_name, path, mask, format, twoway=False):
+    def __init__(self, notebook_name, path, mask, format, twoway=False, download_only=False):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -120,6 +121,7 @@ class GNSync:
             self.extension = ".txt"
 
         self.twoway = twoway
+        self.download_only = download_only
 
         logger.info('Sync Start')
 
@@ -141,19 +143,20 @@ class GNSync:
         files = self._get_files()
         notes = self._get_notes()
 
-        for f in files:
-            has_note = False
-            for n in notes:
-                if f['name'] == n.title:
-                    has_note = True
-                    if f['mtime'] > n.updated:
-                        self._update_note(f, n)
-                        break
+        if not self.download_only:
+            for f in files:
+                has_note = False
+                for n in notes:
+                    if f['name'] == n.title:
+                        has_note = True
+                        if f['mtime'] > n.updated:
+                            self._update_note(f, n)
+                            break
 
-            if not has_note:
-                self._create_note(f)
+                if not has_note:
+                    self._create_note(f)
 
-        if self.twoway:
+        if self.twoway or self.download_only:
             for n in notes:
                 has_file = False
                 for f in files:
@@ -162,6 +165,7 @@ class GNSync:
                         if f['mtime'] < n.updated:
                             self._update_file(f, n)
                             break
+                        os.utime(f, (n.updated, n.updated))
 
                 if not has_file:
                     self._create_file(n)
@@ -320,6 +324,7 @@ def main():
         parser.add_argument('--all', '-a', action='store_true', help='Synchronize all notebooks', default=False)
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync (also download from evernote)', default=False)
+        parser.add_argument('--download-only', action='store_true', help='Only download from evernote; no upload', default=False)
 
         args = parser.parse_args()
 
@@ -329,18 +334,20 @@ def main():
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
         twoway = args.two_way
+        download_only = args.download_only
 
         reset_logpath(logpath)
 
         if args.all:
             for notebook in all_notebooks():
+                logger.info("Syncing notebook %s", notebook)
                 notebook_path = os.path.join(path, notebook)
                 if not os.path.exists(notebook_path):
                     os.mkdir(notebook_path)
-                GNS = GNSync(notebook, notebook_path, mask, format, twoway)
+                GNS = GNSync(notebook, notebook_path, mask, format, twoway, download_only)
                 GNS.sync()
         else:
-            GNS = GNSync(notebook, path, mask, format, twoway)
+            GNS = GNSync(notebook, path, mask, format, twoway, download_only)
             GNS.sync()
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
