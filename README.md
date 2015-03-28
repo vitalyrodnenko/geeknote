@@ -357,8 +357,10 @@ gnsync - is an additional application, that is install with Geeknote. gnsync all
     $ gnsync --path <path to directory which to sync>
             [--mask <unix shell-style wildcards to select the files, like *.* or *.txt or *.log>]
             [--format <in what format to save the note - plain or markdown>]
-            [--logpath <path to logfile>]
             [--notebook <notebook, which will be used>]
+            [--all]
+            [--logpath <path to logfile>]
+            [--two-way]
 ### Options
 
 --path &lt;path to directory which to sync&gt;
@@ -370,11 +372,17 @@ gnsync - is an additional application, that is install with Geeknote. gnsync all
 --format &lt;in what format to save the note - plain or markdown&gt;
 :   Set the engine which to use while files uploading. *gnsync* supports markdown and plain text formats. By default it uses plain text engine.
 
+--notebook &lt;notebook where to save&gt;
+:   You can set the notebook which will be syncronized with local directory. But if you won't set this option, *gnsync* will create new notebook with the name of the directory that you want to sync.
+
+--all &lt;whether to synchronize all notebooks&gt;
+:   You can specify to synchronize all notebooks already on the server, into subdirectories of the path. Useful with --two-way to do a backup of all notes.
+
 --logpath &lt;path to logfile&gt;
 :   *gnsync* can log information about syncing and with that option you can set the logfile.
 
---notebook &lt;notebook where to save&gt;
-:   You can set the notebook which will be syncronized with local directory. But if you won't set this option, *gnsync* will create new notebook with the name of the directory that you want to sync.
+--two-way &lt;whether to do a two-way sync&gt;
+:   Normally *gnsync* will only upload files. Adding this flag will also make it download any notes not present as files in the notebook directory (after uploading any files not present as notes)
 
 ### Description
 The application *gnsync* is very useful in system adminstration, because you can syncronize you local logs, statuses and any other production information with Evernote.

@@ -317,9 +317,9 @@ def main():
         parser.add_argument('--mask', '-m', action='store', help='Mask of files to synchronize. Default is "*.*"')
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook unless all is selected')
-        parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
-        parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync', default=False)
         parser.add_argument('--all', '-a', action='store_true', help='Synchronize all notebooks', default=False)
+        parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
+        parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync (also download from evernote)', default=False)
 
         args = parser.parse_args()
 
