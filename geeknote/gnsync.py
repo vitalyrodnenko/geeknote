@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
+# determine if this is a narrow build or wide build (or py3k)
+try:
+    unichr(0x10000)
+    MAX_CHAR = 0x110000
+except ValueError:
+    MAX_CHAR = 0x9999
+
 # http://stackoverflow.com/a/93029
 CONTROL_CHARS = ''.join(c for c in (("\\U%08x" % i).decode('unicode-escape') for i in xrange(0x110000)) \
                 if c not in string.printable and unicodedata.category(c) == 'Cc')

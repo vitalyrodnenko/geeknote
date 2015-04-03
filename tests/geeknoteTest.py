@@ -25,8 +25,8 @@ class testNotes(unittest.TestCase):
         self.notes = NotesOver()
         self.testNote = tools.Struct(title="note title")
 
-    def test_parceInput1(self):
-        testData = self.notes._parceInput("title", "test body", "tag1")
+    def test_parseInput1(self):
+        testData = self.notes._parseInput("title", "test body", "tag1")
         self.assertTrue(isinstance(testData, dict))
         if not isinstance(testData, dict):
             return
@@ -35,8 +35,8 @@ class testNotes(unittest.TestCase):
         self.assertEqual(testData['content'], Editor.textToENML("test body"))
         self.assertEqual(testData["tags"], ["tag1", ])
 
-    def test_parceInput2(self):
-        testData = self.notes._parceInput("title", "WRITE", "tag1, tag2",
+    def test_parseInput2(self):
+        testData = self.notes._parseInput("title", "WRITE", "tag1, tag2",
                                           None, self.testNote)
         self.assertTrue(isinstance(testData, dict))
         if not isinstance(testData, dict):
@@ -50,7 +50,7 @@ class testNotes(unittest.TestCase):
         self.assertEqual(testData["tags"], ["tag1", "tag2"])
 
     def test_editWithEditorInThread(self):
-        testData = self.notes._parceInput("title", "WRITE", "tag1, tag2",
+        testData = self.notes._parseInput("title", "WRITE", "tag1, tag2",
                                           None, self.testNote)
         print ('')
         print ('')

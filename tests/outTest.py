@@ -162,4 +162,4 @@ Total found: 2
         self.assertEquals(sys.stdout.read(), result)
 
     def test_print_date(self):
-        self.assertEquals(printDate(1000000), '01.01.1970')
+        self.assertEquals(printDate(1000000), '12.01.1970')
