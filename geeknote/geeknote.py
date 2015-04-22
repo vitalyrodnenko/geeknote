@@ -175,6 +175,33 @@ class GeekNote(object):
             noteFilter.words = keywords
         return self.getNoteStore().findNotes(self.authToken, noteFilter, offset, count)
 
+    def findNotesMetadata(self, keywords, count, createOrder=False, offset=0, noteMetadataResultSpec=None):
+        """ WORK WITH NOTES """
+        noteFilter = NoteStore.NoteFilter(order=Types.NoteSortOrder.RELEVANCE)
+        noteFilter.order = getattr(Types.NoteSortOrder, self.noteSortOrder)
+        noteFilter.order = Types.NoteSortOrder.TITLE
+        if createOrder:
+            noteFilter.order = Types.NoteSortOrder.TITLE
+
+        if keywords:
+            noteFilter.words = keywords
+        #NoteMetadataResultSpec
+        #https://dev.evernote.com/doc/reference/NoteStore.html#Struct_NoteMetadata
+        if noteMetadataResultSpec == None:
+            noteMetadataResultSpec = NoteStore.NotesMetadataResultSpec(includeTitle=True,\
+                    includeUpdated=True,\
+                    includeContentLength=True,\
+                    includeCreated=True,\
+                    includeDeleted=True,\
+                    includeNotebookGuid=True,\
+                    includeTagGuids=True,\
+                    includeAttributes=True,\
+                    includeLargestResourceMime=True,\
+                    includeLargestResourceSize=True)
+        #Using new findNote function
+        #https://dev.evernote.com/doc/reference/NoteStore.html#Fn_NoteStore_findNotesMetadata
+        return self.getNoteStore().findNotesMetadata(self.authToken, noteFilter, offset, count, noteMetadataResultSpec)
+
     @EdamException
     def loadNoteContent(self, note):
         """ modify Note object """
