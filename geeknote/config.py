@@ -4,8 +4,11 @@ import os
 import sys
 
 # !!! DO NOT EDIT !!! >>>
-USER_BASE_URL = "www.evernote.com"
-USER_STORE_URI = "https://www.evernote.com/edam/user"
+if os.getenv("GEEKNOTE_BASE") == "yinxiang":
+    USER_BASE_URL = "app.yinxiang.com"
+else:
+    USER_BASE_URL = "www.evernote.com"
+USER_STORE_URI = "https://{}/edam/user".format(USER_BASE_URL)
 CONSUMER_KEY = "skaizer-5314"
 CONSUMER_SECRET = "6f4f9183b3120801"
 
