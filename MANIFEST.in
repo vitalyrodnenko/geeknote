@@ -1,2 +1,2 @@
-include README.MD requirements.txt
+include README.md requirements.txt
 exclude *.orig *.pyc
