@@ -75,7 +75,7 @@ class Editor(object):
 
 
     @staticmethod
-    def ENMLtoText(contentENML):
+    def ENMLtoText(contentENML, markdown=True):
         soup = BeautifulSoup(contentENML.decode('utf-8'))
 
         for section in soup.select('li > p'):
@@ -97,8 +97,10 @@ class Editor(object):
 
         for section in soup.findAll('en-todo'):
             section.replace_with('[ ]')
-
-        content = html2text.html2text(str(soup).decode('utf-8'), '', 0)
+        if markdown:
+            content = html2text.html2text(str(soup).decode('utf-8'), '', 0)
+        else:
+            content = soup.get_text()
         content = re.sub(r' *\n', os.linesep, content)
 
         return content.encode('utf-8')
