@@ -146,6 +146,7 @@ COMMANDS_DICT = {
         "arguments": {
             "--title": {"altName": "-t",
                         "help": "Set the title of new notebook."},
+            "--stack": {"help": "Specify notebook stack container."},
         }
     },
     "notebook-edit": {
