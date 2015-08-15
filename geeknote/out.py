@@ -254,7 +254,7 @@ def printList(listItems, title="", showSelector=False,
                 num = rawInput(": ")
                 if tools.checkIsInt(num) and 1 <= int(num) <= total:
                     return listItems[int(num) - 1]
-                if num == '0':
+                if num == '0' or num == 'q':
                     exit(1)
                 failureMessage('Incorrect number "%s", '
                                'please try again:\n' % num)
