@@ -284,7 +284,7 @@ def printDate(timestamp):
 
     # ---
     
-    return datetime.date.strftime(datetime.date.fromtimestamp(timestamp), "%d.%m.%Y")
+    return datetime.date.strftime(datetime.date.fromtimestamp(timestamp), "%Y-%m-%d")
 
 def printLine(line, endLine="\n", out=sys.stdout):
     message = line + endLine
