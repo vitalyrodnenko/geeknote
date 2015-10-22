@@ -190,8 +190,8 @@ class GeekNoteAuth(object):
                                  {'oauth_token': self.tmpOAuthToken})
 
         # parse hpts and hptsh from page content
-        hpts = re.search('.*"hpts":"(.*?)"', response.data)
-        hptsh = re.search('.*"hptsh":"(.*?)"', response.data)
+        hpts = re.search('.*\("hpts"\)\.value.*?"(.*?)"', response.data)
+        hptsh = re.search('.*\("hptsh"\)\.value.*?"(.*?)"', response.data)
 
         if response.status != 200:
             logging.error("Unexpected response status "
