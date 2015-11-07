@@ -451,9 +451,9 @@ class User(GeekNoteConnector):
 class Tags(GeekNoteConnector):
     """ Work with auth Notebooks """
 
-    def list(self):
+    def list(self, guid=None):
         result = self.getEvernote().findTags()
-        out.printList(result)
+        out.printList(result, showGUID=guid)
 
     def create(self, title):
         self.connectToEvertone()
@@ -511,9 +511,9 @@ class Tags(GeekNoteConnector):
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
 
-    def list(self):
+    def list(self, guid=None):
         result = self.getEvernote().findNotebooks()
-        out.printList(result)
+        out.printList(result, showGUID=guid)
 
     def create(self, title):
         self.connectToEvertone()
@@ -773,7 +773,8 @@ class Notes(GeekNoteConnector):
 
     def find(self, search=None, tags=None, notebooks=None,
              date=None, exact_entry=None, content_search=None,
-             with_url=None, count=None, guid=None):
+             with_url=None, with_tags=None, with_notebook=None,
+             count=None, guid=None):
 
         request = self._createSearchRequest(search, tags, notebooks,
                                             date, exact_entry,
@@ -812,7 +813,8 @@ class Notes(GeekNoteConnector):
         for note in result.notes:
             self.getStorage().setNote(note)
 
-        out.SearchResult(result.notes, request, showUrl=with_url, showGUID=guid)
+        out.SearchResult(result.notes, request, showUrl=with_url, showTags=with_tags,
+                         showNotebook=with_notebook, showGUID=guid)
 
     def _createSearchRequest(self, search=None, tags=None,
                              notebooks=None, date=None,

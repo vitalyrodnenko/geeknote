@@ -226,7 +226,8 @@ def separator(symbol="", title=""):
 
 @preloaderStop
 def printList(listItems, title="", showSelector=False,
-              showByStep=20, showUrl=False, showGUID=False):
+              showByStep=20, showUrl=False, showTags=False,
+              showNotebook=False, showGUID=False):
 
     if title:
         separator("=", title)
@@ -236,10 +237,12 @@ def printList(listItems, title="", showSelector=False,
     for key, item in enumerate(listItems):
         key += 1
 
-        printLine("%s : %s%s%s" % (
+        printLine("%s : %s%s%s%s%s" % (
             item.guid if showGUID and hasattr(item, 'guid') else str(key).rjust(3, " "),
             printDate(item.created).ljust(18, " ") if hasattr(item, 'created') else '',
             item.title if hasattr(item, 'title') else item.name,
+            "".join( map(lambda s:" #"+s, item.tagGuids) ) if showTags and hasattr(item, 'tagGuids') and item.tagGuids else '',
+            " @"+item.notebookGuid if showNotebook and hasattr(item, 'notebookGuid') else '',
             " " + (">>> " + config.NOTE_URL % item.guid) if showUrl else '',))
 
         if key % showByStep == 0 and key < total:
