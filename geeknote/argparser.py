@@ -58,7 +58,7 @@ COMMANDS_DICT = {
         "firstArg": "--note",
         "arguments": {
             "--note":       {"altName": "-n",
-                             "help": "The name or ID from the "
+                             "help": "The name or GUID or ID from the "
                                      "previous search of a note to edit."},
             "--title":      {"altName": "-t",
                              "help": "Set new title of the note."},
@@ -76,7 +76,7 @@ COMMANDS_DICT = {
         "firstArg": "--note",
         "arguments": {
             "--note":  {"altName": "-n",
-                        "help": "The name or ID from the previous "
+                        "help": "The name or GUID or ID from the previous "
                                 "search of a note to remove."},
         },
         "flags": {
@@ -91,7 +91,7 @@ COMMANDS_DICT = {
         "firstArg": "--note",
         "arguments": {
             "--note": {"altName": "-n",
-                       "help": "The name or ID from the previous "
+                       "help": "The name or GUID or ID from the previous "
                                "search of a note to show."},
         },
         "flags": {
@@ -132,6 +132,11 @@ COMMANDS_DICT = {
                                  "default": False},
             "--content-search": {"altName": "-cs",
                                  "help": "Search by content, not by title.",
+                                 "value": True,
+                                 "default": False},
+            "--guid":           {"altName": "-gi",
+                                 "help": "Replace ID with GUID "
+                                         "of each note in results.",
                                  "value": True,
                                  "default": False},
         }
