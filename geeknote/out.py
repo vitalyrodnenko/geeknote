@@ -226,13 +226,16 @@ def separator(symbol="", title=""):
 
 @preloaderStop
 def printList(listItems, title="", showSelector=False,
-              showByStep=20, showUrl=False):
+              showByStep=20, showUrl=False, flush=False):
 
     if title:
         separator("=", title)
 
     total = len(listItems)
-    printLine("Total found: %d" % total)
+    if not flush:
+        printLine("Total found: %d" % total)
+    else:
+        showByStep=float("inf") # don't ask user for more
     for key, item in enumerate(listItems):
         key += 1
 

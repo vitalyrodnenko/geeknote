@@ -140,6 +140,11 @@ COMMANDS_DICT = {
     # Notebooks
     "notebook-list": {
         "help": "Show the list of existing notebooks in your Evernote.",
+        "flags": {
+            "--flush": {"help": "Lists all notebooks at once without asking for user input.",
+            "value": True,
+            "default": False},
+        }
     },
     "notebook-create": {
         "help": "Create new notebook.",

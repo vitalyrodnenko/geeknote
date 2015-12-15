@@ -511,9 +511,10 @@ class Tags(GeekNoteConnector):
 class Notebooks(GeekNoteConnector):
     """ Work with auth Notebooks """
 
-    def list(self):
+    def list(self, flush):
         result = self.getEvernote().findNotebooks()
-        out.printList(result)
+        out.printList(result,flush=flush)
+
 
     def create(self, title):
         self.connectToEvertone()
@@ -907,6 +908,9 @@ def main(args=None):
         # Notebooks
         if COMMAND == 'notebook-list':
             Notebooks().list(**ARGS)
+
+        if COMMAND == 'notebook-list-all':
+            Notebooks().listAll(**ARGS)
 
         if COMMAND == 'notebook-create':
             Notebooks().create(**ARGS)
