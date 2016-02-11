@@ -90,7 +90,7 @@ class Editor(object):
 
 
     @staticmethod
-    def ENMLtoText(contentENML, imageOptions={'saveImages': False}, imageFilename=""):
+    def ENMLtoText(contentENML, imageOptions={'saveImages': False}):
         soup = BeautifulSoup(contentENML.decode('utf-8'))
 
         for section in soup.select('li > p'):
