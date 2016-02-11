@@ -69,6 +69,7 @@ class GeekNote(object):
             except Exception, e:
                 logging.error("Error: %s : %s", func.__name__, str(e))
 
+                print(str(e))
                 if not hasattr(e, 'errorCode'):
                     out.failureMessage("Sorry, operation has failed!!!.")
                     tools.exitErr()
@@ -350,6 +351,13 @@ class GeekNote(object):
         self.getNoteStore().expungeTag(self.authToken, guid)
         return True
 
+    @EdamException
+    def saveMedia(self, guid, mediaHash, filename):
+        logging.debug("saveMedia: guid:{}, mediaHash:{}, filename:{}".format(guid, mediaHash, filename))
+
+        resource = self.getNoteStore().getResourceByHash(self.authToken, guid, mediaHash, True, False, False)
+        open(filename, "w").write(resource.data.body)
+        return True
 
 class GeekNoteConnector(object):
     evernote = None

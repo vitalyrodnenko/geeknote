@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import binascii
 import glob
 import logging
 import string
@@ -85,7 +86,7 @@ class GNSync:
     all_set = False
 
     @log
-    def __init__(self, notebook_name, path, mask, format, twoway=False):
+    def __init__(self, notebook_name, path, mask, format, twoway=False, imageOptions={'saveImages': False, 'imagesInSubdir': False}):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -123,6 +124,9 @@ class GNSync:
         #set notebook
         self.notebook_guid,\
         self.notebook_name = self._get_notebook(notebook_name, path)
+
+        # set image options
+        self.imageOptions = imageOptions
 
         # all is Ok
         self.all_set = True
@@ -225,9 +229,26 @@ class GNSync:
         Creates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = Editor.ENMLtoText(note.content)
+
+        # Save images
+        if 'saveImages' in self.imageOptions and self.imageOptions['saveImages']:
+            if 'imagesInSubdir' in self.imageOptions and self.imageOptions['imagesInSubdir']:
+                os.mkdir(os.path.join(self.path, note.title + "_images"))
+                imagePath = os.path.join(self.path, note.title + "_images", note.title)
+                self.imageOptions['baseFilename'] = note.title + "_images/" + note.title
+            else:
+                imagePath = os.path.join(self.path, note.title)
+                self.imageOptions['baseFilename'] = note.title
+            for imageInfo in Editor.getImages(note.content):
+                filename = "{}-{}.{}".format(imagePath, imageInfo['hash'], imageInfo['extension'])
+                logger.info('Saving image to {}'.format(filename))
+                binaryHash = binascii.unhexlify(imageInfo['hash'])
+                GeekNote().saveMedia(note.guid, binaryHash, filename)
+
+        content = Editor.ENMLtoText(note.content, self.imageOptions)
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
+
         return True
 
     @log
@@ -316,6 +337,8 @@ def main():
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+        parser.add_argument('--save-images', action='store_true', help='save images along with text')
+        parser.add_argument('--images-in-subdir', action='store_true', help='save images in a subdirectory (instead of same directory as file)')
 
         args = parser.parse_args()
 
@@ -326,9 +349,14 @@ def main():
         logpath = args.logpath if args.logpath else None
         twoway = True if args.two_way else False
 
+        # image options
+        imageOptions = {}
+        imageOptions['saveImages'] = args.save_images
+        imageOptions['imagesInSubdir'] = args.images_in_subdir
+
         reset_logpath(logpath)
 
-        GNS = GNSync(notebook, path, mask, format, twoway)
+        GNS = GNSync(notebook, path, mask, format, twoway, imageOptions)
         GNS.sync()
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
