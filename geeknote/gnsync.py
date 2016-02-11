@@ -232,18 +232,20 @@ class GNSync:
 
         # Save images
         if 'saveImages' in self.imageOptions and self.imageOptions['saveImages']:
-            if 'imagesInSubdir' in self.imageOptions and self.imageOptions['imagesInSubdir']:
-                os.mkdir(os.path.join(self.path, note.title + "_images"))
-                imagePath = os.path.join(self.path, note.title + "_images", note.title)
-                self.imageOptions['baseFilename'] = note.title + "_images/" + note.title
-            else:
-                imagePath = os.path.join(self.path, note.title)
-                self.imageOptions['baseFilename'] = note.title
-            for imageInfo in Editor.getImages(note.content):
-                filename = "{}-{}.{}".format(imagePath, imageInfo['hash'], imageInfo['extension'])
-                logger.info('Saving image to {}'.format(filename))
-                binaryHash = binascii.unhexlify(imageInfo['hash'])
-                GeekNote().saveMedia(note.guid, binaryHash, filename)
+            imageList = Editor.getImages(note.content)
+            if imageList:
+                if 'imagesInSubdir' in self.imageOptions and self.imageOptions['imagesInSubdir']:
+                    os.mkdir(os.path.join(self.path, note.title + "_images"))
+                    imagePath = os.path.join(self.path, note.title + "_images", note.title)
+                    self.imageOptions['baseFilename'] = note.title + "_images/" + note.title
+                else:
+                    imagePath = os.path.join(self.path, note.title)
+                    self.imageOptions['baseFilename'] = note.title
+                for imageInfo in imageList:
+                    filename = "{}-{}.{}".format(imagePath, imageInfo['hash'], imageInfo['extension'])
+                    logger.info('Saving image to {}'.format(filename))
+                    binaryHash = binascii.unhexlify(imageInfo['hash'])
+                    GeekNote().saveMedia(note.guid, binaryHash, filename)
 
         content = Editor.ENMLtoText(note.content, self.imageOptions)
         path = os.path.join(self.path, note.title + self.extension)
