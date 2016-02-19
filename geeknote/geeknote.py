@@ -791,11 +791,11 @@ class Notes(GeekNoteConnector):
 
         # Evernote api will only return so many notes in one go. Checks for more
         # notes to come whilst obeying count rules
-        while ((result.totalNotes != len(result.notes)) and count != 0):
+        while ((result.totalNotes != len(result.notes)) and update_count(count) != 0):
             offset = len(result.notes)
-            result.notes += self.getEvernote().findNotes(request, count,
+            result.notes += self.getEvernote().findNotes(request, update_count(count),
                     createFilter, offset).notes
-            count = update_count(count)
+            #count = update_count(count)
 
         if result.totalNotes == 0:
             out.failureMessage("Notes have not been found.")
