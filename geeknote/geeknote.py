@@ -7,6 +7,7 @@ import sys
 import os
 import re
 import mimetypes
+import hashlib
 
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.transport.THttpClient as THttpClient
