@@ -88,6 +88,5 @@ class testNotes(unittest.TestCase):
         self.assertEqual(testRequest, response)
 
     def testError_createSearchRequest1(self):
-        testRequest = self.notes._createSearchRequest(search="test text",
-                                                      date="12.31.1999")
-        self.assertEqual(testRequest, 'exit')
+        self.assertRaises(SystemExit, self.notes._createSearchRequest, 
+                          search="test text", date="12.31.1999")
