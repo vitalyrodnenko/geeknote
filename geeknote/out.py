@@ -286,7 +286,9 @@ def printDate(timestamp):
     
     return datetime.date.strftime(datetime.date.fromtimestamp(timestamp / 1000), "%d.%m.%Y")
 
-def printLine(line, endLine="\n", out=sys.stdout):
+def printLine(line, endLine="\n", out=None):
+    if out is None:
+        out = sys.stdout
     message = line + endLine
     message = tools.stdoutEncode(message)
     try:
