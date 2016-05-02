@@ -22,6 +22,9 @@ class UserStub(object):
     accounting = AccountingStub()
 
 
+class NoteAttributesStub(object):
+    pass
+
 class NoteStub(object):
     title = 'testnote'
     created = 10000
@@ -29,7 +32,7 @@ class NoteStub(object):
     content = '##note content'
     tagNames = ['tag1', 'tag2', 'tag3']
     guid = 12345
-
+    attributes = NoteAttributesStub()
 
 class outTestsWithHackedStdout(unittest.TestCase):
 
@@ -106,10 +109,11 @@ Upload limit end : 01.01.1970\n'''
         note = '''################## TITLE ##################
 testnote
 =================== META ==================
-Created: 01.01.1970      Updated:01.01.1970     \n'''\
-'''----------------- CONTENT -----------------
+Created: 01.01.1970     
+Updated: 01.01.1970     
+----------------- CONTENT -----------------
 Tags: tag1, tag2, tag3
-##note content\n\n\n'''
+##note content\n\n'''
         showNote(NoteStub())
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), note)
