@@ -76,9 +76,13 @@ And visit www.geeknote.me to check for updates.\n''' % VERSION
         self.assertEquals(sys.stdout.read(), '\n\n')
 
     def test_failure_message_success(self):
+        sav = sys.stderr
+        buf = StringIO()
+        sys.stderr = buf
         failureMessage('fail')
-        sys.stdout.seek(0)
-        self.assertEquals(sys.stdout.read(), 'fail\n')
+        sys.stderr = sav
+        buf.seek(0)
+        self.assertEquals(buf.read(), 'fail\n')
 
     def test_success_message_success(self):
         successMessage('success')
