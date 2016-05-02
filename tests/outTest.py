@@ -124,8 +124,8 @@ Tags: tag1, tag2, tag3
 
     def test_print_list_without_title_success(self):
         notes_list = '''Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)])
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -133,8 +133,8 @@ Tags: tag1, tag2, tag3
     def test_print_list_with_title_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)], title='test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -142,8 +142,8 @@ Total found: 2
     def test_print_list_with_urls_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
-  2 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
+  1 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
+  2 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
 '''
         printList([NoteStub() for _ in xrange(2)], title='test', showUrl=True)
         sys.stdout.seek(0)
@@ -153,8 +153,8 @@ Total found: 2
         out.rawInput = lambda x: 2
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote
   0 : -Cancel-\n'''
         out.printList([NoteStub() for _ in xrange(2)], title='test', showSelector=True)
         sys.stdout.seek(0)
@@ -163,8 +163,8 @@ Total found: 2
     def test_search_result_success(self):
         result = '''Search request: test
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         SearchResult([NoteStub() for _ in xrange(2)], 'test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), result)
