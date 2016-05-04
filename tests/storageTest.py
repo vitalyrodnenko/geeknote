@@ -6,20 +6,18 @@ from sqlalchemy.orm.session import sessionmaker
 from geeknote import storage
 import pickle
 
+class TestStorage(storage.Storage):
 
-def hacked_init(self):
-    '''Hack for testing'''
-    engine = create_engine('sqlite:///:memory:', echo=False)
-    storage.Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    self.session = Session()
-
+    def __init__(self):
+        '''Hack for testing'''
+        engine = create_engine('sqlite:///:memory:', echo=False)
+        storage.Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
 
 class storageTest(unittest.TestCase):
     def setUp(self):
-        stor = storage.Storage
-        stor.__init__ = hacked_init
-        self.storage = stor()
+        self.storage = TestStorage()
         self.otoken = 'testoauthtoken'
         self.userinfo = {'email': 'test@mail.com'}
         self.tags = {u'tag': 1, u'tag2': 2, u'tag3': 'lol'}
