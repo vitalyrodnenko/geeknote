@@ -31,31 +31,34 @@ except:
 
 # Application path
 APP_DIR = os.path.join(os.getenv("HOME") or os.getenv("USERPROFILE"),  ".geeknote")
-ERROR_LOG = os.path.join(APP_DIR, "error.log")
 
 # Set default system editor
 DEF_UNIX_EDITOR = "nano"
 DEF_WIN_EDITOR = "notepad.exe"
 EDITOR_OPEN = "WRITE"
 
-DEV_MODE = False
+DEV_MODE = True
 DEBUG = False
 
 # Url view the note
 NOTE_URL = "https://%domain%/Home.action?#n=%s"
-
-# validate config
-try:
-    if not os.path.exists(APP_DIR):
-        os.mkdir(APP_DIR)
-except Exception, e:
-    sys.stdout.write("Can not create application dirictory : %s" % APP_DIR)
-    exit(1)
 
 if DEV_MODE:
     USER_STORE_URI = USER_STORE_URI_SANDBOX
     CONSUMER_KEY = CONSUMER_KEY_SANDBOX
     CONSUMER_SECRET = CONSUMER_SECRET_SANDBOX
     USER_BASE_URL = USER_BASE_URL_SANDBOX
+    APP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
+    sys.stderr.write("Developer mode: using %s as application directory\n" % APP_DIR)
+
+ERROR_LOG = os.path.join(APP_DIR, "error.log")
+
+# validate config
+try:
+    if not os.path.exists(APP_DIR):
+        os.mkdir(APP_DIR)
+except Exception, e:
+    sys.stderr.write("Can not create application directory : %s" % APP_DIR)
+    exit(1)
 
 NOTE_URL = NOTE_URL.replace('%domain%', USER_BASE_URL)
