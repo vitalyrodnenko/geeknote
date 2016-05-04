@@ -3,7 +3,7 @@
 import sys
 import unittest
 from cStringIO import StringIO
-from geeknote.config import VERSION
+from geeknote.config import VERSION, USER_BASE_URL
 from geeknote.out import printDate, printLine, printAbout,\
     separator, failureMessage, successMessage, showUser, showNote, \
     printList, SearchResult
@@ -142,9 +142,10 @@ Total found: 2
     def test_print_list_with_urls_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
-  2 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
-'''
+  1 : 01.01.1970        testnote >>> https://{url}/Home.action?#n=12345
+  2 : 01.01.1970        testnote >>> https://{url}/Home.action?#n=12345
+'''.format(url=USER_BASE_URL)
+
         printList([NoteStub() for _ in xrange(2)], title='test', showUrl=True)
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
