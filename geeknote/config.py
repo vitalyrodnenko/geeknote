@@ -37,8 +37,8 @@ DEF_UNIX_EDITOR = "nano"
 DEF_WIN_EDITOR = "notepad.exe"
 EDITOR_OPEN = "WRITE"
 
-DEV_MODE = True
-DEBUG = False
+DEV_MODE = False
+APPDEBUG = False
 
 # Url view the note
 NOTE_URL = "https://%domain%/Home.action?#n=%s"
