@@ -8,7 +8,6 @@ import re
 import base64
 from urllib import urlencode, unquote, getproxies, proxy_bypass
 from urlparse import urlparse
-
 import out
 import tools
 import config
@@ -70,6 +69,7 @@ class GeekNoteAuth(object):
             # This assumes that the proxy is given in URL form.
             # A little simpler as _parse_proxy in urllib2.py
             self._proxy = urlparse(proxy)
+            logging.debug("Using proxy: %s" % self._proxy.geturl())
 
         if proxy is None or not self._proxy.username:
             self._proxy_auth = None
