@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import unittest
 from geeknote import config
-from geeknote.geeknote import User, Notebooks, Notes, GeekNote
+from geeknote.geeknote import User, Notebooks, Notes, GeekNote, GeekNoteConnector
 from geeknote.storage import Storage
+from geeknote.oauth import GeekNoteAuth
 from random import SystemRandom
 from string import hexdigits
+from proxyenv.proxyenv import ProxyFactory
 
 # see https://docs.python.org/2.7/library/unittest.html §25.3.6
 # http://thecodeship.com/patterns/guide-to-python-function-decorators/
@@ -19,15 +21,25 @@ class TestSandbox(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        storage = Storage()
+
         # start out with empty auth token. Save current token to restore it later.
+        cls.token = storage.getUserToken()
+        cls.info = storage.getUserInfo()
+        storage.removeUser()
+
+        # Force reconnection and re-authorization because it's part of our test suite
+        GeekNoteAuth.cookies = {}
+        GeekNoteConnector.evernote = None
+        GeekNote.skipInitConnection = False
         cls.storage = Storage()
-        cls.token = cls.storage.getUserToken()
-        cls.info = cls.storage.getUserInfo()
-        cls.storage.removeUser()
         cls.notes = set()
         cls.nbs = set()
         cls.notebook = ("Geeknote test %s please delete" %
                         "".join(SystemRandom().choice(hexdigits) for x in range(12)))
+        cls.Notes = Notes()
+        cls.Notebooks = Notebooks()
+        cls.Geeknote = cls.Notebooks.getEvernote()
 
     @classmethod
     def tearDownClass(cls):
@@ -37,9 +49,6 @@ class TestSandbox(unittest.TestCase):
     def setUp(self):
         self.user = User()
         self.tag = "geeknote_unittest_1"
-        self.Notes = Notes()
-        self.Notebooks = Notebooks()
-        self.Geeknote = self.Notebooks.getEvernote()
         
     @skipUnlessDevMode()
     def test01_userLogin(self):
@@ -94,3 +103,22 @@ This is the note text.
         self.user.logout(force=True)
         self.assertFalse(self.Geeknote.checkAuth())
 
+
+class TestSandboxWithProxy(TestSandbox):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.proxy = ProxyFactory()()
+        cls.proxy.start()
+        cls.proxy.wait()
+        cls.proxy.enter_environment()
+        super(TestSandboxWithProxy, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSandboxWithProxy, cls).tearDownClass()
+        cls.proxy.leave_environment()
+        try:
+            cls.proxy.stop()
+        except:
+            pass
