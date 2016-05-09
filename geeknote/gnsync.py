@@ -194,6 +194,7 @@ class GNSync:
         GeekNote().loadNoteContent(note)
         content = Editor.ENMLtoText(note.content)
         open(file_note['path'], "w").write(content)
+        logger.info('File "{0}" was updated'.format(os.path.basename(file_note['path'])))
 
     @log
     def _create_note(self, file_note):
@@ -229,6 +230,7 @@ class GNSync:
         content = Editor.ENMLtoText(note.content)
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
+        logger.info('File "{0}" was created'.format(os.path.basename(path)))
         return True
 
     @log
