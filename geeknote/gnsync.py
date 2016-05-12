@@ -315,7 +315,7 @@ def main():
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
-        parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+        parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync. Upload changed notes to server first and then download.')
 
         args = parser.parse_args()
 
