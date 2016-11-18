@@ -7,6 +7,7 @@ import uuid
 import re
 from urllib import urlencode, unquote
 from urlparse import urlparse
+from lxml import html
 
 import out
 import tools
@@ -42,6 +43,7 @@ class GeekNoteAuth(object):
             'oauth_token': None,
             'oauth_callback': None,
             'embed': 'false',
+            'expireMillis': '31536000000',
         },
         'tfa': {
             'code': '',
@@ -72,7 +74,7 @@ class GeekNoteAuth(object):
 
         return params
 
-    def loadPage(self, url, uri=None, method="GET", params=""):
+    def loadPage(self, url, uri=None, method="GET", params="", additionalParams=""):
         if not url:
             logging.error("Request URL undefined")
             tools.exitErr()
@@ -84,7 +86,7 @@ class GeekNoteAuth(object):
 
         # prepare params, append to uri
         if params:
-            params = urlencode(params)
+            params = urlencode(params) + additionalParams
             if method == "GET":
                 uri += ('?' if uri.find('?') == -1 else '&') + params
                 params = ""
@@ -239,16 +241,49 @@ class GeekNoteAuth(object):
         #self.allowAccess(response.location)
 
     def allowAccess(self):
-        access = self.postData['access']
-        access['oauth_token'] = self.tmpOAuthToken
-        access['oauth_callback'] = "https://" + self.url['base']
         response = self.loadPage(self.url['base'],
                                  self.url['access'],
-                                 "POST", access)
+                                 "GET",
+                                 {'oauth_token': self.tmpOAuthToken})
+
+        logging.debug(response.data)
+        tree = html.fromstring(response.data);
+        token = "&" + urlencode({ 'csrfBusterToken': tree.xpath("//input[@name='csrfBusterToken']/@value")[0]}) + "&" + urlencode({ 'csrfBusterToken': tree.xpath("//input[@name='csrfBusterToken']/@value")[1]})
+        sourcePage = tree.xpath("//input[@name='_sourcePage']/@value")[0]
+        fp = tree.xpath("//input[@name='__fp']/@value")[0]
+        targetUrl = tree.xpath("//input[@name='targetUrl']/@value")[0]
+        logging.debug(token);
+
+        if response.status != 200:
+            logging.error("Unexpected response status "
+                          "on login 200 != %s", response.status)
+            tools.exitErr()
+
+        if 'JSESSIONID' not in self.cookies:
+            logging.error("Not found value JSESSIONID in the response cookies")
+            tools.exitErr()
+        
+        access = self.postData['access']
+        access['oauth_token'] = self.tmpOAuthToken
+        access['oauth_callback'] = ""
+        access['embed'] = 'false'
+        access['suggestedNotebookName'] = 'Geeknote'
+        access['supportLinkedSandbox'] = ''
+        access['analyticsLoginOrigin'] = 'Other'
+        access['clipperFlow'] = 'false'
+        access['showSwitchService'] = 'true'
+        access['_sourcePage'] = sourcePage
+        access['__fp'] = fp
+        access['targetUrl'] = targetUrl
+
+        response = self.loadPage(self.url['base'],
+                                 self.url['access'],
+                                 "POST", access, token)
 
         if response.status != 302:
             logging.error("Unexpected response status on allowing "
                           "access 302 != %s", response.status)
+            logging.error(response.data)
             tools.exitErr()
 
         responseData = self.parseResponse(response.location)
