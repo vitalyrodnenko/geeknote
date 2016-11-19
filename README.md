@@ -22,7 +22,7 @@ You can install Geeknote as a python script.
     $ [sudo] apt-get update; [sudo] apt-get -y install python-setuptools
     
     # Download the repository.
-    $ git clone git://github.com/VitaliyRodnenko/geeknote.git
+    $ git clone git://github.com/pipakin/geeknote.git
     
     $ cd geeknote
 
