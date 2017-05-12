@@ -890,6 +890,9 @@ def main(args=None):
 
         # Notes
         if COMMAND == 'create':
+            content = sys.stdin.read()
+            if content != "":
+                ARGS['content'] = content
             Notes().create(**ARGS)
 
         if COMMAND == 'edit':
