@@ -630,10 +630,6 @@ class Notes(GeekNoteConnector):
     def create(self, title, content=None, tags=None, notebook=None, resource=None):
 
         self.connectToEvertone()
-
-        # Optional Content.
-        content = content or " "
-
         inputData = self._parseInput(title, content, tags, notebook, resource)
 
         if inputData['content'] == config.EDITOR_OPEN:
@@ -708,6 +704,10 @@ class Notes(GeekNoteConnector):
 
         # if get note without params
         if note and title is None and content is None and tags is None and notebook is None:
+            content = config.EDITOR_OPEN
+
+        # if get a note without content
+        if content is None:
             content = config.EDITOR_OPEN
 
         if title is None and note:
