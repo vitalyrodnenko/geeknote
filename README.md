@@ -1,3 +1,5 @@
+**NOTICE: the project is not under maintenance by authors but is open for development by the open-source community.**
+
 geeknote
 ========
 
