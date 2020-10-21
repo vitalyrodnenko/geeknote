@@ -79,13 +79,14 @@ class GNSync:
     notebook_name = None
     path = None
     mask = None
-    twoway = None
+    sync_up = False
+    sync_down = False
 
     notebook_guid = None
     all_set = False
 
     @log
-    def __init__(self, notebook_name, path, mask, format, twoway=False):
+    def __init__(self, notebook_name, path, mask, format, sync_mode):
         # check auth
         if not Storage().getUserToken():
             raise Exception("Auth error. There is not any oAuthToken.")
@@ -116,7 +117,13 @@ class GNSync:
         else:
             self.extension = ".txt"
 
-        self.twoway = twoway
+        if sync_mode == "up":
+            self.sync_up = True
+        elif sync_mode == "down":
+            self.sync_down = True
+        else:
+            self.sync_up = True
+            self.sync_down = True
 
         logger.info('Sync Start')
 
@@ -138,19 +145,22 @@ class GNSync:
         files = self._get_files()
         notes = self._get_notes()
 
-        for f in files:
-            has_note = False
-            for n in notes:
-                if f['name'] == n.title:
-                    has_note = True
-                    if f['mtime'] > n.updated:
-                        self._update_note(f, n)
-                        break
+        if self.sync_up:
+            logger.info('Uploading notes')
+            for f in files:
+                has_note = False
+                for n in notes:
+                    if f['name'] == n.title:
+                        has_note = True
+                        if f['mtime'] > n.updated:
+                            self._update_note(f, n)
+                            break
 
-            if not has_note:
-                self._create_note(f)
+                if not has_note:
+                    self._create_note(f)
 
-        if self.twoway:
+        if self.sync_down:
+            logger.info('Downloading notes')
             for n in notes:
                 has_file = False
                 for f in files:
@@ -315,7 +325,8 @@ def main():
         parser.add_argument('--format', '-f', action='store', default='plain', choices=['plain', 'markdown'], help='The format of the file contents. Default is "plain". Valid values are "plain" and "markdown"')
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
-        parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+        parser.add_argument('--two-way', '-t', action='store_true', help='Two-way sync. Upload changed notes to server first and then download.')
+        parser.add_argument('--one-way', '-w', action='store', default='up', choices=['up', 'down'], help='''One-way sync. Upload changed notes to server or download changes from server if "up" or "down" is given respectively. If --two-way option is specified, --one-way option will be ignored. If both are not given, GNSync will default to do one-way upload.''')
 
         args = parser.parse_args()
 
@@ -325,10 +336,17 @@ def main():
         notebook = args.notebook if args.notebook else None
         logpath = args.logpath if args.logpath else None
         twoway = True if args.two_way else False
+        oneway = args.one_way if args.one_way else "up"
+
+        sync_mode = "up" #default sync mode
+        if twoway:
+            sync_mode = "twoway"
+        else:
+            sync_mode = oneway
 
         reset_logpath(logpath)
 
-        GNS = GNSync(notebook, path, mask, format, twoway)
+        GNS = GNSync(notebook, path, mask, format, sync_mode)
         GNS.sync()
 
     except (KeyboardInterrupt, SystemExit, tools.ExitException):
