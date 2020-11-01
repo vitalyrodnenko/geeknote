@@ -17,7 +17,10 @@ Geeknote is written in Python, so you can use the open source package anywhere y
 Here we have documentation for Geeknote. We'll show basic commands how to work with notes, notebooks and tags in Evernote using Geeknote, also we'll show how to use search to find notes you want and give you some examples.
 
 ## Installation
-You can install Geeknote as a python script.
+You can install Geeknote as a python script or using [Homebrew](http://brew.sh/)/[Linuxbrew](https://github.com/Homebrew/linuxbrew).
+
+### Homebrew installation
+    brew install --HEAD https://raw.githubusercontent.com/VitaliyRodnenko/geeknote/master/geeknote.rb
 
 ### Downloading and installing from source
     # Install dependencies. (This example for Debian-based systems):
