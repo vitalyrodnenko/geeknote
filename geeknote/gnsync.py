@@ -8,6 +8,7 @@ import logging
 import string
 import unicodedata, re
 
+import evernote.edam.notestore.NoteStore as NoteStore
 from geeknote import GeekNote
 from storage import Storage
 from editor import Editor
@@ -304,7 +305,20 @@ class GNSync:
         Get notes from evernote.
         """
         keywords = 'notebook:"{0}"'.format(tools.strip(self.notebook_name))
-        return GeekNote().findNotes(keywords, 10000).notes
+        #print GeekNote().findNotes(keywords, 10000)
+        #try to get all notes in a notebook
+        #assum that the notebook has less than 10000 notes
+        noteMetadataResultSpec = NoteStore.NotesMetadataResultSpec(includeTitle=True,\
+                includeUpdated=True)
+        noteList = GeekNote().findNotesMetadata(keywords, 10000, noteMetadataResultSpec)
+        notes = noteList.notes
+        notesSize = len(notes)
+        while (notesSize < noteList.totalNotes):
+            noteList = GeekNote().findNotesMetadata(keywords, 10000, offset=notesSize)
+            notes += noteList.notes
+            notesSize = len(notes)
+            print notesSize
+        return notes
 
 
 def main():
