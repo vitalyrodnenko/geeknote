@@ -251,7 +251,7 @@ As we mentioned before, *show* can use the results of previous search, so if you
 You can remove notes with Geeknotes from Evernote.
 
 ### Synopsis
-    $ geeknote remove --notebook <note name>
+    $ geeknote remove --note <note name>
                      [--force]
 ### Options
 
