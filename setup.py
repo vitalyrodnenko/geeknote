@@ -90,7 +90,8 @@ setup(
         'sqlalchemy',
         'markdown2',
         'beautifulsoup4',
-        'thrift'
+        'thrift',
+        'lxml'
     ],
 
     entry_points={
