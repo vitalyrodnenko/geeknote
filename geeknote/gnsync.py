@@ -7,6 +7,7 @@ import glob
 import logging
 import string
 import unicodedata, re
+import sys
 
 from geeknote import GeekNote
 from storage import Storage
@@ -193,6 +194,7 @@ class GNSync:
         GeekNote().loadNoteContent(note)
         content = Editor.ENMLtoText(note.content)
         open(file_note['path'], "w").write(content)
+        logger.info('File "{0}" was updated'.format(os.path.basename(file_note['path'])))
 
     @log
     def _create_note(self, file_note):
@@ -228,6 +230,7 @@ class GNSync:
         content = Editor.ENMLtoText(note.content)
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
+        logger.info('File "{0}" was created'.format(os.path.basename(path)))
         return True
 
     @log
@@ -316,6 +319,7 @@ def main():
         parser.add_argument('--notebook', '-n', action='store', help='Notebook name for synchronize. Default is default notebook')
         parser.add_argument('--logpath', '-l', action='store', help='Path to log file. Default is GeekNoteSync in home dir')
         parser.add_argument('--two-way', '-t', action='store', help='Two-way sync')
+        parser.add_argument('--verbose', '-v', action='store_true', help='Verbose mode. Let GNSync print more logs about its progress')
 
         args = parser.parse_args()
 
@@ -327,6 +331,12 @@ def main():
         twoway = True if args.two_way else False
 
         reset_logpath(logpath)
+
+        if args.verbose:
+            handler = logging.StreamHandler(sys.stdout)
+            formatter = logging.Formatter('%(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
 
         GNS = GNSync(notebook, path, mask, format, twoway)
         GNS.sync()
