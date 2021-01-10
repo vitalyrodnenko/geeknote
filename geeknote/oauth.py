@@ -5,9 +5,9 @@ import time
 import Cookie
 import uuid
 import re
-from urllib import urlencode, unquote
+import base64
+from urllib import urlencode, unquote, getproxies, proxy_bypass
 from urlparse import urlparse
-
 import out
 import tools
 import config
@@ -58,6 +58,27 @@ class GeekNoteAuth(object):
     incorrectCode = 0
     code = None
 
+    def __init__(self):
+        try:
+            proxy = getproxies()['https']
+        except KeyError:
+            proxy = None
+        if proxy is None:
+            self._proxy = None
+        else:
+            # This assumes that the proxy is given in URL form.
+            # A little simpler as _parse_proxy in urllib2.py
+            self._proxy = urlparse(proxy)
+            logging.debug("Using proxy: %s" % self._proxy.geturl())
+
+        if proxy is None or not self._proxy.username:
+            self._proxy_auth = None
+        else:
+            user_pass = "%s:%s" % (urlparse.unquote(self._proxy.username),
+                                   urlparse.unquote(self._proxy.password))
+            self._proxy_auth = { "Proxy-Authorization":
+                                 "Basic " + base64.b64encode(user_pass).strip() }
+
     def getTokenRequestData(self, **kwargs):
         params = {
             'oauth_consumer_key': self.consumerKey,
@@ -77,9 +98,11 @@ class GeekNoteAuth(object):
             logging.error("Request URL undefined")
             tools.exitErr()
 
+        if not url.startswith("http"):
+            url = "https://" + url
+        urlData = urlparse(url)
         if not uri:
-            urlData = urlparse(url)
-            url = urlData.netloc
+            url = "%s://%s" (urlData.scheme, urlData.netloc)
             uri = urlData.path + '?' + urlData.query
 
         # prepare params, append to uri
@@ -97,11 +120,27 @@ class GeekNoteAuth(object):
         if method == "POST":
             headers["Content-type"] = "application/x-www-form-urlencoded"
 
-        logging.debug("Request URL: %s:/%s > %s # %s", url,
+        if self._proxy is None or proxy_bypass(urlData.hostname):
+            host = urlData.hostname
+            port = urlData.port
+            real_host = real_port = None
+        else:
+            host = self._proxy.hostname
+            port = self._proxy.port
+            real_host = urlData.hostname
+            real_port = urlData.port
+
+        logging.debug("Request URL: %s%s > %s # %s", url,
                       uri, unquote(params), headers["Cookie"])
 
-        conn = httplib.HTTPSConnection(url)
-        conn.request(method, uri, params, headers)
+        conn = httplib.HTTPSConnection(host, port)
+
+        if real_host is not None:
+            conn.set_tunnel(real_host, real_port, headers=self._proxy_auth)
+        if config.DEBUG:
+            conn.set_debuglevel(1)
+
+        conn.request(method, url + uri, params, headers)
         response = conn.getresponse()
         data = response.read()
         conn.close()

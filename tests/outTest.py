@@ -3,7 +3,7 @@
 import sys
 import unittest
 from cStringIO import StringIO
-from geeknote.config import VERSION
+from geeknote.config import VERSION, USER_BASE_URL
 from geeknote.out import printDate, printLine, printAbout,\
     separator, failureMessage, successMessage, showUser, showNote, \
     printList, SearchResult
@@ -22,6 +22,9 @@ class UserStub(object):
     accounting = AccountingStub()
 
 
+class NoteAttributesStub(object):
+    pass
+
 class NoteStub(object):
     title = 'testnote'
     created = 10000
@@ -29,7 +32,7 @@ class NoteStub(object):
     content = '##note content'
     tagNames = ['tag1', 'tag2', 'tag3']
     guid = 12345
-
+    attributes = NoteAttributesStub()
 
 class outTestsWithHackedStdout(unittest.TestCase):
 
@@ -73,9 +76,13 @@ And visit www.geeknote.me to check for updates.\n''' % VERSION
         self.assertEquals(sys.stdout.read(), '\n\n')
 
     def test_failure_message_success(self):
+        sav = sys.stderr
+        buf = StringIO()
+        sys.stderr = buf
         failureMessage('fail')
-        sys.stdout.seek(0)
-        self.assertEquals(sys.stdout.read(), 'fail\n')
+        sys.stderr = sav
+        buf.seek(0)
+        self.assertEquals(buf.read(), 'fail\n')
 
     def test_success_message_success(self):
         successMessage('success')
@@ -106,18 +113,19 @@ Upload limit end : 01.01.1970\n'''
         note = '''################## TITLE ##################
 testnote
 =================== META ==================
-Created: 01.01.1970      Updated:01.01.1970     \n'''\
-'''----------------- CONTENT -----------------
+Created: 01.01.1970     
+Updated: 01.01.1970     
+----------------- CONTENT -----------------
 Tags: tag1, tag2, tag3
-##note content\n\n\n'''
+##note content\n\n'''
         showNote(NoteStub())
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), note)
 
     def test_print_list_without_title_success(self):
         notes_list = '''Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)])
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -125,8 +133,8 @@ Tags: tag1, tag2, tag3
     def test_print_list_with_title_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)], title='test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -134,9 +142,10 @@ Total found: 2
     def test_print_list_with_urls_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
-  2 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
-'''
+  1 : 01.01.1970        testnote >>> https://{url}/Home.action?#n=12345
+  2 : 01.01.1970        testnote >>> https://{url}/Home.action?#n=12345
+'''.format(url=USER_BASE_URL)
+
         printList([NoteStub() for _ in xrange(2)], title='test', showUrl=True)
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -145,8 +154,8 @@ Total found: 2
         out.rawInput = lambda x: 2
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote
   0 : -Cancel-\n'''
         out.printList([NoteStub() for _ in xrange(2)], title='test', showSelector=True)
         sys.stdout.seek(0)
@@ -155,11 +164,11 @@ Total found: 2
     def test_search_result_success(self):
         result = '''Search request: test
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         SearchResult([NoteStub() for _ in xrange(2)], 'test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), result)
 
     def test_print_date(self):
-        self.assertEquals(printDate(1000000), '12.01.1970')
+        self.assertEquals(printDate(1000000000L), '12.01.1970')
