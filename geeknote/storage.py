@@ -81,6 +81,23 @@ class Tag(Base):
         return "<Tag('{0}')>".format(self.tag)
 
 
+class Note(Base):
+    __tablename__ = 'notes'
+
+    id = Column(Integer, primary_key=True)
+    guid = Column(String(1000))
+    obj = Column(PickleType())
+    timestamp = Column(DateTime(), nullable=False)
+
+    def __init__(self, guid, obj):
+        self.guid = guid
+        self.obj = obj
+        self.timestamp = datetime.datetime.now()
+
+    def __repr__(self):
+        return "<Note('{0}')>".format(self.timestamp)
+
+
 class Search(Base):
     __tablename__ = 'search'
 
@@ -359,6 +376,32 @@ class Storage(object):
             result[item.guid] = item.name
         return result
 
+    @logging
+    def setNote(self, obj):
+        """
+        Set note.
+        """
+        for item in self.session.query(Note).filter(Note.guid == obj.guid).all():
+            self.session.delete(item)
+
+        note = pickle.dumps(obj)
+        instance = Note(obj.guid, note)
+        self.session.add(instance)
+
+        self.session.commit()
+        return True
+    
+    @logging
+    def getNote(self, guid):
+        """
+        Get note by GUID.
+        """
+        note = self.session.query(Note).filter(Note.guid == guid).first()
+        if note:
+            return pickle.loads(note.obj)
+        else:
+            return None
+    
     @logging
     def setSearch(self, search_obj):
         """
