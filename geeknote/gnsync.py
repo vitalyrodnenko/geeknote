@@ -191,7 +191,7 @@ class GNSync:
         Updates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = Editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content, self.format == "markdown")
         open(file_note['path'], "w").write(content)
 
     @log
@@ -225,7 +225,7 @@ class GNSync:
         Creates file from note
         """
         GeekNote().loadNoteContent(note)
-        content = Editor.ENMLtoText(note.content)
+        content = Editor.ENMLtoText(note.content, self.format == "markdown")
         path = os.path.join(self.path, note.title + self.extension)
         open(path, "w").write(content)
         return True
@@ -240,7 +240,7 @@ class GNSync:
         # strip unprintable characters
         content = remove_control_characters(content.decode('utf-8')).encode('utf-8')
         content = Editor.textToENML(content=content, raise_ex=True, format=self.format)
-        
+
         if content is None:
             logger.warning("File {0}. Content must be " \
                            "an UTF-8 encode.".format(path))
