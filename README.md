@@ -110,7 +110,7 @@ The main functionality that we need is creating notes in Evernote.
 :   With this option we specify the title of new note we want to create.
 
 --content &lt;content&gt;
-:   Specifying the content of new note. The content must not contains double quotes.
+:   Specifying the content of new note. The content must not contain double quotes.
 
 --notebook &lt;notebook where to save&gt;
 :   Specify the notebook where new note should be saved. This option is not required. If it isn't given, the note will be saved in default notebook. If notebook doesn't exist Geeknote will create it automatically.
