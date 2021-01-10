@@ -76,7 +76,7 @@ class Editor(object):
 
     @staticmethod
     def ENMLtoText(contentENML):
-        soup = BeautifulSoup(contentENML.decode('utf-8'))
+        soup = BeautifulSoup(contentENML.decode('utf-8'), 'html.parser')
 
         for section in soup.select('li > p'):
             section.replace_with( section.contents[0] )
