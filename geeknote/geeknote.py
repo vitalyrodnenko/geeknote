@@ -290,9 +290,11 @@ class GeekNote(object):
         return self.getNoteStore().listNotebooks(self.authToken)
 
     @EdamException
-    def createNotebook(self, name):
+    def createNotebook(self, name, stack):
         notebook = Types.Notebook()
         notebook.name = name
+        if stack:
+            notebook.stack = stack
 
         logging.debug("New notebook : %s", notebook)
 
@@ -515,10 +517,10 @@ class Notebooks(GeekNoteConnector):
         result = self.getEvernote().findNotebooks()
         out.printList(result)
 
-    def create(self, title):
+    def create(self, title, stack=None):
         self.connectToEvertone()
         out.preloader.setMessage("Creating notebook...")
-        result = self.getEvernote().createNotebook(name=title)
+        result = self.getEvernote().createNotebook(name=title, stack=stack)
 
         if result:
             out.successMessage("Notebook has been successfully created.")
