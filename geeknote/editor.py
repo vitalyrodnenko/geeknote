@@ -168,7 +168,7 @@ class Editor(object):
             # add 2 space before new line in paragraph for creating br tags
             content = re.sub(r'([^\r\n])([\r\n])([^\r\n])', r'\1  \n\3', content)
             if format=='markdown':
-              contentHTML = markdown.markdown(content)
+              contentHTML = markdown.markdown(content, extras=['tables'])
 
               soup = BeautifulSoup(contentHTML, 'html.parser')
               Editor.checklistInSoupToENML(soup)

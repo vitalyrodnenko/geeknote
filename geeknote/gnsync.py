@@ -14,7 +14,7 @@ from editor import Editor
 import tools
 
 # set default logger (write log to file)
-def_logpath = os.path.join(os.getenv('USERPROFILE') or os.getenv('HOME'),  'GeekNoteSync.log')
+def_logpath = os.path.join(os.getenv('HOME') or os.getenv('USERPROFILE'),  'GeekNoteSync.log')
 formatter = logging.Formatter('%(asctime)-15s : %(message)s')
 handler = logging.FileHandler(def_logpath)
 handler.setFormatter(formatter)
@@ -31,7 +31,7 @@ except ValueError:
     MAX_CHAR = 0x9999
 
 # http://stackoverflow.com/a/93029
-CONTROL_CHARS = ''.join(c for c in (unichr(i) for i in xrange(MAX_CHAR)) \
+CONTROL_CHARS = ''.join(c for c in (("\\U%08x" % i).decode('unicode-escape') for i in xrange(0x110000)) \
                 if c not in string.printable and unicodedata.category(c) == 'Cc')
 CONTROL_CHARS_RE = re.compile('[%s]' % re.escape(CONTROL_CHARS))
 def remove_control_characters(s):
