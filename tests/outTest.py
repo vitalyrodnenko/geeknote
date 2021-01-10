@@ -21,20 +21,29 @@ class UserStub(object):
     email = 'testemail'
     accounting = AccountingStub()
 
+class AttributesStub(object):
+    pass
 
 class NoteStub(object):
     title = 'testnote'
-    created = 10000
-    updated = 100000
+    created = 100000000
+    updated = 100000000
     content = '##note content'
     tagNames = ['tag1', 'tag2', 'tag3']
     guid = 12345
+    attributes = AttributesStub()
 
 
 class outTestsWithHackedStdout(unittest.TestCase):
 
     def setUp(self):
-        sys.stdout = StringIO()  # set fake stdout
+        # set fake stdout and stderr
+        self.stdout, sys.stdout = sys.stdout, StringIO()
+        self.stderr, sys.stderr = sys.stderr, StringIO()
+
+    def tearDown(self):
+        sys.stdout = self.stdout
+        sys.stderr = self.stderr
 
     def test_print_line(self):
         printLine('test')
@@ -74,8 +83,8 @@ And visit www.geeknote.me to check for updates.\n''' % VERSION
 
     def test_failure_message_success(self):
         failureMessage('fail')
-        sys.stdout.seek(0)
-        self.assertEquals(sys.stdout.read(), 'fail\n')
+        sys.stderr.seek(0)
+        self.assertEquals(sys.stderr.read(), 'fail\n')
 
     def test_success_message_success(self):
         successMessage('success')
@@ -106,18 +115,18 @@ Upload limit end : 01.01.1970\n'''
         note = '''################## TITLE ##################
 testnote
 =================== META ==================
-Created: 01.01.1970      Updated:01.01.1970     \n'''\
+Created: 01.01.1970     \nUpdated: 01.01.1970     \n'''\
 '''----------------- CONTENT -----------------
 Tags: tag1, tag2, tag3
-##note content\n\n\n'''
+##note content\n\n'''
         showNote(NoteStub())
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), note)
 
     def test_print_list_without_title_success(self):
         notes_list = '''Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)])
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -125,8 +134,8 @@ Tags: tag1, tag2, tag3
     def test_print_list_with_title_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         printList([NoteStub() for _ in xrange(2)], title='test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), notes_list)
@@ -134,8 +143,8 @@ Total found: 2
     def test_print_list_with_urls_success(self):
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
-  2 : 01.01.1970  testnote >>> https://www.evernote.com/Home.action?#n=12345
+  1 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
+  2 : 01.01.1970        testnote >>> https://www.evernote.com/Home.action?#n=12345
 '''
         printList([NoteStub() for _ in xrange(2)], title='test', showUrl=True)
         sys.stdout.seek(0)
@@ -145,8 +154,8 @@ Total found: 2
         out.rawInput = lambda x: 2
         notes_list = '''=================== test ==================
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote
   0 : -Cancel-\n'''
         out.printList([NoteStub() for _ in xrange(2)], title='test', showSelector=True)
         sys.stdout.seek(0)
@@ -155,11 +164,11 @@ Total found: 2
     def test_search_result_success(self):
         result = '''Search request: test
 Total found: 2
-  1 : 01.01.1970  testnote
-  2 : 01.01.1970  testnote\n'''
+  1 : 01.01.1970        testnote
+  2 : 01.01.1970        testnote\n'''
         SearchResult([NoteStub() for _ in xrange(2)], 'test')
         sys.stdout.seek(0)
         self.assertEquals(sys.stdout.read(), result)
 
     def test_print_date(self):
-        self.assertEquals(printDate(1000000), '12.01.1970')
+        self.assertEquals(printDate(1000000000), '12.01.1970')
