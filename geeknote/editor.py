@@ -47,6 +47,21 @@ class Editor(object):
     def HTMLUnescape(text):
         return unescape(text, Editor.getHtmlUnescapeTable())
 
+ 
+    @staticmethod
+    def getImages(contentENML):
+        '''
+        creates a list of image resources to save. each has a hash and extension attribute
+        '''
+        soup = BeautifulSoup(contentENML.decode('utf-8'))
+        imageList = []
+        for section in soup.findAll('en-media'):
+            if 'type' in section.attrs and 'hash' in section.attrs:
+                imageType, imageExtension = section['type'].split('/')
+                if imageType == "image":
+                    imageList.append({'hash': section['hash'], 'extension': imageExtension})
+        return imageList
+
     @staticmethod
     def checklistInENMLtoSoup(soup):
         '''
@@ -75,7 +90,7 @@ class Editor(object):
 
 
     @staticmethod
-    def ENMLtoText(contentENML):
+    def ENMLtoText(contentENML, imageOptions={'saveImages': False}):
         soup = BeautifulSoup(contentENML.decode('utf-8'))
 
         for section in soup.select('li > p'):
@@ -97,6 +112,16 @@ class Editor(object):
 
         for section in soup.findAll('en-todo'):
             section.replace_with('[ ]')
+
+        # change <en-media> tags to <img> tags
+        if 'saveImages' in imageOptions and imageOptions['saveImages']:
+            for section in soup.findAll('en-media'):
+                if 'type' in section.attrs and 'hash' in section.attrs:
+                    imageType, imageExtension = section['type'].split('/')
+                    if imageType == "image":
+                        newTag = soup.new_tag("img")
+                        newTag['src'] = "{}-{}.{}".format(imageOptions['baseFilename'], section['hash'], imageExtension)
+                        section.replace_with(newTag)
 
         content = html2text.html2text(str(soup).decode('utf-8'), '', 0)
         content = re.sub(r' *\n', os.linesep, content)
