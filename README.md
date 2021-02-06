@@ -60,7 +60,7 @@ If you want to change Evernote user you should launch *logout* command:
 
 And after you can repeat authorization step.
 
-###Look your settings
+### Look your settings
 
     $ geeknote settings
     Geeknote
